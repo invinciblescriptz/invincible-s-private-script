@@ -366,32 +366,49 @@ KillFolder:AddSwitch("Kill Selected Player Only", function(state)
     end
 end)
 
+Evil Karma Kill function (targets players with more Evil Karma than Good Karma)
+local function evilKarmaKill(toggleState)
+    getgenv().killEvil = toggleState
+    if toggleState then
+        equipTool("Punch")
+        task.spawn(function()
+            while getgenv().killEvil do
+                local character = LocalPlayer.Character
+                local leftHand = character and character:FindFirstChild("LeftHand")
+                if not leftHand then
+                    task.wait(0.3)
+                    continue
+                end
+                local muscleEvent = LocalPlayer:FindFirstChild("muscleEvent")
+                if muscleEvent then
+                    muscleEvent:FireServer("punch", "rightHand")
+                    muscleEvent:FireServer("punch", "leftHand")
+                end
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer then
+                        local goodKarma = player:FindFirstChild("goodKarma")
+                        local evilKarma = player:FindFirstChild("evilKarma")
+           ... (29 KB left)
+
+----killl bad and good---
+local Section = Tabs.Killer:CreateSection("⏬Auto Kill Karma⏬")
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Equip Punch tool
+local function equipTool(toolName)
+    local character = LocalPlayer.Character
+    local backpack = LocalPlayer.Backpack
+    if not (character and backpack) then return end
+    local tool = backpack:FindFirstChild(toolName)
+    if tool then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:EquipTool(tool)
+        end
+    end
+end
+
 
 local Stats = window:AddTab("Stats")
-
-local IntSection = Tabs.Stats:CreateSection("Player Stats")
-local RunService = game:GetService("RunService")
-local player = game.Players.LocalPlayer
-
-local startTime = 0
-local sessionStartTime = os.time()
-local timerRunning = false
-
-local strengthGained = 0
-local lastStrengthValue = nil
-local rebirthsGained = 0
-local lastRebirthsValue = nil
-local killsGained = 0
-local lastKillsValue = nil
-local brawlsGained = 0
-local lastBrawlsValue = nil
-local goodKarmaGained = 0
-local lastGoodKarmaValue = nil
-local evilKarmaGained = 0
-local lastEvilKarmaValue = nil
-local durabilityGained = 0
-local lastDurabilityValue = nil
-local agilityGained = 0
-local lastAgilityValue = nil
-local muscleKingTimeGained = 0
-local lastMuscleKingTimeValue = nil
