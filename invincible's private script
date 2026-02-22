@@ -42,3 +42,5 @@ Tools:AddButton("anti lag", function()
 end)
 
 local main = window:AddTab ("kill")
+
+local main = window:AddTab ("teleport")
