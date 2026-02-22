@@ -9,41 +9,44 @@ local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 local Rocks = main:AddFolder("Rocks")
 
--- Helper: Auto-rep (unchanged, solid)
+-- Helper: Auto-rep loop (improved equip check)
 local function startAutoRep(toolName, toggleVar)
     task.spawn(function()
         while _G[toggleVar] do
-            local player = game.Players.LocalPlayer
-            local character = player.Character or player.CharacterAdded:Wait()
-            if not character or not character:FindFirstChild("Humanoid") then
-                task.wait(1)
-                continue
-            end
+            pcall(function()
+                local player = game.Players.LocalPlayer
+                local character = player.Character
+                if not character or not character:FindFirstChild("Humanoid") or character.Humanoid.Health <= 0 then
+                    task.wait(1.5)
+                    return
+                end
 
-            -- Auto-equip tool
-            local tool = player.Backpack:FindFirstChild(toolName) or character:FindFirstChild(toolName)
-            if tool and tool.Parent ~= character then
-                character.Humanoid:EquipTool(tool)
-            end
+                -- Auto-equip if not equipped
+                local tool = player.Backpack:FindFirstChild(toolName) or character:FindFirstChild(toolName)
+                if tool and tool.Parent ~= character then
+                    character.Humanoid:EquipTool(tool)
+                end
 
-            -- Fire rep event
-            local muscleEvent = player:FindFirstChild("muscleEvent")
-            if muscleEvent then
-                muscleEvent:FireServer("rep")
-            end
-
+                -- Fire rep
+                local muscleEvent = player:FindFirstChild("muscleEvent")
+                if muscleEvent then
+                    muscleEvent:FireServer("rep")
+                end
+            end)
             task.wait(0.025)
         end
 
-        -- Cleanup: unequip on disable
-        local player = game.Players.LocalPlayer
-        local character = player.Character
-        if character then
-            local equipped = character:FindFirstChild(toolName)
-            if equipped then
-                equipped.Parent = player.Backpack
+        -- Cleanup unequip
+        pcall(function()
+            local player = game.Players.LocalPlayer
+            local character = player.Character
+            if character then
+                local equipped = character:FindFirstChild(toolName)
+                if equipped then
+                    equipped.Parent = player.Backpack
+                end
             end
-        end
+        end)
     end)
 end
 
@@ -63,42 +66,46 @@ Tools:AddSwitch("Auto Handstands", function(state)
     if state then startAutoRep("Handstands", "AutoHandstands") end
 end)
 
--- Fast Punch (improved stability + check both hands)
+-- Fast Punch (stable spam, both hands)
 Tools:AddSwitch("Fast Punch", function(state)
     _G.FastPunch = state
     if state then
-        -- Cooldown bypass loop
+        -- Cooldown bypass
         task.spawn(function()
             while _G.FastPunch do
-                local player = game.Players.LocalPlayer
-                local punch = player.Backpack:FindFirstChild("Punch") or (player.Character and player.Character:FindFirstChild("Punch"))
-                if punch and punch:FindFirstChild("attackTime") then
-                    punch.attackTime.Value = 0
-                end
+                pcall(function()
+                    local player = game.Players.LocalPlayer
+                    local punch = player.Backpack:FindFirstChild("Punch") or (player.Character and player.Character:FindFirstChild("Punch"))
+                    if punch and punch:FindFirstChild("attackTime") then
+                        punch.attackTime.Value = 0
+                    end
+                end)
                 task.wait(0.25)
             end
         end)
 
-        -- Spam punch event + activate
+        -- Spam fire + activate
         task.spawn(function()
             while _G.FastPunch do
-                local player = game.Players.LocalPlayer
-                local muscleEvent = player:FindFirstChild("muscleEvent")
-                if muscleEvent then
-                    muscleEvent:FireServer("punch", "rightHand")
-                    muscleEvent:FireServer("punch", "leftHand")
-                end
-                local char = player.Character
-                if char and char:FindFirstChild("Punch") then
-                    char.Punch:Activate()
-                end
-                task.wait(0.07)  -- Slightly more stable (most 2026 servers handle ~14–15/s)
+                pcall(function()
+                    local player = game.Players.LocalPlayer
+                    local muscleEvent = player:FindFirstChild("muscleEvent")
+                    if muscleEvent then
+                        muscleEvent:FireServer("punch", "rightHand")
+                        muscleEvent:FireServer("punch", "leftHand")
+                    end
+                    local char = player.Character
+                    if char and char:FindFirstChild("Punch") then
+                        char.Punch:Activate()
+                    end
+                end)
+                task.wait(0.07)  -- ~14/s – stable on most 2026 servers
             end
         end)
     end
 end)
 
--- Anti-Lag (unchanged, very effective)
+-- Anti-Lag (solid, no changes needed)
 Tools:AddButton("Anti Lag (Boost FPS)", function()
     local Lighting = game:GetService("Lighting")
     local Workspace = game:GetService("Workspace")
@@ -120,54 +127,58 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     print("Anti-Lag activated → check FPS (Shift+F5)")
 end)
 
--- Improved Ancient Jungle Rock Auto-Farm (10M durability confirmed working in recent sources)
+-- Ancient Jungle Rock Auto-Farm (confirmed 10M durability in 2026 sources)
 Rocks:AddSwitch("Auto Farm Ancient Jungle Rock (10M)", function(state)
     getgenv().autoFarmRock = state
-    getgenv().targetRockName = "Ancient Jungle Rock"
-    getgenv().targetDurability = 10000000  -- Standard for Ancient Jungle in 2025–2026
+    getgenv().targetRockName = "Ancient Jungle Rock"  -- exact name match; set to "" to farm any 10M rock
+    getgenv().targetDurability = 10000000
 
     task.spawn(function()
         while getgenv().autoFarmRock do
-            local player = game.Players.LocalPlayer
-            local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") or not player:FindFirstChild("Durability") then
-                task.wait(1.5)
-                continue
-            end
+            pcall(function()
+                local player = game.Players.LocalPlayer
+                local char = player.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") or not player:FindFirstChild("Durability") then
+                    task.wait(1.5)
+                    return
+                end
 
-            if player.Durability.Value < getgenv().targetDurability then
-                task.wait(2)  -- Wait longer if durability too low
-                continue
-            end
+                if player.Durability.Value < getgenv().targetDurability then
+                    task.wait(2)
+                    return
+                end
 
-            local hrp = char.HumanoidRootPart
-            local found = false
+                local hrp = char.HumanoidRootPart
+                local found = false
 
-            for _, obj in pairs(game.Workspace.machinesFolder:GetDescendants()) do
-                if obj:IsA("IntValue") and obj.Name == "neededDurability" 
-                   and obj.Value == getgenv().targetDurability
-                   and obj.Parent and obj.Parent:FindFirstChild("Rock")
-                   and (getgenv().targetRockName == "" or obj.Parent.Rock.Name == getgenv().targetRockName) then
+                for _, obj in pairs(game.Workspace.machinesFolder:GetDescendants()) do
+                    if obj:IsA("IntValue") and obj.Name == "neededDurability" 
+                       and obj.Value == getgenv().targetDurability
+                       and obj.Parent and obj.Parent:FindFirstChild("Rock")
+                       and (getgenv().targetRockName == "" or obj.Parent.Rock.Name == getgenv().targetRockName) then
 
-                    local rock = obj.Parent.Rock
-                    local distance = (hrp.Position - rock.Position).Magnitude
+                        local rock = obj.Parent.Rock
+                        local distance = (hrp.Position - rock.Position).Magnitude
 
-                    if distance > 10 then  -- Only teleport if meaningfully far (anti-rubberband)
-                        hrp.CFrame = rock.CFrame * CFrame.new(0, 3.5, -1.5)  -- Better offset for punch hitbox
-                        found = true
-                        task.wait(0.12)  -- Brief settle
+                        if distance > 10 then
+                            hrp.CFrame = rock.CFrame * CFrame.new(0, 3.5, -1.5)  -- optimized offset for hitbox
+                            found = true
+                            task.wait(0.12)
+                        end
                     end
                 end
+
+                task.wait(found and 0.35 or 1.2)
+            end)
+        end
+
+        -- Cleanup: TP to safe spawn area (adjust coords if needed)
+        pcall(function()
+            local player = game.Players.LocalPlayer
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.CFrame = CFrame.new(-10, 10, -200)  -- near default spawn island
             end
-
-            task.wait(found and 0.35 or 1.2)  -- Faster when active, slower when searching
-        end
-
-        -- Cleanup on disable: return to safe-ish spawn area
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = CFrame.new(-10, 10, -200)  -- Approx spawn island safe spot
-        end
+        end)
     end)
 end)
