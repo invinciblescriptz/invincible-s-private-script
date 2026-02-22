@@ -41,6 +41,8 @@ Tools:AddButton("anti lag", function()
     game.Lighting.TimeOfDay = "00:00:00"
 end)
 
+local rocks = window:AddFolder("rocks")
+
 local main = window:AddTab ("kill")
 
 local main = window:AddTab ("teleport")
