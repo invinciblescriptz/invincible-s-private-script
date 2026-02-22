@@ -43,10 +43,4 @@ end)
 
 local main = window:AddTab ("kill")
 
-AddButton("anti knockback, function()
-anti knockback
-print (hello)
-end
-end)
-
 local main = window:AddTab ("teleport")
