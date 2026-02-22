@@ -8,3 +8,10 @@ local window = library:AddWindow("INV Clan", {
 
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
+
+Tools:AddSwitch("fast punch", function (state)
+fast punch = state
+if state then
+print("hello)
+end
+end)
