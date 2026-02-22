@@ -1,8 +1,8 @@
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library", true))()
 
-local window = library:AddWindow("INV Clan", {
+local window = library:AddWindow("invincibles priv script", {
     main_color = Color3.fromRGB(0, 0, 0),
-    min_size = Vector2.new(470,470),
+    min_size = Vector2.new(470, 470),
     can_resize = false,
 })
 
@@ -10,41 +10,41 @@ local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 
 Tools:AddSwitch("Fast Punch", function(state)
-_G.fastHitActive
-_G.fastHitActive = Value
+    _G.fastHitActive = state -- 'state' is the boolean passed by the library
        
-       if Value then
-           local function equipAndModifyPunch()
-               while _G.fastHitActive do
-                   local player = game.Players.LocalPlayer
-                   local punch = player.Backpack:FindFirstChild("Punch")
-                   if punch then
-                       punch.Parent = player.Character
-                       if punch:FindFirstChild("attackTime") then
-                           punch.attackTime.Value = 0
-                       end
-                   end
-                   task.wait()
-               end
-           end
+    if _G.fastHitActive then
+        -- Handle Tool Modification
+        task.spawn(function()
+            while _G.fastHitActive do
+                local player = game.Players.LocalPlayer
+                local punch = player.Backpack:FindFirstChild("Punch")
+                if punch and player.Character then
+                    punch.Parent = player.Character
+                    if punch:FindFirstChild("attackTime") then
+                        punch.attackTime.Value = 0
+                    end
+                end
+                task.wait(0.5)
+            end
+        end)
 
-           local function rapidPunch()
-               while _G.fastHitActive do
-                   local player = game.Players.LocalPlayer
-                   player.muscleEvent:FireServer("punch", "rightHand")
-                   player.muscleEvent:FireServer("punch", "leftHand")
-                   local character = player.Character
-                   if character then
-                       local punchTool = character:FindFirstChild("Punch")
-                       if punchTool then
-                           punchTool:Activate()
-                       end
-                   end
-                   task.wait(0.07)
-               end
-           end
-
-           coroutine.wrap(equipAndModifyPunch)()
-           coroutine.wrap(rapidPunch)()
-       end
+        -- Handle Rapid Punching
+        task.spawn(function()
+            while _G.fastHitActive do
+                local player = game.Players.LocalPlayer
+                -- Remote firing for Muscle Legends / Strength Simulators
+                if player:FindFirstChild("muscleEvent") then
+                    player.muscleEvent:FireServer("punch", "rightHand")
+                    player.muscleEvent:FireServer("punch", "leftHand")
+                end
+                
+                local character = player.Character
+                local punchTool = character and character:FindFirstChild("Punch")
+                if punchTool then
+                    punchTool:Activate()
+                end
+                task.wait(0.07)
+            end
+        end)
+    end
 end)
