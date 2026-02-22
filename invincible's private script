@@ -15,11 +15,12 @@ local window = library:AddWindow("Coding Example"invincible's private script", {
     print("hello")
     end)
 
+    Tools:AddSwitch("weight", function(state)
+    weight = state
+    if state then
+    print("hello")
+    end)
+    
     Tools:AddButton("anti lag", function()
     game.Lighting.TimeOfDay = "00:00:00"
     end)
-
-    Local tab = window:AddTab("auto kill")
-
-
-    Local tab = window:AddTab("fast farming")
