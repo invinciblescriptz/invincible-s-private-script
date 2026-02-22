@@ -32,7 +32,7 @@ local function startAutoRep(toolName, toggleVar)
                 muscleEvent:FireServer("rep")
             end
             
-            task.wait(0.025)  -- Balanced: fast farm, low kick risk (adjust if needed)
+            task.wait(0.025) -- Balanced: fast farm, low kick risk (adjust if needed)
         end
         
         -- Unequip when turned off
@@ -101,8 +101,49 @@ Tools:AddSwitch("Fast Punch", function(state)
                     player.Character.Punch:Activate()
                 end
                 
-                task.wait(0.065)  -- Very fast; increase to 0.1 if kicked
+                task.wait(0.065) -- Very fast; increase to 0.1 if kicked
             end
         end)
     end
+end)
+
+-- Improved Anti-Lag Button (FPS booster - disables heavy graphics)
+Tools:AddButton("Anti Lag (Boost FPS)", function()
+    local Lighting = game:GetService("Lighting")
+    local Workspace = game:GetService("Workspace")
+    
+    -- Quick basic improvements
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 1
+    Lighting.ClockTime = 12  -- Neutral daylight (no cycle)
+    Lighting.FogEnd = 9999
+    Lighting.FogStart = 0
+    game.Lighting.TimeOfDay = "12:00:00"  -- Your original + better
+    
+    -- Disable heavy effects
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+            v.Enabled = false
+        elseif v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
+            v.Enabled = false
+        elseif v:IsA("Explosion") then
+            v.Visible = false
+        end
+    end
+    
+    -- Lower render quality (client-side only)
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01  -- or "Level03" for balance
+    -- Optional: uncap FPS (may help on some devices)
+    -- setfpscap(999)  -- uncomment if your executor supports it (Synapse, Script-Ware, etc.)
+    
+    -- Optional: hide player clothes / accessories for extra boost
+    -- for _, plr in pairs(game.Players:GetPlayers()) do
+    --     if plr.Character then
+    --         for _, acc in pairs(plr.Character:GetChildren()) do
+    --             if acc:IsA("Accessory") then acc:Destroy() end
+    --         end
+    --     end
+    -- end
+    
+    print("Anti-Lag applied! Check your FPS (Shift + F5 in Roblox)")
 end)
