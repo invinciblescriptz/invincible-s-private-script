@@ -346,4 +346,14 @@ crystalsTab:AddDropdown("Select Crystal", {
     end
 })
 
-crystalsTab:Add
+crystalsTab:AddSwitch("Auto Open Crystal", function(state)
+    _G.AutoOpenCrystal = state
+    if state then
+        task.spawn(function()
+            while _G.AutoOpenCrystal do
+                game:GetService("ReplicatedStorage").rEvents.openCrystalRemote:InvokeServer("openCrystal", selectedCrystal)
+                task.wait(1)
+            end
+        end)
+    end
+end)
