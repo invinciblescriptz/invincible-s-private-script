@@ -9,9 +9,9 @@ local window = library:AddWindow("INV Clan", {
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 
-Tools.AddSwitch("Fast Punch", function(state)
-Fast punch = state
-If state then
+Tools:AddSwitch("Fast Punch", function(state)
+fastpunch = state
+if fastpunch then
 _G.fastHitActive = Value
        
        if Value then
@@ -48,4 +48,4 @@ _G.fastHitActive = Value
            coroutine.wrap(equipAndModifyPunch)()
            coroutine.wrap(rapidPunch)()
        end
-End)
+end)
