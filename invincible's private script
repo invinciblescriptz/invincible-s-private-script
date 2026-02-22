@@ -9,9 +9,43 @@ local window = library:AddWindow("INV Clan", {
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 
-Tools:AddSwitch("fast punch", function (state)
-fast punch = state
-if state then
-print("hello)
-end
-end)
+Tools.AddSwitch("Fast Punch", function(state)
+Fast punch = state
+If state then
+_G.fastHitActive = Value
+       
+       if Value then
+           local function equipAndModifyPunch()
+               while _G.fastHitActive do
+                   local player = game.Players.LocalPlayer
+                   local punch = player.Backpack:FindFirstChild("Punch")
+                   if punch then
+                       punch.Parent = player.Character
+                       if punch:FindFirstChild("attackTime") then
+                           punch.attackTime.Value = 0
+                       end
+                   end
+                   task.wait()
+               end
+           end
+
+           local function rapidPunch()
+               while _G.fastHitActive do
+                   local player = game.Players.LocalPlayer
+                   player.muscleEvent:FireServer("punch", "rightHand")
+                   player.muscleEvent:FireServer("punch", "leftHand")
+                   local character = player.Character
+                   if character then
+                       local punchTool = character:FindFirstChild("Punch")
+                       if punchTool then
+                           punchTool:Activate()
+                       end
+                   end
+                   task.wait(0.07)
+               end
+           end
+
+           coroutine.wrap(equipAndModifyPunch)()
+           coroutine.wrap(rapidPunch)()
+       end
+End)
