@@ -20,12 +20,10 @@ local function startAutoRep(toolName, toggleVar)
                     task.wait(1.5)
                     return
                 end
-
                 local tool = player.Backpack:FindFirstChild(toolName) or character:FindFirstChild(toolName)
                 if tool and tool.Parent ~= character then
                     character.Humanoid:EquipTool(tool)
                 end
-
                 local muscleEvent = player:FindFirstChild("muscleEvent")
                 if muscleEvent then
                     muscleEvent:FireServer("rep")
@@ -33,7 +31,6 @@ local function startAutoRep(toolName, toggleVar)
             end)
             task.wait(0.025)
         end
-
         pcall(function()
             local player = game.Players.LocalPlayer
             local character = player.Character
@@ -109,22 +106,17 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     Lighting.ClockTime = 12
     Lighting.FogEnd = 9999
     Lighting.FogStart = 0
-
     for _, v in pairs(Workspace:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or
            v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
             v.Enabled = false
         end
     end
-
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     print("Anti-Lag activated → check FPS (Shift+F5)")
 end)
 
--- ──────────────────────────────────────────────────────────────
 -- ROCK FARM SYSTEM
--- ──────────────────────────────────────────────────────────────
-
 local function startRockFarm(toggleVar, rockName, requiredDurability)
     task.spawn(function()
         while _G[toggleVar] do
@@ -135,24 +127,19 @@ local function startRockFarm(toggleVar, rockName, requiredDurability)
                     task.wait(1.5)
                     return
                 end
-
                 if player.Durability.Value < requiredDurability then
                     task.wait(2)
                     return
                 end
-
                 local hrp = char.HumanoidRootPart
                 local found = false
-
                 for _, obj in pairs(game.Workspace.machinesFolder:GetDescendants()) do
                     if obj:IsA("IntValue") and obj.Name == "neededDurability"
                        and obj.Value == requiredDurability
                        and obj.Parent and obj.Parent:FindFirstChild("Rock")
                        and (rockName == "" or obj.Parent.Rock.Name == rockName) then
-
                         local rock = obj.Parent.Rock
                         local distance = (hrp.Position - rock.Position).Magnitude
-
                         if distance > 10 then
                             hrp.CFrame = rock.CFrame * CFrame.new(0, 3.5, -1.5)
                             found = true
@@ -160,25 +147,20 @@ local function startRockFarm(toggleVar, rockName, requiredDurability)
                         end
                     end
                 end
-
                 if found then
                     local punchTool = player.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
                     if punchTool and punchTool.Parent ~= char and char:FindFirstChild("Humanoid") then
                         char.Humanoid:EquipTool(punchTool)
                     end
-
                     local muscleEvent = player:FindFirstChild("muscleEvent")
                     if muscleEvent then
                         muscleEvent:FireServer("punch", "leftHand")
                         muscleEvent:FireServer("punch", "rightHand")
                     end
                 end
-
                 task.wait(found and 0.35 or 1.2)
             end)
         end
-
-        -- Return to safe spot when disabled
         pcall(function()
             local player = game.Players.LocalPlayer
             local char = player.Character
@@ -189,25 +171,17 @@ local function startRockFarm(toggleVar, rockName, requiredDurability)
     end)
 end
 
--- Rock farms (use only one at a time)
 Rocks:AddSwitch("Farm Ancient Jungle Rock (10M)", function(state)
     _G.FarmAncientJungle = state
-    if state then
-        startRockFarm("FarmAncientJungle", "Ancient Jungle Rock", 10000000)
-    end
+    if state then startRockFarm("FarmAncientJungle", "Ancient Jungle Rock", 10000000) end
 end)
 
 Rocks:AddSwitch("Farm Any 10M Rock (No Name Filter)", function(state)
     _G.FarmAny10M = state
-    if state then
-        startRockFarm("FarmAny10M", "", 10000000)
-    end
+    if state then startRockFarm("FarmAny10M", "", 10000000) end
 end)
 
--- ──────────────────────────────────────────────────────────────
 -- TELEPORT TAB
--- ──────────────────────────────────────────────────────────────
-
 local Teleport = window:AddTab("Teleport")
 
 Teleport:AddButton("To Spawn / Safe Area", function()
@@ -224,4 +198,101 @@ Teleport:AddButton("To Muscle King Area", function()
     end
 end)
 
--- Add more teleport buttons here as needed
+-- KILL TAB (fixed for Elerium UI)
+local KillTab = window:AddTab("Kill")
+local KillFolder = KillTab:AddFolder("Auto Kill")
+
+local function checkCharacter()
+    local player = game.Players.LocalPlayer
+    if not player.Character then
+        player.CharacterAdded:Wait()
+    end
+    return player.Character
+end
+
+local function killPlayer(targetPlayer)
+    local char = checkCharacter()
+    if not char or not char:FindFirstChild("LeftHand") then return end
+
+    if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and
+       targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health > 0 then
+
+        firetouchinterest(targetPlayer.Character.HumanoidRootPart, char.LeftHand, 0)
+        firetouchinterest(targetPlayer.Character.HumanoidRootPart, char.LeftHand, 1)
+
+        local punch = game.Players.LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
+        if punch and char:FindFirstChild("Humanoid") then
+            char.Humanoid:EquipTool(punch)
+        end
+
+        local muscleEvent = game.Players.LocalPlayer:FindFirstChild("muscleEvent")
+        if muscleEvent then
+            muscleEvent:FireServer("punch", "leftHand")
+            muscleEvent:FireServer("punch", "rightHand")
+        end
+    end
+end
+
+KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
+    getgenv().killAura = state
+    if state then
+        task.spawn(function()
+            while getgenv().killAura do
+                pcall(function()
+                    for _, plr in ipairs(game.Players:GetPlayers()) do
+                        if plr ~= game.Players.LocalPlayer then
+                            killPlayer(plr)
+                        end
+                    end
+                end)
+                task.wait(0.08)   -- adjust if too aggressive
+            end
+        end)
+    end
+end)
+
+-- Optional: single target kill
+local targetKillPlayer = nil
+
+local playerDropdown = KillFolder:AddDropdown("Select Target Player", {
+    Title = "Single Target Kill",
+    Values = {},
+    Callback = function(selected)
+        local name = selected:match("^([^|]+)") or selected
+        targetKillPlayer = name
+        print("Kill target set to: " .. name)
+    end
+})
+
+-- Auto-update player list
+task.spawn(function()
+    while true do
+        local list = {}
+        for _, plr in ipairs(game.Players:GetPlayers()) do
+            if plr ~= game.Players.LocalPlayer then
+                table.insert(list, plr.Name .. " | " .. plr.DisplayName)
+            end
+        end
+        playerDropdown:SetValues(list)
+        task.wait(5)
+    end
+end)
+
+KillFolder:AddSwitch("Kill Selected Player Only", function(state)
+    getgenv().killSingle = state
+    if state then
+        task.spawn(function()
+            while getgenv().killSingle do
+                pcall(function()
+                    if targetKillPlayer then
+                        local target = game.Players:FindFirstChild(targetKillPlayer)
+                        if target then
+                            killPlayer(target)
+                        end
+                    end
+                end)
+                task.wait(0.08)
+            end
+        end)
+    end
+end)
