@@ -16,27 +16,6 @@ print("hello")
 end
 end)
 
-Tools:AddSwitch("weight", function(state)
-weight = state
-if state then
-print("hello")
-end
-end)
-
-Tools:AddSwitch("situps", function(state)
-situps = state
-if state then
-print("hello")
-end
-end)
-
-Tools:AddSwitch("handstands", function(state)
-handstands = state
-if state then
-print("hello")
-end
-end)
-
 Tools:AddSwitch("fast punch", function (state)
 fast punch = state
 if state then
