@@ -49,34 +49,26 @@ Tools:AddSwitch("Fast Punch", function(state)
     end
 end)
 
-Tools:AddSwitch("pushups") function(state)
-
-local Toggle = Tabs.AutoFarm:CreateToggle("Pushups", {
-    Title = "Auto Pushups",
-    Description = "Automatically performs pushups to gain strength",
-    Default = false,
-    Callback = function(Value)
-        _G.AutoPushups = Value
+_G.AutoPushups = Value
         if Value then
-            -- Wrap the loop in task.spawn so it doesn't block the UI
-            task.spawn(function()
-                while _G.AutoPushups do
-                    -- Check and equip tool if not held
-                    local char = game.Players.LocalPlayer.Character
-                    if char and not char:FindFirstChild("Pushups") then
-                        local tool = game.Players.LocalPlayer.Backpack:FindFirstChild("Pushups")
-                        if tool then
-                            char.Humanoid:EquipTool(tool)
-                        end
+            local pushupsTool = game.Players.LocalPlayer.Backpack:FindFirstChild("Pushups")
+            if pushupsTool then
+                game.Players.LocalPlayer.Character.Humanoid:EquipTool(pushupsTool)
+            end
+            if not _G.AutoPushupsRunning then
+                _G.AutoPushupsRunning = true
+                task.spawn(function()
+                    while _G.AutoPushups do
+                        game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
+                        task.wait(0.001)
                     end
-                    
-                    -- Fire the rep event
-                    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
-                    
-                    -- Use a small delay to prevent rate-limiting or crashes
-                    task.wait(0.05) 
-                end
-            end)
+                    _G.AutoPushupsRunning = false
+                end)
+            end
+        else
+            local character = game.Players.LocalPlayer.Character
+            local equipped = character and character:FindFirstChild("Pushups")
+            if equipped then
+                equipped.Parent = game.Players.LocalPlayer.Backpack
+            end
         end
-    end
-})
