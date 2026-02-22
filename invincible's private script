@@ -9,11 +9,37 @@ local window = library:AddWindow("invincibles priv script", {
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 
+-- YOUR AUTO PUSHUP INTEGRATION
+Tools:AddSwitch("Auto Pushups", function(state)
+    _G.AutoPushups = state
+    
+    if _G.AutoPushups then
+        task.spawn(function()
+            while _G.AutoPushups do
+                local player = game.Players.LocalPlayer
+                local character = player.Character
+                
+                -- Ensure Tool is Equipped
+                if character then
+                    local pushupsTool = player.Backpack:FindFirstChild("Pushups")
+                    if pushupsTool then
+                        pushupsTool.Parent = character
+                    end
+                end
+                
+                -- Fire the rep event (Muscle Legends Specific)
+                -- Using task.wait(0.01) to prevent game kicks for spam
+                game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
+                task.wait(0.01)
+            end
+        end)
+    end
+end)
+
+-- YOUR EXISTING FAST PUNCH CODE
 Tools:AddSwitch("Fast Punch", function(state)
-    _G.fastHitActive = state -- 'state' is the boolean passed by the library
-       
+    _G.fastHitActive = state
     if _G.fastHitActive then
-        -- Handle Tool Modification
         task.spawn(function()
             while _G.fastHitActive do
                 local player = game.Players.LocalPlayer
@@ -27,48 +53,18 @@ Tools:AddSwitch("Fast Punch", function(state)
                 task.wait(0.5)
             end
         end)
-
-        -- Handle Rapid Punching
         task.spawn(function()
             while _G.fastHitActive do
                 local player = game.Players.LocalPlayer
-                -- Remote firing for Muscle Legends / Strength Simulators
                 if player:FindFirstChild("muscleEvent") then
                     player.muscleEvent:FireServer("punch", "rightHand")
                     player.muscleEvent:FireServer("punch", "leftHand")
                 end
-                
-                local character = player.Character
-                local punchTool = character and character:FindFirstChild("Punch")
-                if punchTool then
-                    punchTool:Activate()
+                if player.Character and player.Character:FindFirstChild("Punch") then
+                    player.Character.Punch:Activate()
                 end
                 task.wait(0.07)
             end
         end)
     end
 end)
-
-_G.AutoPushups = Value
-        if Value then
-            local pushupsTool = game.Players.LocalPlayer.Backpack:FindFirstChild("Pushups")
-            if pushupsTool then
-                game.Players.LocalPlayer.Character.Humanoid:EquipTool(pushupsTool)
-            end
-            if not _G.AutoPushupsRunning then
-                _G.AutoPushupsRunning = true
-                task.spawn(function()
-                    while _G.AutoPushups do
-                        game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
-                        task.wait(0.001)
-                    end
-                    _G.AutoPushupsRunning = false
-                end)
-            end
-        else
-            local character = game.Players.LocalPlayer.Character
-            local equipped = character and character:FindFirstChild("Pushups")
-            if equipped then
-                equipped.Parent = game.Players.LocalPlayer.Backpack
-            end
-        end
