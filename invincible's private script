@@ -18,7 +18,6 @@ local window = library:AddWindow("Coding Example"invincible's private script", {
     Tools:AddSwitch("weight", function(state)
     weight = state
     if state then
-    print("hello")
     end)
     
     Tools:AddButton("anti lag", function()
