@@ -16,6 +16,13 @@ Tools:AddSwitch("Pushups", function(state)
     end
 end)
 
+Tools:AddSwitch("weight", function(state)
+weight = state
+if state then
+print("hello")
+end
+end)
+
 Tools:AddButton("antilag", function()
     game.Lighting.TimeOfDay = "00:00:00"
 end)
