@@ -41,6 +41,15 @@ Tools:AddButton("anti lag", function()
     game.Lighting.TimeOfDay = "00:00:00"
 end)
 
+local Rocks = main AddFolder("Rocks")
+
+Rocks AddSwitch("muscle king 5m", function(state)
+muscle king 5m = state
+if state then
+print ("hello")
+end
+end)
+
 local main = window:AddTab ("kill")
 
 local main = window:AddTab ("teleport")
