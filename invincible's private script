@@ -16,36 +16,16 @@ Tools:AddSwitch("Pushups", function(state)
     end
 end)
 
-Tools:AddSwitch("weight", function(state)
-weight = state
-if state then
-print("hello")
-end
-end)
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
-Tools:AddSwitch("situps", function(state)
-situps = state
-if state then
-print("hello")
-end
+spawn(function()
+    while true do
+        local character = LocalPlayer.Character
+        if character then
+            -- *This is an example*; the real remote name and arguments will differ
+            game:GetService("ReplicatedStorage").rEvents:WaitForChild("exerciseRemote"):FireServer("Pushup")
+        end
+        wait(0.1) -- adjust as needed
+    end
 end)
-
-Tools:AddSwitch("handstands", function(state)
-handstands = state
-if state then
-print("hello")
-end
-end)
-
-Tools:AddSwitch("fast punch", function (state)
-fast punch = state
-if state then
-print("hello)
-end
-end)
-
-Tools:AddButton("anti lag", function()
-    game.Lighting.TimeOfDay = "00:00:00"
-end)
-
-local Rocks = main:AddFolder("Rocks")
