@@ -6,7 +6,7 @@ local window = library:AddWindow("invincible's priv script", {
     can_resize = false,
 })
 
-local main = window:AddTab("Main")
+local main = window:AddTab("farm")
 local Tools = main:AddFolder("Tools")
 
 Tools:AddSwitch("Pushups", function(state)
@@ -42,5 +42,11 @@ Tools:AddButton("anti lag", function()
 end)
 
 local main = window:AddTab ("kill")
+
+AddButton("anti knockback, function()
+anti knockback
+print (hello)
+end
+end)
 
 local main = window:AddTab ("teleport")
