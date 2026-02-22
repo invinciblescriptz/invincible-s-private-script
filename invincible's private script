@@ -10,8 +10,7 @@ local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 
 Tools:AddSwitch("Fast Punch", function(state)
-fastpunch = state
-if fastpunch then
+_G.fastHitActive
 _G.fastHitActive = Value
        
        if Value then
