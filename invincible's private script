@@ -48,3 +48,33 @@ Tools:AddSwitch("Fast Punch", function(state)
         end)
     end
 end)
+
+local Toggle = Tabs.AutoFarm:CreateToggle("Pushups", {
+    Title = "Auto Pushups",
+    Description = "Automatically performs pushups to gain strength",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoPushups = Value
+        if Value then
+            -- Wrap the loop in task.spawn so it doesn't block the UI
+            task.spawn(function()
+                while _G.AutoPushups do
+                    -- Check and equip tool if not held
+                    local char = game.Players.LocalPlayer.Character
+                    if char and not char:FindFirstChild("Pushups") then
+                        local tool = game.Players.LocalPlayer.Backpack:FindFirstChild("Pushups")
+                        if tool then
+                            char.Humanoid:EquipTool(tool)
+                        end
+                    end
+                    
+                    -- Fire the rep event
+                    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
+                    
+                    -- Use a small delay to prevent rate-limiting or crashes
+                    task.wait(0.05) 
+                end
+            end)
+        end
+    end
+})
