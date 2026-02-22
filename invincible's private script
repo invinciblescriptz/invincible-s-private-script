@@ -36,7 +36,3 @@ if state then
 print("hello)
 end
 end)
-
-Tools:AddButton("anti lag", function()
-    game.Lighting.TimeOfDay = "00:00:00"
-end)
