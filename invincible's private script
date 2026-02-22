@@ -1,6 +1,132 @@
--- ... (your existing code up to Anti-Lag button remains unchanged)
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library", true))()
+local window = library:AddWindow("Invincibles Priv Script", {
+    main_color = Color3.fromRGB(0, 0, 0),
+    min_size = Vector2.new(470, 470),
+    can_resize = false,
+})
 
--- Shared rock farm function (CFrame teleport + equip + punch spam)
+local main = window:AddTab("Main")
+local Tools = main:AddFolder("Tools")
+local Rocks = main:AddFolder("Rocks")
+
+-- Helper: Auto-rep loop
+local function startAutoRep(toolName, toggleVar)
+    task.spawn(function()
+        while _G[toggleVar] do
+            pcall(function()
+                local player = game.Players.LocalPlayer
+                local character = player.Character or player.CharacterAdded:Wait()
+                if not character or not character:FindFirstChild("Humanoid") or character.Humanoid.Health <= 0 then
+                    task.wait(1.5)
+                    return
+                end
+
+                local tool = player.Backpack:FindFirstChild(toolName) or character:FindFirstChild(toolName)
+                if tool and tool.Parent ~= character then
+                    character.Humanoid:EquipTool(tool)
+                end
+
+                local muscleEvent = player:FindFirstChild("muscleEvent")
+                if muscleEvent then
+                    muscleEvent:FireServer("rep")
+                end
+            end)
+            task.wait(0.025)
+        end
+
+        -- Cleanup unequip
+        pcall(function()
+            local player = game.Players.LocalPlayer
+            local character = player.Character
+            if character then
+                local equipped = character:FindFirstChild(toolName)
+                if equipped then
+                    equipped.Parent = player.Backpack
+                end
+            end
+        end)
+    end)
+end
+
+-- Auto training switches
+Tools:AddSwitch("Auto Pushups", function(state)
+    _G.AutoPushups = state
+    if state then startAutoRep("Pushups", "AutoPushups") end
+end)
+
+Tools:AddSwitch("Auto Weight", function(state)
+    _G.AutoWeight = state
+    if state then startAutoRep("Weight", "AutoWeight") end
+end)
+
+Tools:AddSwitch("Auto Handstands", function(state)
+    _G.AutoHandstands = state
+    if state then startAutoRep("Handstands", "AutoHandstands") end
+end)
+
+-- Fast Punch
+Tools:AddSwitch("Fast Punch", function(state)
+    _G.FastPunch = state
+    if state then
+        task.spawn(function()
+            while _G.FastPunch do
+                pcall(function()
+                    local player = game.Players.LocalPlayer
+                    local punch = player.Backpack:FindFirstChild("Punch") or (player.Character and player.Character:FindFirstChild("Punch"))
+                    if punch and punch:FindFirstChild("attackTime") then
+                        punch.attackTime.Value = 0
+                    end
+                end)
+                task.wait(0.25)
+            end
+        end)
+
+        task.spawn(function()
+            while _G.FastPunch do
+                pcall(function()
+                    local player = game.Players.LocalPlayer
+                    local muscleEvent = player:FindFirstChild("muscleEvent")
+                    if muscleEvent then
+                        muscleEvent:FireServer("punch", "rightHand")
+                        muscleEvent:FireServer("punch", "leftHand")
+                    end
+                    local char = player.Character
+                    if char and char:FindFirstChild("Punch") then
+                        char.Punch:Activate()
+                    end
+                end)
+                task.wait(0.07)
+            end
+        end)
+    end
+end)
+
+-- Anti-Lag
+Tools:AddButton("Anti Lag (Boost FPS)", function()
+    local Lighting = game:GetService("Lighting")
+    local Workspace = game:GetService("Workspace")
+
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 1
+    Lighting.ClockTime = 12
+    Lighting.FogEnd = 9999
+    Lighting.FogStart = 0
+
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or
+           v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
+            v.Enabled = false
+        end
+    end
+
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    print("Anti-Lag activated → check FPS (Shift+F5)")
+end)
+
+-- ──────────────────────────────────────────────────────────────
+-- ROCK FARM SYSTEM (teleport + punch when close)
+-- ──────────────────────────────────────────────────────────────
+
 local function startRockFarm(toggleVar, rockName, requiredDurability)
     task.spawn(function()
         while _G[toggleVar] do
@@ -11,83 +137,93 @@ local function startRockFarm(toggleVar, rockName, requiredDurability)
                     task.wait(1.5)
                     return
                 end
+
                 if player.Durability.Value < requiredDurability then
                     task.wait(2)
                     return
                 end
+
                 local hrp = char.HumanoidRootPart
                 local found = false
+
                 for _, obj in pairs(game.Workspace.machinesFolder:GetDescendants()) do
-                    if obj:IsA("IntValue") and obj.Name == "neededDurability" and obj.Value == requiredDurability
+                    if obj:IsA("IntValue") and obj.Name == "neededDurability"
+                       and obj.Value == requiredDurability
                        and obj.Parent and obj.Parent:FindFirstChild("Rock")
                        and (rockName == "" or obj.Parent.Rock.Name == rockName) then
+
                         local rock = obj.Parent.Rock
                         local distance = (hrp.Position - rock.Position).Magnitude
+
                         if distance > 10 then
-                            hrp.CFrame = rock.CFrame * CFrame.new(0, 3.5, -1.5)  -- offset for hitbox
+                            hrp.CFrame = rock.CFrame * CFrame.new(0, 3.5, -1.5)
                             found = true
                             task.wait(0.12)
                         end
                     end
                 end
+
                 if found then
                     local punchTool = player.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
                     if punchTool and punchTool.Parent ~= char and char:FindFirstChild("Humanoid") then
                         char.Humanoid:EquipTool(punchTool)
                     end
+
                     local muscleEvent = player:FindFirstChild("muscleEvent")
                     if muscleEvent then
                         muscleEvent:FireServer("punch", "leftHand")
                         muscleEvent:FireServer("punch", "rightHand")
                     end
                 end
+
                 task.wait(found and 0.35 or 1.2)
             end)
         end
+
         -- Cleanup: return to safe area
         pcall(function()
             local player = game.Players.LocalPlayer
             local char = player.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart.CFrame = CFrame.new(-10, 10, -200)  -- near spawn island
+                char.HumanoidRootPart.CFrame = CFrame.new(-10, 10, -200)
             end
         end)
     end)
 end
 
--- Rock farm switches (Frost to Ancient Jungle)
-Rocks:AddSwitch("Farm Frost Gym Rock (150K Dur)", function(state)
-    _G.FarmFrostGym = state
-    if state then startRockFarm("FarmFrostGym", "Frost Gym Rock", 150000) end
+-- High-tier rock farms – toggle ONE at a time!
+Rocks:AddSwitch("Farm Frost Gym Rock (150K)", function(state)
+    _G.FarmFrost = state
+    if state then startRockFarm("FarmFrost", "Frost Gym Rock", 150000) end
 end)
 
-Rocks:AddSwitch("Farm Mythical Gym Rock (400K Dur)", function(state)
-    _G.FarmMythicalGym = state
-    if state then startRockFarm("FarmMythicalGym", "Mythical Gym Rock", 400000) end
+Rocks:AddSwitch("Farm Mythical Gym Rock (400K)", function(state)
+    _G.FarmMythical = state
+    if state then startRockFarm("FarmMythical", "Mythical Gym Rock", 400000) end
 end)
 
-Rocks:AddSwitch("Farm Eternal Gym Rock (750K Dur)", function(state)
-    _G.FarmEternalGym = state
-    if state then startRockFarm("FarmEternalGym", "Eternal Gym Rock", 750000) end
+Rocks:AddSwitch("Farm Eternal Gym Rock (750K)", function(state)
+    _G.FarmEternal = state
+    if state then startRockFarm("FarmEternal", "Eternal Gym Rock", 750000) end
 end)
 
-Rocks:AddSwitch("Farm Legend Gym Rock (1M Dur)", function(state)
-    _G.FarmLegendGym = state
-    if state then startRockFarm("FarmLegendGym", "Legend Gym Rock", 1000000) end
+Rocks:AddSwitch("Farm Legend Gym Rock (1M)", function(state)
+    _G.FarmLegend = state
+    if state then startRockFarm("FarmLegend", "Legend Gym Rock", 1000000) end
 end)
 
-Rocks:AddSwitch("Farm Muscle King Gym Rock (5M Dur)", function(state)
-    _G.FarmMuscleKingGym = state
-    if state then startRockFarm("FarmMuscleKingGym", "Muscle King Gym Rock", 5000000) end
+Rocks:AddSwitch("Farm Muscle King Gym Rock (5M)", function(state)
+    _G.FarmMuscleKing = state
+    if state then startRockFarm("FarmMuscleKing", "Muscle King Gym Rock", 5000000) end
 end)
 
-Rocks:AddSwitch("Farm Ancient Jungle Rock (10M Dur)", function(state)
+Rocks:AddSwitch("Farm Ancient Jungle Rock (10M)", function(state)
     _G.FarmAncientJungle = state
     if state then startRockFarm("FarmAncientJungle", "Ancient Jungle Rock", 10000000) end
 end)
 
--- Optional: Any rock at 10M (ignores name check - useful if name varies)
-Rocks:AddSwitch("Farm Any 10M Dur Rock (No Name)", function(state)
+-- Fallback – farms ANY rock requiring exactly 10 million durability (name independent)
+Rocks:AddSwitch("Farm Any 10M Durability Rock (No Name Check)", function(state)
     _G.FarmAny10M = state
     if state then startRockFarm("FarmAny10M", "", 10000000) end
 end)
