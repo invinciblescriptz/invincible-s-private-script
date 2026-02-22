@@ -33,7 +33,7 @@ end)
 Tools:AddSwitch("fast punch", function (state)
 fast punch = state
 if state then
-print("hello)
+print("hello")
 end
 end)
 
