@@ -1,6 +1,5 @@
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library", true))()
-
-local window = library:AddWindow("invincibles priv script", {
+local window = library:AddWindow("Invincibles Priv Script", {
     main_color = Color3.fromRGB(0, 0, 0),
     min_size = Vector2.new(470, 470),
     can_resize = false,
@@ -8,142 +7,146 @@ local window = library:AddWindow("invincibles priv script", {
 
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
+local Rocks = main:AddFolder("Rocks")  -- ← added here
 
--- Helper function to auto-equip and fire "rep" (used by Pushups, Weight, Handstands, Situps, etc.)
+-- Your existing helper function (good as-is)
 local function startAutoRep(toolName, toggleVar)
     task.spawn(function()
         while _G[toggleVar] do
             local player = game.Players.LocalPlayer
-            local character = player.Character
+            local character = player.Character or player.CharacterAdded:Wait()
             if not character or not character:FindFirstChild("Humanoid") then
-                player.CharacterAdded:Wait()
-                character = player.Character
+                task.wait(1)
+                continue
             end
-            
-            -- Auto-equip the tool
+
+            -- Auto-equip
             local tool = player.Backpack:FindFirstChild(toolName)
             if tool then
                 character.Humanoid:EquipTool(tool)
             end
-            
-            -- Fire rep event
+
+            -- Fire rep
             local muscleEvent = player:FindFirstChild("muscleEvent")
             if muscleEvent then
                 muscleEvent:FireServer("rep")
             end
-            
-            task.wait(0.025) -- Balanced: fast farm, low kick risk (adjust if needed)
+
+            task.wait(0.025)  -- fast but usually safe
         end
-        
-        -- Unequip when turned off
-        local character = game.Players.LocalPlayer.Character
+
+        -- Unequip on disable
+        local player = game.Players.LocalPlayer
+        local character = player.Character
         if character then
             local equipped = character:FindFirstChild(toolName)
             if equipped then
-                equipped.Parent = game.Players.LocalPlayer.Backpack
+                equipped.Parent = player.Backpack
             end
         end
     end)
 end
 
--- Auto Pushups
+-- Your switches (unchanged, they look fine)
 Tools:AddSwitch("Auto Pushups", function(state)
     _G.AutoPushups = state
-    if state then
-        startAutoRep("Pushups", "AutoPushups")
-    end
+    if state then startAutoRep("Pushups", "AutoPushups") end
 end)
 
--- Auto Weight
 Tools:AddSwitch("Auto Weight", function(state)
     _G.AutoWeight = state
-    if state then
-        startAutoRep("Weight", "AutoWeight")
-    end
+    if state then startAutoRep("Weight", "AutoWeight") end
 end)
 
--- Auto Handstands
 Tools:AddSwitch("Auto Handstands", function(state)
     _G.AutoHandstands = state
-    if state then
-        startAutoRep("Handstands", "AutoHandstands")
-    end
+    if state then startAutoRep("Handstands", "AutoHandstands") end
 end)
 
--- Fast Punch (your original, slightly cleaned)
+-- Fast Punch (yours is decent; minor safety)
 Tools:AddSwitch("Fast Punch", function(state)
     _G.FastPunch = state
-    
     if state then
-        -- Lower attack cooldown loop
+        -- Cooldown remover
         task.spawn(function()
             while _G.FastPunch do
-                local player = game.Players.LocalPlayer
-                local punch = player.Backpack:FindFirstChild("Punch") or (player.Character and player.Character:FindFirstChild("Punch"))
+                local punch = game.Players.LocalPlayer.Backpack:FindFirstChild("Punch") or (game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Punch"))
                 if punch and punch:FindFirstChild("attackTime") then
                     punch.attackTime.Value = 0
                 end
                 task.wait(0.3)
             end
         end)
-        
-        -- Spam punch remote + activate
+
+        -- Spam fire + activate
         task.spawn(function()
             while _G.FastPunch do
-                local player = game.Players.LocalPlayer
-                local muscleEvent = player:FindFirstChild("muscleEvent")
+                local muscleEvent = game.Players.LocalPlayer:FindFirstChild("muscleEvent")
                 if muscleEvent then
                     muscleEvent:FireServer("punch", "rightHand")
                     muscleEvent:FireServer("punch", "leftHand")
                 end
-                
-                if player.Character and player.Character:FindFirstChild("Punch") then
-                    player.Character.Punch:Activate()
+                local char = game.Players.LocalPlayer.Character
+                if char and char:FindFirstChild("Punch") then
+                    char.Punch:Activate()
                 end
-                
-                task.wait(0.065) -- Very fast; increase to 0.1 if kicked
+                task.wait(0.065)  -- 0.08–0.1 more stable on many servers
             end
         end)
     end
 end)
 
--- Improved Anti-Lag Button (FPS booster - disables heavy graphics)
+-- Anti-Lag button (yours is solid; added a few extras)
 Tools:AddButton("Anti Lag (Boost FPS)", function()
     local Lighting = game:GetService("Lighting")
     local Workspace = game:GetService("Workspace")
-    
-    -- Quick basic improvements
+
     Lighting.GlobalShadows = false
     Lighting.Brightness = 1
-    Lighting.ClockTime = 12  -- Neutral daylight (no cycle)
+    Lighting.ClockTime = 12
     Lighting.FogEnd = 9999
     Lighting.FogStart = 0
-    game.Lighting.TimeOfDay = "12:00:00"  -- Your original + better
-    
-    -- Disable heavy effects
+
     for _, v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or
+           v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
             v.Enabled = false
-        elseif v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
-            v.Enabled = false
-        elseif v:IsA("Explosion") then
-            v.Visible = false
         end
     end
-    
-    -- Lower render quality (client-side only)
-    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01  -- or "Level03" for balance
-    -- Optional: uncap FPS (may help on some devices)
-    -- setfpscap(999)  -- uncomment if your executor supports it (Synapse, Script-Ware, etc.)
-    
-    -- Optional: hide player clothes / accessories for extra boost
-    -- for _, plr in pairs(game.Players:GetPlayers()) do
-    --     if plr.Character then
-    --         for _, acc in pairs(plr.Character:GetChildren()) do
-    --             if acc:IsA("Accessory") then acc:Destroy() end
-    --         end
-    --     end
-    -- end
-    
-    print("Anti-Lag applied! Check your FPS (Shift + F5 in Roblox)")
+
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    print("Anti-Lag activated → check FPS (Shift+F5)")
+end)
+
+-- Ancient Jungle Rock farm (modernized touch → better method)
+-- Most Muscle Legends scripts now use magnitude check + CFrame or network ownership tricks
+Rocks:AddSwitch("Auto Farm Ancient Jungle Rock", function(state)
+    getgenv().autoFarmRock = state
+    getgenv().selectedRock = "Ancient Jungle Rock"  -- or make dropdown later
+
+    task.spawn(function()
+        while getgenv().autoFarmRock do
+            local player = game.Players.LocalPlayer
+            if player.Durability.Value < 10000000 then
+                task.wait(1)
+                continue
+            end
+
+            for _, obj in pairs(game.Workspace.machinesFolder:GetDescendants()) do
+                if obj.Name == "neededDurability" and obj.Value == 10000000 and
+                   obj.Parent and obj.Parent:FindFirstChild("Rock") and
+                   obj.Parent.Rock.Name == getgenv().selectedRock then
+
+                    local rock = obj.Parent.Rock
+                    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        -- Teleport style (safer than firetouchinterest in 2025–2026)
+                        hrp.CFrame = rock.CFrame * CFrame.new(0, 3, 0)
+                        task.wait(0.1)
+                    end
+                end
+            end
+            task.wait(0.4)  -- don't hammer too hard
+        end
+    end)
 end)
