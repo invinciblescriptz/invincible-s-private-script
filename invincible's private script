@@ -15,11 +15,6 @@ local window = library:AddWindow("Coding Example"invincible's private script", {
     print("hello")
     end)
 
-    Tools:AddSwitch("weight", function(state)
-    weight = state
-    if state then
-    end)
-    
     Tools:AddButton("anti lag", function()
     game.Lighting.TimeOfDay = "00:00:00"
     end)
