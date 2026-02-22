@@ -9,6 +9,13 @@ local window = library:AddWindow("invincible's priv script", {
 local main = window:AddTab("main")
 local Tools = main:AddFolder("Tool")
 
+Tools:AddSwitch(pushup", function(state)
+pushup = state
+if state then
+print("hello")
+end
+end)
+
 Tools:AddSwitch("weight", function(state)
 weight = state
 if state then
@@ -32,13 +39,6 @@ end)
 
 Tools:AddSwitch("fast punch", function (state)
 fast punch = state
-if state then
-print("hello")
-end
-end)
-
-Tools:AddSwitch("pushups", function (state)
-pushups = state
 if state then
 print("hello")
 end
