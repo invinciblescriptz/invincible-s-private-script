@@ -307,4 +307,91 @@ KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
     getgenv().killAura = state
     if state then
         task.spawn(function()
-            while getgen
+            while getgenv().killAura do
+                pcall(function()
+                    for _, plr in ipairs(game.Players:GetPlayers()) do
+                        if plr ~= game.Players.LocalPlayer then
+                            killPlayer(plr)
+                        end
+                    end
+                end)
+                task.wait(0.08)
+            end
+        end)
+    end
+end)
+
+-- Optional single target
+local targetKillPlayer = nil
+
+local playerDropdown = KillFolder:AddDropdown("Select Target Player", {
+    Title = "Single Target Kill",
+    Values = {},
+    Callback = function(selected)
+        local name = selected:match("^([^|]+)") or selected
+        targetKillPlayer = name
+        print("Kill target set to: " .. name)
+    end
+})
+
+task.spawn(function()
+    while true do
+        local list = {}
+        for _, plr in ipairs(game.Players:GetPlayers()) do
+            if plr ~= game.Players.LocalPlayer then
+                table.insert(list, plr.Name .. " | " .. plr.DisplayName)
+            end
+        end
+        playerDropdown:SetValues(list)
+        task.wait(5)
+    end
+end)
+
+KillFolder:AddSwitch("Kill Selected Player Only", function(state)
+    getgenv().killSingle = state
+    if state then
+        task.spawn(function()
+            while getgenv().killSingle do
+                pcall(function()
+                    if targetKillPlayer then
+                        local target = game.Players:FindFirstChild(targetKillPlayer)
+                        if target then
+                            killPlayer(target)
+                        end
+                    end
+                end)
+                task.wait(0.08)
+            end
+        end)
+    end
+end)
+
+
+local Stats = window:AddTab("Stats")
+
+local IntSection = Tabs.Stats:CreateSection("Player Stats")
+local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+
+local startTime = 0
+local sessionStartTime = os.time()
+local timerRunning = false
+
+local strengthGained = 0
+local lastStrengthValue = nil
+local rebirthsGained = 0
+local lastRebirthsValue = nil
+local killsGained = 0
+local lastKillsValue = nil
+local brawlsGained = 0
+local lastBrawlsValue = nil
+local goodKarmaGained = 0
+local lastGoodKarmaValue = nil
+local evilKarmaGained = 0
+local lastEvilKarmaValue = nil
+local durabilityGained = 0
+local lastDurabilityValue = nil
+local agilityGained = 0
+local lastAgilityValue = nil
+local muscleKingTimeGained = 0
+local lastMuscleKingTimeValue = nil
