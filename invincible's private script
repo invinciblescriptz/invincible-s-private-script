@@ -9,112 +9,100 @@ local window = library:AddWindow("invincibles priv script", {
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 
--- YOUR AUTO PUSHUP INTEGRATION
+-- Helper function to auto-equip and fire "rep" (used by Pushups, Weight, Handstands, Situps, etc.)
+local function startAutoRep(toolName, toggleVar)
+    task.spawn(function()
+        while _G[toggleVar] do
+            local player = game.Players.LocalPlayer
+            local character = player.Character
+            if not character or not character:FindFirstChild("Humanoid") then
+                player.CharacterAdded:Wait()
+                character = player.Character
+            end
+            
+            -- Auto-equip the tool
+            local tool = player.Backpack:FindFirstChild(toolName)
+            if tool then
+                character.Humanoid:EquipTool(tool)
+            end
+            
+            -- Fire rep event
+            local muscleEvent = player:FindFirstChild("muscleEvent")
+            if muscleEvent then
+                muscleEvent:FireServer("rep")
+            end
+            
+            task.wait(0.025)  -- Balanced: fast farm, low kick risk (adjust if needed)
+        end
+        
+        -- Unequip when turned off
+        local character = game.Players.LocalPlayer.Character
+        if character then
+            local equipped = character:FindFirstChild(toolName)
+            if equipped then
+                equipped.Parent = game.Players.LocalPlayer.Backpack
+            end
+        end
+    end)
+end
+
+-- Auto Pushups
 Tools:AddSwitch("Auto Pushups", function(state)
     _G.AutoPushups = state
-    
-    if _G.AutoPushups then
-        task.spawn(function()
-            while _G.AutoPushups do
-                local player = game.Players.LocalPlayer
-                local character = player.Character
-                
-                -- Ensure Tool is Equipped
-                if character then
-                    local pushupsTool = player.Backpack:FindFirstChild("Pushups")
-                    if pushupsTool then
-                        pushupsTool.Parent = character
-                    end
-                end
-                
-                -- Fire the rep event (Muscle Legends Specific)
-                -- Using task.wait(0.01) to prevent game kicks for spam
-                game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
-                task.wait(0.01)
-            end
-        end)
+    if state then
+        startAutoRep("Pushups", "AutoPushups")
     end
 end)
 
--- YOUR EXISTING FAST PUNCH CODE
+-- Auto Weight
+Tools:AddSwitch("Auto Weight", function(state)
+    _G.AutoWeight = state
+    if state then
+        startAutoRep("Weight", "AutoWeight")
+    end
+end)
+
+-- Auto Handstands
+Tools:AddSwitch("Auto Handstands", function(state)
+    _G.AutoHandstands = state
+    if state then
+        startAutoRep("Handstands", "AutoHandstands")
+    end
+end)
+
+-- Fast Punch (your original, slightly cleaned)
 Tools:AddSwitch("Fast Punch", function(state)
-    _G.fastHitActive = state
-    if _G.fastHitActive then
+    _G.FastPunch = state
+    
+    if state then
+        -- Lower attack cooldown loop
         task.spawn(function()
-            while _G.fastHitActive do
+            while _G.FastPunch do
                 local player = game.Players.LocalPlayer
-                local punch = player.Backpack:FindFirstChild("Punch")
-                if punch and player.Character then
-                    punch.Parent = player.Character
-                    if punch:FindFirstChild("attackTime") then
-                        punch.attackTime.Value = 0
-                    end
+                local punch = player.Backpack:FindFirstChild("Punch") or (player.Character and player.Character:FindFirstChild("Punch"))
+                if punch and punch:FindFirstChild("attackTime") then
+                    punch.attackTime.Value = 0
                 end
-                task.wait(0.5)
+                task.wait(0.3)
             end
         end)
+        
+        -- Spam punch remote + activate
         task.spawn(function()
-            while _G.fastHitActive do
+            while _G.FastPunch do
                 local player = game.Players.LocalPlayer
-                if player:FindFirstChild("muscleEvent") then
-                    player.muscleEvent:FireServer("punch", "rightHand")
-                    player.muscleEvent:FireServer("punch", "leftHand")
+                local muscleEvent = player:FindFirstChild("muscleEvent")
+                if muscleEvent then
+                    muscleEvent:FireServer("punch", "rightHand")
+                    muscleEvent:FireServer("punch", "leftHand")
                 end
+                
                 if player.Character and player.Character:FindFirstChild("Punch") then
                     player.Character.Punch:Activate()
                 end
-                task.wait(0.07)
+                
+                task.wait(0.065)  -- Very fast; increase to 0.1 if kicked
             end
         end)
     end
 end)
-
-("Weight", {
-    Title = "Auto Weight",
-    Description = "Auto Lift Weight",
-    Default = false,
-    Callback = function(Value)
-        _G.AutoWeight = Value
-        if Value then
-            local weightTool = game.Players.LocalPlayer.Backpack:FindFirstChild("Weight")
-            if weightTool then
-                game.Players.LocalPlayer.Character.Humanoid:EquipTool(weightTool)
-            end
-        else
-            local character = game.Players.LocalPlayer.Character
-            local equipped = character:FindFirstChild("Weight")
-            if equipped then
-                equipped.Parent = game.Players.LocalPlayer.Backpack
-            end
-        end
-        while _G.AutoWeight do
-            game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
-            task.wait(0)
-        end
-    end
-})
-
-local Toggle = Tabs.AutoFarm:CreateToggle("Handstands", {
-    Title = "Auto Handstands",
-    Description = "Auto Lift Handstands",
-    Default = false,
-    Callback = function(Value)
-        _G.AutoHandstands = Value
-        if Value then
-            local handstandsTool = game.Players.LocalPlayer.Backpack:FindFirstChild("Handstands")
-            if handstandsTool then
-                game.Players.LocalPlayer.Character.Humanoid:EquipTool(handstandsTool)
-            end
-        else
-            local character = game.Players.LocalPlayer.Character
-            local equipped = character:FindFirstChild("Handstands")
-            if equipped then
-                equipped.Parent = game.Players.LocalPlayer.Backpack
-            end
-        end
-        while _G.AutoHandstands do
-            game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
-            task.wait(0)
-        end
-    end
-})
