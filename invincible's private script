@@ -49,6 +49,8 @@ Tools:AddSwitch("Fast Punch", function(state)
     end
 end)
 
+Tools:AddSwitch("pushups") function(state)
+
 local Toggle = Tabs.AutoFarm:CreateToggle("Pushups", {
     Title = "Auto Pushups",
     Description = "Automatically performs pushups to gain strength",
