@@ -6,7 +6,7 @@ local window = library:AddWindow("invincible's priv script", {
     can_resize = false,
 })
 
-local main = window:AddTab("farm")
+local main = window:AddTab("main")
 local Tools = main:AddFolder("Tools")
 
 Tools:AddSwitch("Pushups", function(state)
