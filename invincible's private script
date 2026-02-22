@@ -37,6 +37,13 @@ print("hello")
 end
 end)
 
+Tools:AddSwitch("fast punch", function (state)
+fast punch = state
+if state then
+print("hello)
+end
+end)
+
 Tools:AddButton("anti lag", function()
     game.Lighting.TimeOfDay = "00:00:00"
 end)
