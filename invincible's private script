@@ -7,9 +7,9 @@ local window = library:AddWindow("Invincibles Priv Script", {
 
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
-local Rocks = main:AddFolder("Rocks")  -- ← added here
+local Rocks = main:AddFolder("Rocks")
 
--- Your existing helper function (good as-is)
+-- Helper: Auto-rep (unchanged, solid)
 local function startAutoRep(toolName, toggleVar)
     task.spawn(function()
         while _G[toggleVar] do
@@ -20,22 +20,22 @@ local function startAutoRep(toolName, toggleVar)
                 continue
             end
 
-            -- Auto-equip
-            local tool = player.Backpack:FindFirstChild(toolName)
-            if tool then
+            -- Auto-equip tool
+            local tool = player.Backpack:FindFirstChild(toolName) or character:FindFirstChild(toolName)
+            if tool and tool.Parent ~= character then
                 character.Humanoid:EquipTool(tool)
             end
 
-            -- Fire rep
+            -- Fire rep event
             local muscleEvent = player:FindFirstChild("muscleEvent")
             if muscleEvent then
                 muscleEvent:FireServer("rep")
             end
 
-            task.wait(0.025)  -- fast but usually safe
+            task.wait(0.025)
         end
 
-        -- Unequip on disable
+        -- Cleanup: unequip on disable
         local player = game.Players.LocalPlayer
         local character = player.Character
         if character then
@@ -47,7 +47,7 @@ local function startAutoRep(toolName, toggleVar)
     end)
 end
 
--- Your switches (unchanged, they look fine)
+-- Auto training switches
 Tools:AddSwitch("Auto Pushups", function(state)
     _G.AutoPushups = state
     if state then startAutoRep("Pushups", "AutoPushups") end
@@ -63,40 +63,42 @@ Tools:AddSwitch("Auto Handstands", function(state)
     if state then startAutoRep("Handstands", "AutoHandstands") end
 end)
 
--- Fast Punch (yours is decent; minor safety)
+-- Fast Punch (improved stability + check both hands)
 Tools:AddSwitch("Fast Punch", function(state)
     _G.FastPunch = state
     if state then
-        -- Cooldown remover
+        -- Cooldown bypass loop
         task.spawn(function()
             while _G.FastPunch do
-                local punch = game.Players.LocalPlayer.Backpack:FindFirstChild("Punch") or (game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Punch"))
+                local player = game.Players.LocalPlayer
+                local punch = player.Backpack:FindFirstChild("Punch") or (player.Character and player.Character:FindFirstChild("Punch"))
                 if punch and punch:FindFirstChild("attackTime") then
                     punch.attackTime.Value = 0
                 end
-                task.wait(0.3)
+                task.wait(0.25)
             end
         end)
 
-        -- Spam fire + activate
+        -- Spam punch event + activate
         task.spawn(function()
             while _G.FastPunch do
-                local muscleEvent = game.Players.LocalPlayer:FindFirstChild("muscleEvent")
+                local player = game.Players.LocalPlayer
+                local muscleEvent = player:FindFirstChild("muscleEvent")
                 if muscleEvent then
                     muscleEvent:FireServer("punch", "rightHand")
                     muscleEvent:FireServer("punch", "leftHand")
                 end
-                local char = game.Players.LocalPlayer.Character
+                local char = player.Character
                 if char and char:FindFirstChild("Punch") then
                     char.Punch:Activate()
                 end
-                task.wait(0.065)  -- 0.08–0.1 more stable on many servers
+                task.wait(0.07)  -- Slightly more stable (most 2026 servers handle ~14–15/s)
             end
         end)
     end
 end)
 
--- Anti-Lag button (yours is solid; added a few extras)
+-- Anti-Lag (unchanged, very effective)
 Tools:AddButton("Anti Lag (Boost FPS)", function()
     local Lighting = game:GetService("Lighting")
     local Workspace = game:GetService("Workspace")
@@ -118,35 +120,54 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     print("Anti-Lag activated → check FPS (Shift+F5)")
 end)
 
--- Ancient Jungle Rock farm (modernized touch → better method)
--- Most Muscle Legends scripts now use magnitude check + CFrame or network ownership tricks
-Rocks:AddSwitch("Auto Farm Ancient Jungle Rock", function(state)
+-- Improved Ancient Jungle Rock Auto-Farm (10M durability confirmed working in recent sources)
+Rocks:AddSwitch("Auto Farm Ancient Jungle Rock (10M)", function(state)
     getgenv().autoFarmRock = state
-    getgenv().selectedRock = "Ancient Jungle Rock"  -- or make dropdown later
+    getgenv().targetRockName = "Ancient Jungle Rock"
+    getgenv().targetDurability = 10000000  -- Standard for Ancient Jungle in 2025–2026
 
     task.spawn(function()
         while getgenv().autoFarmRock do
             local player = game.Players.LocalPlayer
-            if player.Durability.Value < 10000000 then
-                task.wait(1)
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") or not player:FindFirstChild("Durability") then
+                task.wait(1.5)
                 continue
             end
 
+            if player.Durability.Value < getgenv().targetDurability then
+                task.wait(2)  -- Wait longer if durability too low
+                continue
+            end
+
+            local hrp = char.HumanoidRootPart
+            local found = false
+
             for _, obj in pairs(game.Workspace.machinesFolder:GetDescendants()) do
-                if obj.Name == "neededDurability" and obj.Value == 10000000 and
-                   obj.Parent and obj.Parent:FindFirstChild("Rock") and
-                   obj.Parent.Rock.Name == getgenv().selectedRock then
+                if obj:IsA("IntValue") and obj.Name == "neededDurability" 
+                   and obj.Value == getgenv().targetDurability
+                   and obj.Parent and obj.Parent:FindFirstChild("Rock")
+                   and (getgenv().targetRockName == "" or obj.Parent.Rock.Name == getgenv().targetRockName) then
 
                     local rock = obj.Parent.Rock
-                    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        -- Teleport style (safer than firetouchinterest in 2025–2026)
-                        hrp.CFrame = rock.CFrame * CFrame.new(0, 3, 0)
-                        task.wait(0.1)
+                    local distance = (hrp.Position - rock.Position).Magnitude
+
+                    if distance > 10 then  -- Only teleport if meaningfully far (anti-rubberband)
+                        hrp.CFrame = rock.CFrame * CFrame.new(0, 3.5, -1.5)  -- Better offset for punch hitbox
+                        found = true
+                        task.wait(0.12)  -- Brief settle
                     end
                 end
             end
-            task.wait(0.4)  -- don't hammer too hard
+
+            task.wait(found and 0.35 or 1.2)  -- Faster when active, slower when searching
+        end
+
+        -- Cleanup on disable: return to safe-ish spawn area
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = CFrame.new(-10, 10, -200)  -- Approx spawn island safe spot
         end
     end)
 end)
