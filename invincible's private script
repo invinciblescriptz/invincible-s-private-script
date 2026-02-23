@@ -39,7 +39,7 @@ local main = window:AddTab("Main")
 local BetterFarmingTab = window:AddTab("better farming")
 local Tools = main:AddFolder("Tools")
 local RockFarmFolder = main:AddFolder("Rock Farm")
-local rebirth = windowAddTab("Rebirth")
+local rebirth = window:AddTab("Rebirth")
 
 Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
 Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
@@ -200,8 +200,6 @@ end)
 
 local RockSection = Tabs.AutoFarm:CreateSection("Rock Farm")
 
-
-
 local Section = Tabs.Rebirth:CreateSection("AutoRebirth")
 
 -- Initialize variables first
@@ -270,7 +268,6 @@ local targetToggle = Tabs.Rebirth:CreateToggle("AutoRebirthTarget", {
 
 -- BETTER FARMING - Fast Strength (unchanged)
 local fastStrengthRunning = false
-
 BetterFarmingTab:AddSwitch("Fast Grind", function(state)
     fastStrengthRunning = state
     if state then
