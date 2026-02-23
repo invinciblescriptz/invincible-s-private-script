@@ -9,11 +9,18 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
--- Utility functions
-local function getRebirthCount()
+-- Your existing feature setup (you may have buttons, teleport, kill, etc.)...
+
+-- =========================
+-- START OF REBIRTH & ROCK FARMING
+-- =========================
+
+-- Rebirth System
+local function getRebirths()
     local stat = LocalPlayer:FindFirstChild("leaderstats")
     if stat and stat:FindFirstChild("Rebirths") then
         return stat.Rebirths.Value
@@ -32,18 +39,18 @@ local function invokeRebirth()
         end
     end)
     if not success then
-        print("Failed to invoke rebirth remote:", err)
+        print("Rebirth invoke failed:", err)
     end
 end
 
--- AUTO REBIRTH
-local targetRebirthValue = 1
+local targetRebirth = 1
 local autoRebirthActive = false
 
 local function autoRebirthLoop()
     while autoRebirthActive do
-        local current = getRebirthCount()
-        if current >= targetRebirthValue then
+        local current = getRebirths()
+        print("Rebirths: " .. current)
+        if current >= targetRebirth then
             print("Target rebirth reached: " .. current)
             autoRebirthActive = false
             break
@@ -60,50 +67,44 @@ local function toggleAutoRebirth(state)
     end
 end
 
--- UI for Rebirth
+-- Rebirth UI
 local rebirthTab = window:AddTab("Rebirth")
 local toggleRebirth = rebirthTab:AddToggle("Auto Rebirth to Target", {
     Default = false,
     Callback = toggleAutoRebirth
 })
-
-local inputRebirthTarget = rebirthTab:AddInput("TargetRebirth", {
+local inputRebirth = rebirthTab:AddInput("TargetRebirth", {
     Default = "1",
     Placeholder = "Enter target rebirth",
     Callback = function(val)
         local num = tonumber(val)
-        if num then targetRebirthValue = num end
+        if num then targetRebirth = num end
     end
 })
-
 rebirthTab:AddButton("Rebirth Now", function()
     invokeRebirth()
 end)
 
 local function updateRebirthStats()
-    local current = getRebirthCount()
+    local current = getRebirths()
     local initial = 0
-    if game.Players.LocalPlayer:FindFirstChild("leaderstats") then
-        if game.Players.LocalPlayer.leaderstats:FindFirstChild("Rebirths") then
-            initial = game.Players.LocalPlayer.leaderstats.Rebirths.Value
-        end
+    if game.Players.LocalPlayer:FindFirstChild("leaderstats") and game.Players.LocalPlayer.leaderstats:FindFirstChild("Rebirths") then
+        initial = game.Players.LocalPlayer.leaderstats.Rebirths.Value
     end
     local gained = current - initial
     if Paragraph then
-        Paragraph:SetContent("Target: " .. targetRebirthValue .. "\nCurrent: " .. current .. "\nGained: " .. gained)
+        Paragraph:SetContent("Target: " .. targetRebirth .. "\nCurrent: " .. current .. "\nGained: " .. gained)
     end
 end
 
 local Paragraph = rebirthTab:AddParagraph("RebirthStats", {
     Title = "Rebirth Stats",
-    Content = "Loading...",
-    TitleAlignment = "Left",
-    ContentAlignment = Enum.TextXAlignment.Left
+    Content = "Loading..."
 })
 
 game:GetService("RunService").RenderStepped:Connect(updateRebirthStats)
 
--- ROCKS for farming
+-- ROCK FARMING
 local rockNames = {
     {name = "TinyIslandRock", title = "Tiny Island Rock"},
     {name = "StarterIslandRock", title = "Starter Island Rock"},
@@ -117,7 +118,7 @@ local farming = false
 local function farmRock(rockName)
     local rock = workspace:FindFirstChild(rockName)
     if not rock then
-        print("Rock not found: " .. rockName)
+        print("Rock not found:", rockName)
         return
     end
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -125,13 +126,15 @@ local function farmRock(rockName)
         print("HumanoidRootPart not found")
         return
     end
+    -- Teleport near the rock
     hrp.CFrame = rock.CFrame * CFrame.new(0, 0, -3)
     wait(0.5)
     local rockPart = rock:FindFirstChildWhichIsA("BasePart")
     if not rockPart then
-        print("Rock part not found in: " .. rockName)
+        print("Rock part not found in:", rockName)
         return
     end
+    -- Fire touch
     firetouchinterest(hrp, rockPart, 0)
     firetouchinterest(hrp, rockPart, 1)
     print("Farmed " .. rockName)
@@ -152,13 +155,17 @@ local function stopFarming()
     _G.farming = false
 end
 
--- Create "Rocks" tab and add all rocks
-local RockTab = window:AddTab("Rocks")
-for _, rock in ipairs(rockNames) do
-    RockTab:AddButton("Farm " .. rock.title, function()
-        startFarming(rock.name)
+-- Create a tab for rocks
+local rocksTab = window:AddTab("Rocks")
+for _, r in ipairs(rockNames) do
+    rocksTab:AddButton("Farm " .. r.title, function()
+        startFarming(r.name)
     end)
 end
-RockTab:AddButton("Stop Farming", function()
+rocksTab:AddButton("Stop Farming", function()
     stopFarming()
 end)
+
+-----------------------------------------------------
+-- END OF REBIRTH & ROCK FARMING
+-----------------------------------------------------
