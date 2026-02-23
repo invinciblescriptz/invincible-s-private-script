@@ -198,7 +198,7 @@ task.spawn(function()
     end
 end)
 
--- ROCK FARM (optimized dropdown + single toggle)
+-- ROCK FARM (dropdown + single toggle)
 RockFarmFolder:AddSection("Rock Farm Controls")
 
 local rockOptions = {
@@ -258,11 +258,11 @@ RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
                 pcall(function()
                     local durVal = LocalPlayer:FindFirstChild("Durability")
                     if durVal and durVal.Value >= selectedDur then
-                        -- Optional: teleport near rock zone (uncomment if needed)
+                        -- Optional TP (uncomment if rocks are far)
                         -- local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        -- if hrp then hrp.CFrame = CFrame.new(-39, 6, 1886) end  -- example for Tiny Island
+                        -- if hrp then hrp.CFrame = CFrame.new(-39, 6, 1886) end  -- Tiny Island example
 
-                        for _, desc in pairs(workspace.machinesFolder:GetDescendants()) do
+                        for _, desc in pairs(workspace:FindFirstChild("machinesFolder") and workspace.machinesFolder:GetDescendants() or {}) do
                             if desc.Name == "neededDurability" and desc.Value == selectedDur then
                                 local rock = desc.Parent:FindFirstChild("Rock")
                                 if rock then
@@ -311,6 +311,7 @@ local function startStrengthAutomation()
                     end
                 end
             end
+            equipPunch()  -- added auto-equip punch in loop
             for i = 1, 30 do
                 if muscleEvent then muscleEvent:FireServer("rep") end
             end
@@ -355,6 +356,8 @@ rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
                         local rebirthRemote = rEvents:FindFirstChild("rebirthRemote")
                         if rebirthRemote then
                             rebirthRemote:InvokeServer("rebirthRequest")
+                        else
+                            warn("rebirthRemote not found - check ReplicatedStorage.rEvents")
                         end
                     end
                 end)
@@ -375,6 +378,8 @@ rebirthTab:AddSwitch("Auto Size 2", function(state)
                     local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
                     if rEvents and rEvents:FindFirstChild("changeSpeedSizeRemote") then
                         rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 2)
+                    else
+                        warn("changeSpeedSizeRemote not found - check ReplicatedStorage.rEvents")
                     end
                 end)
                 task.wait(0.05)
