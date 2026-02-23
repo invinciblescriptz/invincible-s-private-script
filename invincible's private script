@@ -43,18 +43,9 @@ local Tools = main:AddFolder("Tools")
 local RockFarmFolder = main:AddFolder("Rock Farm")
 local BetterFarmingTab = window:AddTab("better farming")
 
-Tools:AddSwitch("Auto Pushups", function(state)
-    _G.AutoPushups = state
-    if state then startAutoRep("Pushups", "AutoPushups") end
-end)
-Tools:AddSwitch("Auto Weight", function(state)
-    _G.AutoWeight = state
-    if state then startAutoRep("Weight", "AutoWeight") end
-end)
-Tools:AddSwitch("Auto Handstands", function(state)
-    _G.AutoHandstands = state
-    if state then startAutoRep("Handstands", "AutoHandstands") end
-end)
+Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
+Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
+Tools:AddSwitch("Auto Handstands", function(state) _G.AutoHandstands = state if state then startAutoRep("Handstands", "AutoHandstands") end end)
 
 Tools:AddSwitch("Fast Punch", function(state)
     _G.FastPunch = state
@@ -67,9 +58,7 @@ Tools:AddSwitch("Fast Punch", function(state)
                         muscleEvent:FireServer("punch", "leftHand")
                     end
                     local char = LocalPlayer.Character
-                    if char and char:FindFirstChild("Punch") then
-                        char.Punch:Activate()
-                    end
+                    if char and char:FindFirstChild("Punch") then char.Punch:Activate() end
                 end)
                 task.wait(0.07)
             end
@@ -150,9 +139,7 @@ local function killPlayer(target)
         firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 0)
         firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 1)
         local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
-        if punch and char:FindFirstChild("Humanoid") then
-            char.Humanoid:EquipTool(punch)
-        end
+        if punch and char:FindFirstChild("Humanoid") then char.Humanoid:EquipTool(punch) end
         if muscleEvent then
             muscleEvent:FireServer("punch", "leftHand")
             muscleEvent:FireServer("punch", "rightHand")
@@ -166,10 +153,8 @@ KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
         task.spawn(function()
             while getgenv().killAura do
                 pcall(function()
-                    for _, plr in pairs(Players:GetPlayers()) do
-                        if plr ~= LocalPlayer then
-                            if plr.Character then killPlayer(plr) end
-                        end
+                    for _, plr in Players:GetPlayers() do
+                        if plr ~= LocalPlayer and plr.Character then killPlayer(plr) end
                     end
                 end)
                 task.wait(0.08)
@@ -221,53 +206,34 @@ task.spawn(function()
     end
 end)
 
--- REBIRTH & Auto Rebirth to Target
-local rebirthTab = window:AddTab("rebirth")
+local RockSection = Tabs.AutoFarm:CreateSection("Rock Farm")
+
+local Section = Tabs.Rebirth:CreateSection("AutoRebirth")
+
+-- Initialize variables first
 local targetRebirthValue = 1
-local targetRebirthRunning = false
-
-rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
-    getgenv().autoRebirth = state
-    if state then
-        task.spawn(function()
-            while getgenv().autoRebirth do
-                pcall(function()
-                    local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
-                    if rEvents then
-                        local rebirthRemote = rEvents:FindFirstChild("rebirthRemote")
-                        if rebirthRemote then
-                            rebirthRemote:InvokeServer("rebirthRequest")
-                        end
-                    end
-                end)
-                task.wait(0.1)
-            end
-        end)
-        print("Auto Rebirth ENABLED")
-    else
-        print("Auto Rebirth DISABLED")
-    end
-end)
-
-local function updateStats()
-    local currentRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
-    local gained = currentRebirths - initialRebirths
-    if _G.Paragraph then
-        _G.Paragraph:SetContent(string.format("Target Rebirth: %d\nCurrent Rebirths: %d\nRebirths Gained: %d", targetRebirthValue, currentRebirths, gained))
-    end
-end
-
 local initialRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
+
+-- Stats Display
 local Paragraph = Tabs.Rebirth:CreateParagraph("RebirthStats", {
     Title = "Rebirth Statistics",
     Content = "Loading stats...",
     TitleAlignment = "Left",
     ContentAlignment = Enum.TextXAlignment.Left
 })
-_G.Paragraph = Paragraph
+
+-- Update function
+local function updateStats()
+    local currentRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
+    local gained = currentRebirths - initialRebirths
+    Paragraph:SetContent(string.format("Target Rebirth: %d\nCurrent Rebirths: %d\nRebirths Gained: %d", targetRebirthValue, currentRebirths, gained))
+end
+
+-- Connect stats update
 game.Players.LocalPlayer.leaderstats.Rebirths.Changed:Connect(updateStats)
 updateStats()
 
+-- Target input
 local targetInput = Tabs.Rebirth:CreateInput("TargetRebirth", {
     Title = "Target Rebirth Amount",
     Description = "Enter your target rebirth goal",
@@ -281,6 +247,7 @@ local targetInput = Tabs.Rebirth:CreateInput("TargetRebirth", {
     end
 })
 
+-- Auto Rebirth to target toggle
 local targetRebirthLoop = nil
 local targetToggle = Tabs.Rebirth:CreateToggle("AutoRebirthTarget", {
     Title = "Auto Rebirth (Target)",
@@ -291,8 +258,7 @@ local targetToggle = Tabs.Rebirth:CreateToggle("AutoRebirthTarget", {
             targetRebirthLoop = task.spawn(function()
                 print("Target Rebirth started - goal: " .. targetRebirthValue)
                 while task.wait(0.1) do
-                    local current = game.Players.LocalPlayer.leaderstats.Rebirths.Value
-                    if current >= targetRebirthValue then
+                    if game.Players.LocalPlayer.leaderstats.Rebirths.Value >= targetRebirthValue then
                         targetToggle:SetValue(false)
                         break
                     end
@@ -313,7 +279,20 @@ local targetToggle = Tabs.Rebirth:CreateToggle("AutoRebirthTarget", {
     end
 })
 
--- Faster Strength Automation (if needed)
+-- Other features...
+-- For example: startStrengthAutomation() function
+function startStrengthAutomation()
+    while true do
+        pcall(function()
+            local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
+            if rEvents and rEvents:FindFirstChild("changeSpeedSizeRemote") then
+                rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 2)
+            end
+        end)
+        task.wait(0.05)
+    end
+end
+
 local fastStrengthRunning = false
 BetterFarmingTab:AddSwitch("Fast Grind", function(state)
     fastStrengthRunning = state
@@ -337,9 +316,8 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- REBIRTH & TARGET REBIRTH
+-- Rebirth & Auto Rebirth to Target
 local fastRebirthRunning = false
-
 local function startRebirthAutomation()
     while fastRebirthRunning do
         pcall(function()
@@ -358,7 +336,7 @@ end
 local targetRebirthValue = 1
 local targetRebirthRunning = false
 
-rebirthTab:AddSwitch("Auto Rebirth to Target", function(state)
+rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
     targetRebirthRunning = state
     if state then
         task.spawn(function()
@@ -384,7 +362,7 @@ rebirthTab:AddSwitch("Auto Rebirth to Target", function(state)
     end
 end)
 
--- Rock Farm Configs
+-- Rock farm configs
 local rockConfigs = {
     {
         name = "TinyIslandRock",
@@ -419,14 +397,10 @@ local rockConfigs = {
 }
 
 local RockSection = Tabs.AutoFarm:CreateSection("Rock Farm")
--- You can now create buttons or dropdowns to automate farming rocks based on rockConfigs
-
 -- Example: create buttons for each rock
 for _, config in ipairs(rockConfigs) do
     RockSection:AddButton("Farm " .. config.title, function()
-        -- Logic to farm the specific rock
-        -- This depends on your game mechanics
+        -- Implement your farming logic here
         print("Started farming: " .. config.title)
-        -- Implement your farming automation here
     end)
 end
