@@ -198,80 +198,124 @@ task.spawn(function()
     end
 end)
 
-local RockSection = Tabs.AutoFarm:CreateSection("Rock Farm")
+-- ROCK FARM (unchanged)
+RockFarmFolder:AddSection("Rock Farm Controls")
 
+local rockOptions = {
+    {name = "Tiny Island Rock", dur = 0},
+    {name = "Starter Island Rock", dur = 100},
+    {name = "Legend Beach Rock", dur = 5000},
+    {name = "Frost Gym Rock", dur = 150000},
+    {name = "Mythical Gym Rock", dur = 400000},
+    {name = "Eternal Gym Rock", dur = 750000},
+    {name = "Legend Gym Rock", dur = 1000000},
+    {name = "Muscle King Gym Rock", dur = 5000000},
+    {name = "Ancient Jungle Rock", dur = 10000000},
+}
 
-
-local Section = Tabs.Rebirth:CreateSection("AutoRebirth")
-
--- Initialize variables first
-local targetRebirthValue = 1
-local initialRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
-
--- Stats Display
-local Paragraph = Tabs.Rebirth:CreateParagraph("RebirthStats", {
-	Title = "Rebirth Statistics",
-	Content = "Loading stats...",
-	TitleAlignment = "Left",
-	ContentAlignment = Enum.TextXAlignment.Left
+local selectedDur = nil
+local rockDropdown = RockFarmFolder:AddDropdown("Select Rock", {
+    Title = "Select Rock to Farm",
+    Values = {"None"},
+    Callback = function(selected)
+        selectedDur = nil
+        for _, opt in ipairs(rockOptions) do
+            if opt.name == selected then
+                selectedDur = opt.dur
+                break
+            end
+        end
+        print("Selected rock durability: " .. (selectedDur or "None"))
+    end
 })
 
--- Update function
-local function updateStats()
-	local currentRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
-	local gained = currentRebirths - initialRebirths
-	Paragraph:SetContent(string.format("Target Rebirth: %d\nCurrent Rebirths: %d\nRebirths Gained: %d", targetRebirthValue, currentRebirths, gained))
+local rockValues = {"None"}
+for _, opt in ipairs(rockOptions) do table.insert(rockValues, opt.name) end
+rockDropdown:SetValues(rockValues)
+
+local function equipPunch()
+    pcall(function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+                if tool.Name == "Punch" then
+                    char.Humanoid:EquipTool(tool)
+                end
+            end
+            if muscleEvent then
+                muscleEvent:FireServer("punch", "leftHand")
+                muscleEvent:FireServer("punch", "rightHand")
+            end
+        end
+    end)
 end
 
--- Connect the update function
-game.Players.LocalPlayer.leaderstats.Rebirths.Changed:Connect(updateStats)
-updateStats()
-
-
--- Target Input
-local targetInput = Tabs.Rebirth:CreateInput("TargetRebirth", {
-	Title = "Target Rebirth Amount",
-	Description = "Enter your target rebirth goal",
-	Default = "1",
-	Placeholder = "Enter amount...",
-	Numeric = true,
-	Finished = true,
-	Callback = function(Value)
-		targetRebirthValue = tonumber(Value) or 1
-		updateStats()
-	end
-})
-
--- Target Rebirth Toggle
-local targetRebirthLoop = nil
-local targetToggle = Tabs.Rebirth:CreateToggle("AutoRebirthTarget", {
-	Title = "Auto Rebirth (Target)",
-	Description = "Automatically rebirth until target is reached",
-	Default = false,
-	Callback = function(Value)
-		if Value then
-			targetRebirthLoop = task.spawn(function()
-				while task.wait(0.1) do
-					if game.Players.LocalPlayer.leaderstats.Rebirths.Value >= targetRebirthValue then
-						targetToggle:SetValue(false)
-						break
-					end
-					game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-				end
-			end)
-		else
-			if targetRebirthLoop then
-				task.cancel(targetRebirthLoop)
-				targetRebirthLoop = nil
-			end
-		end
-	end
-})
+RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
+    getgenv().autoRockFarm = state
+    if state and selectedDur then
+        task.spawn(function()
+            while getgenv().autoRockFarm do
+                pcall(function()
+                    local durVal = LocalPlayer:FindFirstChild("Durability")
+                    if durVal and durVal.Value >= selectedDur then
+                        for _, desc in pairs(workspace:FindFirstChild("machinesFolder") and workspace.machinesFolder:GetDescendants() or {}) do
+                            if desc.Name == "neededDurability" and desc.Value == selectedDur then
+                                local rock = desc.Parent:FindFirstChild("Rock")
+                                if rock then
+                                    local char = LocalPlayer.Character
+                                    if char and char:FindFirstChild("RightHand") and char:FindFirstChild("LeftHand") then
+                                        firetouchinterest(rock, char.RightHand, 0)
+                                        firetouchinterest(rock, char.RightHand, 1)
+                                        firetouchinterest(rock, char.LeftHand, 0)
+                                        firetouchinterest(rock, char.LeftHand, 1)
+                                        equipPunch()
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.15)
+            end
+        end)
+        print("Rock farm started for durability >= " .. selectedDur)
+    else
+        print("Rock farm stopped or no rock selected")
+    end
+end)
 
 -- BETTER FARMING - Fast Strength (unchanged)
 local fastStrengthRunning = false
 
-BetterFarmingTab:AddSwitch("Fast Grind", function(state)
+local function startStrengthAutomation()
+    while fastStrengthRunning do
+        pcall(function()
+            local petsFolder = LocalPlayer:WaitForChild("petsFolder", 5)
+            if petsFolder then
+                local uniquePets = petsFolder:FindFirstChild("Unique")
+                if uniquePets then
+                    for _, pet in pairs(uniquePets:GetChildren()) do
+                        if pet.Name == "Swift Samurai" then  -- ← change to your best pet
+                            local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
+                            if rEvents and rEvents:FindFirstChild("equipPetEvent") then
+                                rEvents.equipPetEvent:FireServer("equipPet", pet)
+                            else
+                                warn("equipPetEvent not found - skipping pet equip")
+                            end
+                        end
+                    end
+                end
+            end
+            equipPunch()
+            for i = 1, 30 do
+                if muscleEvent then muscleEvent:FireServer("rep") end
+            end
+        end)
+        task.wait(0.05)
+    end
+end
+
+BetterFarmingTab:AddSwitch("Fast Strength Gain", function(state)
     fastStrengthRunning = state
     if state then
         task.spawn(startStrengthAutomation)
@@ -294,7 +338,6 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 -- REBIRTH TAB (with elerium-v2 compatible rebirth target)
-
 local rebirthTab = window:AddTab("rebirth")
 
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
@@ -392,6 +435,16 @@ local function startRebirthAutomation()
     end
 end
 
+rebirthTab:AddSwitch("Fast Rebirth Spam", function(state)
+    fastRebirthRunning = state
+    if state then
+        task.spawn(startRebirthAutomation)
+        print("Fast Rebirth Spam ENABLED")
+    else
+        print("Fast Rebirth Spam DISABLED")
+    end
+end)
+
 -- NEW TARGET REBIRTH (elerium-v2 compatible version)
 local targetRebirthValue = 1
 local targetRebirthRunning = false
@@ -425,28 +478,3 @@ end)
 -- Simple target input simulation (print to console since no input in elerium-v2)
 print("To set target rebirth amount, change 'targetRebirthValue = 1' line in script to your number, then re-execute.")
 -- Example: change to targetRebirthValue = 50 for goal of 50 rebirths
-
-
-local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
-local UserInputService = game:GetService("UserInputService")
-local RS = game:GetService("ReplicatedStorage")
-
--- Wait for muscleEvent reliably
-local muscleEvent
-task.spawn(function()
-    repeat
-        muscleEvent = LP:FindFirstChild("muscleEvent") or workspace:FindFirstChild("muscleEvent")
-        wait(1)
-    until muscleEvent
-    print("muscleEvent found:", muscleEvent)
-end)
-
--- Helper: firetouchinterest (might be needed depending on exploit)
-local function fireTouch(part1, part2, toggle)
-    if firetouchinterest then
-        firetouchinterest(part1, part2, toggle)
-    else
-        print("firetouchinterest not available")
-    end
-end
