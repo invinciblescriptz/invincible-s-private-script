@@ -682,7 +682,7 @@ local Toggle = Tabs.AutoFarm:CreateToggle("AncientJungleRock", {
     end
 })
 
-local Section = Tabs.Main:CreateSection("Auto Farm Gym")
+local Auto Farm Gym = main:AddFolder("Auto Farm Gym")
 
 local function pressE()
     local vim = game:GetService("VirtualInputManager")
