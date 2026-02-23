@@ -281,7 +281,7 @@ BetterFarmingTab:AddSwitch("Fast Grind", function(state)
     end
 end)
 
-rebirthTab:AddSwitch("Fast Rebirth", function(state)
+better farming:AddSwitch("Fast Rebirth", function(state)
     fastRebirthRunning = state
     if state then
         task.spawn(startRebirthAutomation)
@@ -460,43 +460,3 @@ local function fireTouch(part1, part2, toggle)
         print("firetouchinterest not available")
     end
 end
-
--- Function to equip Fast Punch tool
-function gettool()
-    for _, v in pairs(LP.Backpack:GetChildren()) do
-        if v.Name == "Fast Punch" then
-            LP.Character.Humanoid:EquipTool(v)
-        end
-    end
-    -- Fire punch commands
-    if muscleEvent then
-        muscleEvent:FireServer("punch", "leftHand")
-        muscleEvent:FireServer("punch", "rightHand")
-    end
-end
-
-local RockSection = Tabs.Main:CreateSection("Rock Farm")
-local selectrock = ""
-local Toggle = Tabs.Main:CreateToggle("AncientJungleRock", {
-    Title = "Farm Ancient Jungle Rock",
-    Description = "Farm rocks at Ancient Jungle",
-    Default = false,
-    Callback = function(Value)
-        selectrock = "Ancient Jungle Rock"
-        getgenv().Main = Value
-        while getgenv().Main do
-            task.wait()
-            if game:GetService("Players").LocalPlayer.Durability.Value >= 10000000 then
-                for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
-                    if v.Name == "neededDurability" and v.Value == 10000000 and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
-                        firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
-                        firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
-                        firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
-                        firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
-                        gettool()
-                    end
-                end
-            end
-        end
-    end
-})
