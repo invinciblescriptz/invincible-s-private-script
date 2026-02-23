@@ -250,7 +250,7 @@ local function equipPunch()
     end)
 end
 
-RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
+Rock Farm:AddSwitch("Auto Farm Selected Rock", function(state)
     getgenv().autoRockFarm = state
     if state and selectedDur then
         task.spawn(function()
