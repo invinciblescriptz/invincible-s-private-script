@@ -21,7 +21,12 @@ local function startAutoRep(toolName, toggleVar)
                 local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then task.wait(1.5) return end
                 local tool = LocalPlayer.Backpack:FindFirstChild(toolName) or char:FindFirstChild(toolName)
-                if tool and tool.Parent ~= char then char.Humanoid:EquipTool(tool) end
+                if tool and tool.Parent ~= char then
+                    local humanoid = char:FindFirstChildOfClass("Humanoid")
+                    if humanoid then
+                        humanoid:EquipTool(tool)
+                    end
+                end
                 if muscleEvent then muscleEvent:FireServer("rep") end
             end)
             task.wait(0.025)
@@ -35,17 +40,35 @@ local function startAutoRep(toolName, toggleVar)
         end)
     end)
 end
+
 local main = window:AddTab("Main")
 local BetterFarmingTab = window:AddTab("BETTER FARMING")
 local Tools = main:AddFolder("Tools")
 local RockFarmFolder = main:AddFolder("Rock Farm")
 local REBIRTH = window:AddTab("REBIRTH")
 local MISC = window:AddTab("MISC")
-local KILLER = window:AddTab ("KILLER")
+local KILLER = window:AddTab("KILLER")
 
-Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
-Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
-Tools:AddSwitch("Auto Handstands", function(state) _G.AutoHandstands = state if state then startAutoRep("Handstands", "AutoHandstands") end end)
+Tools:AddSwitch("Auto Pushups", function(state)
+    _G.AutoPushups = state
+    if state then
+        startAutoRep("Pushups", "AutoPushups")
+    end
+end)
+
+Tools:AddSwitch("Auto Weight", function(state)
+    _G.AutoWeight = state
+    if state then
+        startAutoRep("Weight", "AutoWeight")
+    end
+end)
+
+Tools:AddSwitch("Auto Handstands", function(state)
+    _G.AutoHandstands = state
+    if state then
+        startAutoRep("Handstands", "AutoHandstands")
+    end
+end)
 
 Tools:AddSwitch("Fast Punch", function(state)
     _G.FastPunch = state
@@ -58,7 +81,9 @@ Tools:AddSwitch("Fast Punch", function(state)
                         muscleEvent:FireServer("punch", "leftHand")
                     end
                     local char = LocalPlayer.Character
-                    if char and char:FindFirstChild("Punch") then char.Punch:Activate() end
+                    if char and char:FindFirstChild("Punch") then
+                        char.Punch:Activate()
+                    end
                 end)
                 task.wait(0.07)
             end
@@ -123,23 +148,25 @@ Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
 -- BETTER FARMING - Fast Farming (unchanged)
+-- (Make sure you define `startStrengthAutomation` elsewhere)
 
-Toggle for Fast Strength Gain
+-- Toggle for Fast Strength Gain
 local MainToggle = Tabs.BETTER FARMING:CreateToggle("UltimateStrength", {
     Title = "Fast Grind",
     Default = false,
     Callback = function(Value)
         isRunning = Value
         if Value then
-            task.spawn(startStrengthAutomation) -- Start the automation when toggled on
+            task.spawn(startStrengthAutomation) -- Ensure this function is defined
         end
     end
 })
 
+-- Re-initialize `Players` and `LocalPlayer` if needed
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Equip Punch tool
+-- Equip Punch tool function
 local function equipTool(toolName)
     local character = LocalPlayer.Character
     local backpack = LocalPlayer.Backpack
