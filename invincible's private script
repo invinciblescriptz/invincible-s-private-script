@@ -200,74 +200,9 @@ end)
 
 local RockSection = Tabs.AutoFarm:CreateSection("Rock Farm")
 
-local Section = Tabs.Rebirth:CreateSection("AutoRebirth")
+-- BETTER FARMING - Fast Farming (unchanged)
 
--- Initialize variables first
-local targetRebirthValue = 1
-local initialRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
-
--- Stats Display
-local Paragraph = Tabs.Rebirth:CreateParagraph("RebirthStats", {
-	Title = "Rebirth Statistics",
-	Content = "Loading stats...",
-	TitleAlignment = "Left",
-	ContentAlignment = Enum.TextXAlignment.Left
-})
-
--- Update function
-local function updateStats()
-	local currentRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
-	local gained = currentRebirths - initialRebirths
-	Paragraph:SetContent(string.format("Target Rebirth: %d\nCurrent Rebirths: %d\nRebirths Gained: %d", targetRebirthValue, currentRebirths, gained))
-end
-
--- Connect the update function
-game.Players.LocalPlayer.leaderstats.Rebirths.Changed:Connect(updateStats)
-updateStats()
-
-
--- Target Input
-local targetInput = Tabs.Rebirth:CreateInput("TargetRebirth", {
-	Title = "Target Rebirth Amount",
-	Description = "Enter your target rebirth goal",
-	Default = "1",
-	Placeholder = "Enter amount...",
-	Numeric = true,
-	Finished = true,
-	Callback = function(Value)
-		targetRebirthValue = tonumber(Value) or 1
-		updateStats()
-	end
-})
-
--- Target Rebirth Toggle
-local targetRebirthLoop = nil
-local targetToggle = Tabs.Rebirth:CreateToggle("AutoRebirthTarget", {
-	Title = "Auto Rebirth (Target)",
-	Description = "Automatically rebirth until target is reached",
-	Default = false,
-	Callback = function(Value)
-		if Value then
-			targetRebirthLoop = task.spawn(function()
-				while task.wait(0.1) do
-					if game.Players.LocalPlayer.leaderstats.Rebirths.Value >= targetRebirthValue then
-						targetToggle:SetValue(false)
-						break
-					end
-					game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-				end
-			end)
-		else
-			if targetRebirthLoop then
-				task.cancel(targetRebirthLoop)
-				targetRebirthLoop = nil
-			end
-		end
-	end
-})
-
--- BETTER FARMING - Fast Strength (unchanged)
-local fastStrengthRunning = false
+local Fast Farming = false
 BetterFarmingTab:AddSwitch("Fast Grind", function(state)
     fastStrengthRunning = state
     if state then
