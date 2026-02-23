@@ -98,4 +98,128 @@ killFolder:AddSwitch("Kill All Players", function(state)
 end)
 
 local targetName = nil
-... (125 lines left)
+local dropdown = killFolder:AddDropdown("Target Player", {
+    Values = {},
+    Callback = function(val)
+        targetName = val
+    end
+})
+
+killFolder:AddSwitch("Auto Kill Target", function(state)
+    getg().autoKillTarget = state
+    if state and targetName then
+        task.spawn(function()
+            while getg().autoKillTarget do
+                local tgt = Players:FindFirstChild(targetName)
+                if tgt then
+                    local hrp = tgt.Character and tgt.Character:FindFirstChild("HumanoidRootPart")
+                    local myHRP = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp and myHRP then
+                        fireTouch(hrp, myHRP, 0)
+                        fireTouch(hrp, myHRP, 1)
+                    end
+                end
+                wait(0.08)
+            end
+        end)
+    end
+end)
+
+-- Update dropdown list of players
+task.spawn(function()
+    while true do
+        local list = {}
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= LP then
+                table.insert(list, plr.Name)
+            end
+        end
+        pcall(function()
+            dropdown:SetValues(list)
+        end)
+        wait(5)
+    end
+end)
+
+-- Infinite Jump
+MiscTab:AddSwitch("Infinite Jump", function(state)
+    getg().infJump = state
+end)
+UserInputService.JumpRequest:Connect(function()
+    if getg().infJump and LP.Character then
+        LP.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
+-- Auto farm rocks
+local autoFarm = false
+local targetDurability = 0
+local function autoFarmRocks(durability)
+    while autoFarm do
+        for _, v in pairs(workspace:FindFirstChild("machinesFolder") and workspace.machinesFolder:GetDescendants() or {}) do
+            if v.Name == "neededDurability" and v.Value == durability then
+                local rock = v.Parent and v.Parent:FindFirstChild("Rock")
+                local char = LP.Character
+                if rock and char and char:FindFirstChild("RightHand") and char:FindFirstChild("LeftHand") then
+                    fireTouch(rock, char.RightHand, 0)
+                    fireTouch(rock, char.RightHand, 1)
+                    fireTouch(rock, char.LeftHand, 0)
+                    fireTouch(rock, char.LeftHand, 1)
+                    -- Punch while farming
+                    if _G.FastPunch then
+                        if muscleEvent then
+                            muscleEvent:FireServer("punch", "rightHand")
+                            muscleEvent:FireServer("punch", "leftHand")
+                        end
+                        local punch = char:FindFirstChild("Punch")
+                        if punch then punch:Activate() end
+                    end
+                end
+            end
+        end
+        wait(0.15)
+    end
+end
+
+local RockFarmFolder = farmTab:AddFolder("Rock Farm")
+RockFarmFolder:AddSwitch("Farm Rock (durability 0)", {
+    Default = false,
+    Callback = function(val)
+        autoFarm = val
+        if val then autoFarmRocks(0) end
+    end
+})
+
+-- Fast Punch with auto-equip
+Tools:AddSwitch("Fast Punch", function(state)
+    _G.FastPunch = state
+    if state then
+        task.spawn(function()
+            local function equipPunch()
+                local ch = LP.Character
+                if not ch then return end
+                local punch = LP.Backpack:FindFirstChild("Punch")
+                if punch then
+                    punch.Parent = ch
+                end
+            end
+            equipPunch()
+            while _G.FastPunch do
+                pcall(function()
+                    if muscleEvent then
+                        muscleEvent:FireServer("punch", "rightHand")
+                        muscleEvent:FireServer("punch", "leftHand")
+                    end
+                    local ch = LP.Character
+                    if not ch:FindFirstChild("Punch") then
+                        local punch = LP.Backpack:FindFirstChild("Punch")
+                        if punch then punch.Parent = ch end
+                    end
+                    local punch = ch:FindFirstChild("Punch")
+                    if punch then punch:Activate() end
+                end)
+                wait(0.07)
+            end
+        end)
+    end
+end)
