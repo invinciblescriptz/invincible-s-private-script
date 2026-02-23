@@ -207,7 +207,21 @@ end)
 -- ==================== BETTER FARMING TAB (new) ====================
 local BetterFarm = window:AddTab("better farming")
 
-BetterFarm:AddButton("Auto Rebirth (example)", function()
+local Misc = window:AddTab("Misc")
+
+Misc:AddSwitch("Infinite Jump", function(state)
+    if state then
+        LocalPlayer:GetMouse().KeyDown:Connect(function(key)
+            if key == " " and LocalPlayer.Character then
+                LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+            end
+        end)
+    end
+end)
+
+local rebirth = window:AddTab("rebirth")
+
+AddButton:rebirth("Auto Rebirth (example)", function()
     -- Simple loop example; adjust threshold as needed
     task.spawn(function()
         while true do
@@ -220,16 +234,4 @@ BetterFarm:AddButton("Auto Rebirth (example)", function()
         end
     end)
     print("Auto Rebirth loop started (edit threshold/remote)")
-end)
-
-BetterFarm:AddSwitch("Infinite Jump", function(state)
-    if state then
-        LocalPlayer:GetMouse().KeyDown:Connect(function(key)
-            if key == " " and LocalPlayer.Character then
-                LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-            end
-        end)
-    end
-end)
-
-print("Invincibles Priv Script - FIXED 2026 Edition Loaded")
+en
