@@ -24,10 +24,36 @@ local KILLER = window:AddTab("KILLER")
 local Tools = main:AddFolder("Tools")
 local RockFolder = main:AddFolder("Rock") -- moved rock farm buttons here
 
+-- ================== Helper Functions ==================
+local function gettool()
+    local tool = LocalPlayer.Backpack:FindFirstChild("Punch") or LocalPlayer.Character:FindFirstChild("Punch")
+    if tool then
+        LocalPlayer.Character.Humanoid:EquipTool(tool)
+    end
+end
+
+local function tpTo(pos)
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = CFrame.new(pos)
+    end
+end
+
 -- ================== Tools Buttons ==================
-Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
-Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
-Tools:AddSwitch("Auto Handstands", function(state) _G.AutoHandstands = state if state then startAutoRep("Handstands", "AutoHandstands") end end)
+Tools:AddSwitch("Auto Pushups", function(state)
+    _G.AutoPushups = state
+    if state then startAutoRep("Pushups", "AutoPushups") end
+end)
+
+Tools:AddSwitch("Auto Weight", function(state)
+    _G.AutoWeight = state
+    if state then startAutoRep("Weight", "AutoWeight") end
+end)
+
+Tools:AddSwitch("Auto Handstands", function(state)
+    _G.AutoHandstands = state
+    if state then startAutoRep("Handstands", "AutoHandstands") end
+end)
 
 Tools:AddSwitch("Fast Punch", function(state)
     _G.FastPunch = state
@@ -40,7 +66,9 @@ Tools:AddSwitch("Fast Punch", function(state)
                         muscleEvent:FireServer("punch", "leftHand")
                     end
                     local char = LocalPlayer.Character
-                    if char and char:FindFirstChild("Punch") then char.Punch:Activate() end
+                    if char and char:FindFirstChild("Punch") then
+                        char.Punch:Activate()
+                    end
                 end)
                 task.wait(0.07)
             end
@@ -106,10 +134,14 @@ Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849,20,-6335)
 
 -- ================== KILL SYSTEM ==================
 local KillFolder = KILLER:AddFolder("Auto Kill")
+
+-- Helper to check character
 local function checkCharacter()
     if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
     return LocalPlayer.Character
 end
+
+-- Kill Player function
 local function killPlayer(target)
     local char = checkCharacter()
     if not char or not char:FindFirstChild("LeftHand") then return end
@@ -118,47 +150,75 @@ local function killPlayer(target)
         firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 0)
         firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 1)
         local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
-        if punch and char:FindFirstChild("Humanoid") then char.Humanoid:EquipTool(punch) end
+        if punch then
+            LocalPlayer.Character.Humanoid:EquipTool(punch)
+        end
         if muscleEvent then
             muscleEvent:FireServer("punch", "leftHand")
             muscleEvent:FireServer("punch", "rightHand")
         end
     end
 end
-KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
-    getgenv().killAura = state
-    if state then
-        task.spawn(function()
-            while getgenv().killAura do
-                pcall(function()
-                    for _, plr in ipairs(Players:GetPlayers()) do
-                        if plr ~= LocalPlayer and plr.Character then killPlayer(plr) end
-                    end
-                end)
-                task.wait(0.08)
-            end
-        end)
+
+-- Auto Kill All Players (Aura)
+local killAura = false
+local killAuraThread = nil
+KillFolder:AddSwitch("Kill All Players (Aura)", {
+    Title = "Kill All Players (Aura)",
+    Default = false,
+    Callback = function(state)
+        killAura = state
+        if state then
+            killAuraThread = task.spawn(function()
+                while killAura do
+                    pcall(function()
+                        for _, plr in ipairs(Players:GetPlayers()) do
+                            if plr ~= LocalPlayer and plr.Character then
+                                killPlayer(plr)
+                            end
+                        end
+                    end)
+                    task.wait(0.08)
+                end
+            end)
+        else
+            killAura = false
+        end
     end
-end)
-local targetPlayerName = nil
+})
+
+-- Target Player dropdown
+local targetPlayer = ""
 local playerDropdown = KillFolder:AddDropdown("Target Player", {
     Values = {},
-    Callback = function(val) targetPlayerName = val end
+    Callback = function(val) targetPlayer = val end
 })
-local autoKillTarget = false
-KillFolder:AddSwitch("Auto Kill Selected", function(state)
-    autoKillTarget = state
-    if state and targetPlayerName then
-        task.spawn(function()
-            while autoKillTarget do
-                local target = Players:FindFirstChild(targetPlayerName)
-                if target then killPlayer(target) end
-                task.wait(0.08)
-            end
-        end)
+
+-- Auto Kill Selected
+local autoKillSelected = false
+local autoKillThread = nil
+KillFolder:AddSwitch("Auto Kill Selected", {
+    Title = "Auto Kill Selected",
+    Default = false,
+    Callback = function(state)
+        autoKillSelected = state
+        if state then
+            autoKillThread = task.spawn(function()
+                while autoKillSelected do
+                    local target = Players:FindFirstChild(targetPlayer)
+                    if target then
+                        killPlayer(target)
+                    end
+                    task.wait(0.08)
+                end
+            end)
+        else
+            autoKillSelected = false
+        end
     end
-end)
--- update player list
+})
+
+-- Update player list periodically
 task.spawn(function()
     while true do
         local list = {}
@@ -173,10 +233,16 @@ task.spawn(function()
 end)
 
 -- ================== REBIRTH SYSTEM ==================
-local initialRebirths = LocalPlayer:FindFirstChild("leaderstats") and LocalPlayer.leaderstats:FindFirstChild("Rebirths").Value or 0
+local initialRebirths = 0
+do
+    local stat = LocalPlayer:FindFirstChild("leaderstats")
+    if stat and stat:FindFirstChild("Rebirths") then
+        initialRebirths = stat.Rebirths.Value
+    end
+end
 local targetRebirth = 1
 local autoRebirth = false
-local fastRebirthRunning = false -- control variable
+local fastRebirthRunning = false
 
 local function getRebirths()
     local stat = LocalPlayer:FindFirstChild("leaderstats")
@@ -185,6 +251,7 @@ local function getRebirths()
     end
     return 0
 end
+
 local function invokeRebirth()
     local success, err = pcall(function()
         local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
@@ -199,24 +266,26 @@ end
 local function startRebirthAutomation()
     while fastRebirthRunning do
         invokeRebirth()
-        wait(0.2)
+        task.wait(0.2)
     end
 end
 
--- ================== Add "Fast Rebirth" toggle under BETTER FARMING ==================
+-- Add "Fast Rebirth" toggle under BETTER FARMING
 local betterFarmingTab = window:GetTab("BETTER FARMING")
-betterFarmingTab:AddSwitch("Fast Rebirth", function(state)
-    fastRebirthRunning = state
-    if state then
-        print("Fast Rebirth Spam ENABLED")
-        task.spawn(function()
-            startRebirthAutomation()
-        end)
-    else
-        print("Fast Rebirth Spam DISABLED")
-        fastRebirthRunning = false
+betterFarmingTab:AddSwitch("Fast Rebirth", {
+    Title = "Fast Rebirth",
+    Default = false,
+    Callback = function(state)
+        fastRebirthRunning = state
+        if state then
+            print("Fast Rebirth Spam ENABLED")
+            task.spawn(function() startRebirthAutomation() end)
+        else
+            print("Fast Rebirth Spam DISABLED")
+            fastRebirthRunning = false
+        end
     end
-end)
+})
 
 local function updateRebirthStats()
     local current = getRebirths()
@@ -225,8 +294,10 @@ local function updateRebirthStats()
         Paragraph:SetContent("Target: " .. targetRebirth .. "\nCurrent: " .. current .. "\nGained: " .. gained)
     end
 end
+
 local Paragraph = REBIRTH:AddParagraph("RebirthStats", {
     Title = "Rebirth Stats",
     Content = "Loading..."
 })
+
 game:GetService("RunService").RenderStepped:Connect(updateRebirthStats)
