@@ -13,7 +13,7 @@ local RunService = game:GetService("RunService")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
--- ================== Main UI Tabs ==================
+-- ================== UI Tabs ==================
 local main = window:AddTab("Main")
 local BetterFarmingTab = window:AddTab("BETTER FARMING")
 local REBIRTH = window:AddTab("REBIRTH")
@@ -56,8 +56,8 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     Lighting.FogEnd = 9999
     Lighting.FogStart = 0
     for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or
-           v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") 
+           or v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
             v.Enabled = false
         end
     end
@@ -84,25 +84,25 @@ Tools:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- ================== Teleport Buttons ==================
+-- ================== Teleports ==================
 local function tpTo(pos)
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if hrp then hrp.CFrame = CFrame.new(pos) end
 end
 
 local Teleport = window:AddTab("Teleport")
-Teleport:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
-Teleport:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
-Teleport:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39, 6, 1886)) end)
-Teleport:AddButton("To Frozen Area", function() tpTo(Vector3.new(-2623, 6, -409)) end)
-Teleport:AddButton("To Mythical Area", function() tpTo(Vector3.new(2251, 6, 1073)) end)
-Teleport:AddButton("To Inferno Area", function() tpTo(Vector3.new(-6759, 6, -1285)) end)
-Teleport:AddButton("To Legend Area", function() tpTo(Vector3.new(4603, 990, -3898)) end)
-Teleport:AddButton("To Muscle King Area", function() tpTo(Vector3.new(-8626, 16, -5730)) end)
-Teleport:AddButton("To Jungle Area", function() tpTo(Vector3.new(-8642, 6, 2381)) end)
-Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836)) end)
-Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
-Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
+Teleport:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6,5,-196)) end)
+Teleport:AddButton("To Secret Area", function() tpTo(Vector3.new(1947,2,6191)) end)
+Teleport:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39,6,1886)) end)
+Teleport:AddButton("To Frozen Area", function() tpTo(Vector3.new(-2623,6,-409)) end)
+Teleport:AddButton("To Mythical Area", function() tpTo(Vector3.new(2251,6,1073)) end)
+Teleport:AddButton("To Inferno Area", function() tpTo(Vector3.new(-6759,6,-1285)) end)
+Teleport:AddButton("To Legend Area", function() tpTo(Vector3.new(4603,990,-3898)) end)
+Teleport:AddButton("To Muscle King Area", function() tpTo(Vector3.new(-8626,16,-5730)) end)
+Teleport:AddButton("To Jungle Area", function() tpTo(Vector3.new(-8642,6,2381)) end)
+Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471,119,-8836)) end)
+Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960,17,-7398)) end)
+Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849,20,-6335)) end)
 
 -- ================== KILL SYSTEM ==================
 local KillFolder = KILLER:AddFolder("Auto Kill")
@@ -110,7 +110,6 @@ local function checkCharacter()
     if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
     return LocalPlayer.Character
 end
-
 local function killPlayer(target)
     local char = checkCharacter()
     if not char or not char:FindFirstChild("LeftHand") then return end
@@ -126,7 +125,6 @@ local function killPlayer(target)
         end
     end
 end
-
 KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
     getgenv().killAura = state
     if state then
@@ -142,13 +140,11 @@ KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
         end)
     end
 end)
-
 local targetPlayerName = nil
 local playerDropdown = KillFolder:AddDropdown("Target Player", {
     Values = {},
     Callback = function(val) targetPlayerName = val end
 })
-
 local autoKillTarget = false
 KillFolder:AddSwitch("Auto Kill Selected", function(state)
     autoKillTarget = state
@@ -162,8 +158,7 @@ KillFolder:AddSwitch("Auto Kill Selected", function(state)
         end)
     end
 end)
-
--- update player list periodically
+-- update player list
 task.spawn(function()
     while true do
         local list = {}
@@ -181,7 +176,7 @@ end)
 local initialRebirths = LocalPlayer:FindFirstChild("leaderstats") and LocalPlayer.leaderstats:FindFirstChild("Rebirths").Value or 0
 local targetRebirth = 1
 local autoRebirth = false
-local fastRebirthRunning = false
+local fastRebirthRunning = false -- control variable
 
 local function getRebirths()
     local stat = LocalPlayer:FindFirstChild("leaderstats")
@@ -190,7 +185,6 @@ local function getRebirths()
     end
     return 0
 end
-
 local function invokeRebirth()
     local success, err = pcall(function()
         local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
@@ -214,8 +208,8 @@ local betterFarmingTab = window:GetTab("BETTER FARMING")
 betterFarmingTab:AddSwitch("Fast Rebirth", function(state)
     fastRebirthRunning = state
     if state then
+        print("Fast Rebirth Spam ENABLED")
         task.spawn(function()
-            print("Fast Rebirth Spam ENABLED")
             startRebirthAutomation()
         end)
     else
