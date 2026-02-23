@@ -39,7 +39,7 @@ end
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 local RockFarmFolder = main:AddFolder("Rock Farm")
-local BetterFarmingFolder = main:AddFolder("Better Farming")  -- Fixed name (no spaces)
+local BetterFarmingFolder = main:AddFolder("Better Farming")
 
 Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
 Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
@@ -258,6 +258,10 @@ RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
                 pcall(function()
                     local durVal = LocalPlayer:FindFirstChild("Durability")
                     if durVal and durVal.Value >= selectedDur then
+                        -- Optional TP (uncomment if rocks are far away)
+                        -- local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        -- if hrp then hrp.CFrame = CFrame.new(-39, 6, 1886) end  -- example for Tiny
+
                         for _, desc in pairs(workspace.machinesFolder:GetDescendants()) do
                             if desc.Name == "neededDurability" and desc.Value == selectedDur then
                                 local rock = desc.Parent:FindFirstChild("Rock")
@@ -291,29 +295,27 @@ local fastStrengthRunning = false
 local function startStrengthAutomation()
     while fastStrengthRunning do
         pcall(function()
-            -- Pet equip example (change "Swift Samurai" to your pet name)
             local petsFolder = LocalPlayer:WaitForChild("petsFolder", 5)
             if petsFolder then
                 local uniquePets = petsFolder:FindFirstChild("Unique")
                 if uniquePets then
                     for _, pet in pairs(uniquePets:GetChildren()) do
-                        if pet.Name == "Swift Samurai" then
+                        if pet.Name == "Swift Samurai" then  -- ← change to your best pet
                             local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
                             if rEvents and rEvents:FindFirstChild("equipPetEvent") then
                                 rEvents.equipPetEvent:FireServer("equipPet", pet)
                             else
-                                warn("equipPetEvent not found - pet equip skipped")
+                                warn("equipPetEvent not found - skipping pet equip")
                             end
                         end
                     end
                 end
             end
-            -- Spam reps
             for i = 1, 30 do
                 if muscleEvent then muscleEvent:FireServer("rep") end
             end
         end)
-        task.wait(0.05)  -- balanced
+        task.wait(0.05)
     end
 end
 
@@ -414,3 +416,5 @@ rebirthTab:AddSwitch("Hide All Frames", function(state)
     end)
     print("Hide Frames " .. (state and "ENABLED" or "DISABLED"))
 end)
+
+print("Invincibles Priv Script - Fully Fixed & Ready (2026)")
