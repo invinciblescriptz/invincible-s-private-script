@@ -782,7 +782,7 @@ print("hello)
 end
 end)
 
-KillerFolder:AddSwitch("Auto Kill Selected", function(state)
+Killer:AddSwitch("Auto Kill Selected", function(state)
     getgenv().autoSingleKill = state
     if state and targetKillPlayer then
         task.spawn(function()
