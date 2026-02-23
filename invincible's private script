@@ -113,26 +113,6 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     print("Anti-Lag activated → check FPS (Shift+F5)")
 end)
 
-Rocks:AddSwitch("Farm Frost Gym Rock (150k Dur)", function(state)
-    _G.FarmFrost = state
-    if state then startRockFarm("FarmFrost", "frost", 150000) end
-end)
-
-Rocks:AddSwitch("Farm Mythical Gym Rock (400k Dur)", function(state)
-    _G.FarmMythical = state
-    if state then startRockFarm("FarmMythical", "mythical", 400000) end
-end)
-
-Rocks:AddSwitch("Farm Ancient Jungle Rock (10M Dur)", function(state)
-    _G.FarmAncientJungle = state
-    if state then startRockFarm("FarmAncientJungle", "ancient jungle", 10000000) end
-end)
-
-Rocks:AddSwitch("Farm Any 10M+ Rock (No Name Filter)", function(state)
-    _G.FarmAny10M = state
-    if state then startRockFarm("FarmAny10M", "", 10000000) end
-end)
-
 -- Teleport Tab (unchanged, but used Vector3 for clarity)
 local Teleport = window:AddTab("Teleport")
 local function tpTo(pos)
@@ -222,3 +202,4 @@ task.spawn(function()
         playerDropdown:SetValues(list)
         task.wait(5)
     end
+end)
