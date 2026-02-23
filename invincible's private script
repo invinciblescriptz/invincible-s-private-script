@@ -762,6 +762,7 @@ Tabs.Killer:AddToggle("Kill Player", {
         end)
     end
 })
+
 local PlayerDropdown = Tabs.Killer:CreateDropdown("PlayerList", {
 	Title = "Kill Target",
 	Description = "Choose player to target",
