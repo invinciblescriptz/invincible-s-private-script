@@ -250,7 +250,7 @@ local function equipPunch()
     end)
 end
 
-Rock Farm:AddSwitch("Auto Farm Selected Rock", function(state)
+RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
     getgenv().autoRockFarm = state
     if state and selectedDur then
         task.spawn(function()
@@ -337,6 +337,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
+-- REBIRTH TAB
 local rebirthTab = window:AddTab("rebirth")
 
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
@@ -443,3 +444,5 @@ rebirthTab:AddSwitch("Fast Rebirth Spam", function(state)
         print("Fast Rebirth Spam DISABLED")
     end
 end)
+
+print("Invincibles Priv Script - Fully Fixed & Ready (2026)")
