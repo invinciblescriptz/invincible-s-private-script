@@ -337,7 +337,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- REBIRTH TAB
+-- REBIRTH TAB (only one tab)
 local rebirthTab = window:AddTab("rebirth")
 
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
@@ -431,7 +431,7 @@ local function startRebirthAutomation()
                 end
             end
         end)
-        task.wait(0.07)  -- fast but safe
+        task.wait(0.07)
     end
 end
 
