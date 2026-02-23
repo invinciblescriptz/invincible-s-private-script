@@ -17,7 +17,6 @@ local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
 -- Placeholder for startStrengthAutomation
 local function startStrengthAutomation()
-    -- Example auto strength logic
     while _G.isStrengthAuto do
         pcall(function()
             print("Auto Strength Active...")
@@ -200,7 +199,6 @@ end)
 
 -- Target Rebirth
 local targetRebirthValue = 1
-local targetRebirthLoop = nil
 local function updateRebirthStats()
     local rebirths = LocalPlayer.leaderstats.Rebirths.Value
     print("Rebirths: " .. rebirths .. " / Target: " .. targetRebirthValue)
@@ -240,9 +238,7 @@ rebirthTab:AddSwitch("Auto Rebirth to Target", {
 })
 
 -- Toggle for "Fast Grind" (auto strength)
-local fastStrengthRunning = false
 local function startStrengthAutomation()
-    -- implement your auto strength logic here
     while _G.isStrengthAuto do
         pcall(function()
             print("Auto Strength Running...")
