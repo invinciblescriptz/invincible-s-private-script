@@ -521,33 +521,6 @@ local function killPlayer(target)
     end
 end
 
-KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
-    getgenv().killAura = state
-    if state then
-        task.spawn(function()
-            while getgenv().killAura do
-                pcall(function()
-                    for _, plr in Players:GetPlayers() do
-                        if plr ~= LocalPlayer and plr.Character then killPlayer(plr) end
-                    end
-                end)
-                task.wait(0.08)
-            end
-        end)
-    end
-end)
-
-local targetKillPlayer = nil
-local playerDropdown = KillFolder:AddDropdown("Select Target Player", {
-    Title = "Single Target Kill",
-    Values = {},
-    Callback = function(selected)
-        local name = selected:match("^([^|]+)") or selected
-        targetKillPlayer = name
-        print("Target set: " .. name)
-    end
-})
-
 KillFolder:AddSwitch("Auto Kill Selected", function(state)
     getgenv().autoSingleKill = state
     if state and targetKillPlayer then
@@ -801,3 +774,25 @@ local PlayerDropdown = Tabs.Killer:CreateDropdown("PlayerList", {
 		print("Target set to:", targetPlayer)
 	end
 })
+
+Killer:AddSwitch("fast punch", function (state)
+fast punch = state
+if state then
+print("hello)
+end
+end)
+
+KillerFolder:AddSwitch("Auto Kill Selected", function(state)
+    getgenv().autoSingleKill = state
+    if state and targetKillPlayer then
+        task.spawn(function()
+            while getgenv().autoSingleKill do
+                pcall(function()
+                    local tgt = Players:FindFirstChild(targetKillPlayer)
+                    if tgt then killPlayer(tgt) end
+                end)
+                task.wait(0.08)
+            end
+        end)
+    end
+end)
