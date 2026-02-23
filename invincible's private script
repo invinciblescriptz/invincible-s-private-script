@@ -5,6 +5,9 @@ local window = library:AddWindow("Invincibles Priv Script", {
     can_resize = false,
 })
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 local Rocks = main:AddFolder("Rocks")
@@ -14,7 +17,7 @@ local function startAutoRep(toolName, toggleVar)
     task.spawn(function()
         while _G[toggleVar] do
             pcall(function()
-                local player = game.Players.LocalPlayer
+                local player = LocalPlayer
                 local character = player.Character or player.CharacterAdded:Wait()
                 if not character or not character:FindFirstChild("Humanoid") or character.Humanoid.Health <= 0 then
                     task.wait(1.5)
@@ -32,7 +35,7 @@ local function startAutoRep(toolName, toggleVar)
             task.wait(0.025)
         end
         pcall(function()
-            local player = game.Players.LocalPlayer
+            local player = LocalPlayer
             local character = player.Character
             if character then
                 local equipped = character:FindFirstChild(toolName)
@@ -67,7 +70,7 @@ Tools:AddSwitch("Fast Punch", function(state)
         task.spawn(function()
             while _G.FastPunch do
                 pcall(function()
-                    local player = game.Players.LocalPlayer
+                    local player = LocalPlayer
                     local punch = player.Backpack:FindFirstChild("Punch") or (player.Character and player.Character:FindFirstChild("Punch"))
                     if punch and punch:FindFirstChild("attackTime") then
                         punch.attackTime.Value = 0
@@ -80,7 +83,7 @@ Tools:AddSwitch("Fast Punch", function(state)
         task.spawn(function()
             while _G.FastPunch do
                 pcall(function()
-                    local player = game.Players.LocalPlayer
+                    local player = LocalPlayer
                     local muscleEvent = player:FindFirstChild("muscleEvent")
                     if muscleEvent then
                         muscleEvent:FireServer("punch", "rightHand")
@@ -121,7 +124,7 @@ local function startRockFarm(toggleVar, rockName, requiredDurability)
     task.spawn(function()
         while _G[toggleVar] do
             pcall(function()
-                local player = game.Players.LocalPlayer
+                local player = LocalPlayer
                 local char = player.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") or not player:FindFirstChild("Durability") then
                     task.wait(1.5)
@@ -162,7 +165,7 @@ local function startRockFarm(toggleVar, rockName, requiredDurability)
             end)
         end
         pcall(function()
-            local player = game.Players.LocalPlayer
+            local player = LocalPlayer
             local char = player.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
                 char.HumanoidRootPart.CFrame = CFrame.new(-10, 10, -200)
@@ -185,87 +188,63 @@ end)
 local Teleport = window:AddTab("Teleport")
 
 Teleport:AddButton("To Spawn / Safe Area", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(2, 8, 115)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(2, 8, 115) end
 end)
 
 Teleport:AddButton("To Secret Area", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(1947, 2, 6191)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(1947, 2, 6191) end
 end)
 
 Teleport:AddButton("To Tiny Area", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(-34, 7, 1903)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(-34, 7, 1903) end
 end)
 
 Teleport:AddButton("To Frozen Area", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(-2600.00244, 3.67686558, -403.884369)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(-2600.00244, 3.67686558, -403.884369) end
 end)
 
 Teleport:AddButton("To Mythical Area", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(2255, 7, 1071)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(2255, 7, 1071) end
 end)
 
 Teleport:AddButton("To Inferno Area", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(-6768, 7, -1287)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(-6768, 7, -1287) end
 end)
 
 Teleport:AddButton("To Legend Area", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(4604, 991, -3887)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(4604, 991, -3887) end
 end)
 
 Teleport:AddButton("To Muscle King Area", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(-8646, 17, -5738)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(-8646, 17, -5738) end
 end)
 
 Teleport:AddButton("To Jungle Area", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(-8659, 6, 2384)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(-8659, 6, 2384) end
 end)
 
 Teleport:AddButton("To Lava Brawl", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(4471, 119, -8836)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(4471, 119, -8836) end
 end)
 
 Teleport:AddButton("To Desert Brawl", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(960, 17, -7398)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(960, 17, -7398) end
 end)
 
 Teleport:AddButton("To Beach Brawl", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(-1849, 20, -6335)
-    end
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(-1849, 20, -6335) end
 end)
 
 -- KILL TAB
@@ -273,11 +252,10 @@ local KillTab = window:AddTab("Kill")
 local KillFolder = KillTab:AddFolder("Auto Kill")
 
 local function checkCharacter()
-    local player = game.Players.LocalPlayer
-    if not player.Character then
-        player.CharacterAdded:Wait()
+    if not LocalPlayer.Character then
+        LocalPlayer.CharacterAdded:Wait()
     end
-    return player.Character
+    return LocalPlayer.Character
 end
 
 local function killPlayer(targetPlayer)
@@ -290,12 +268,12 @@ local function killPlayer(targetPlayer)
         firetouchinterest(targetPlayer.Character.HumanoidRootPart, char.LeftHand, 0)
         firetouchinterest(targetPlayer.Character.HumanoidRootPart, char.LeftHand, 1)
 
-        local punch = game.Players.LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
+        local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
         if punch and char:FindFirstChild("Humanoid") then
             char.Humanoid:EquipTool(punch)
         end
 
-        local muscleEvent = game.Players.LocalPlayer:FindFirstChild("muscleEvent")
+        local muscleEvent = LocalPlayer:FindFirstChild("muscleEvent")
         if muscleEvent then
             muscleEvent:FireServer("punch", "leftHand")
             muscleEvent:FireServer("punch", "rightHand")
@@ -309,8 +287,8 @@ KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
         task.spawn(function()
             while getgenv().killAura do
                 pcall(function()
-                    for _, plr in ipairs(game.Players:GetPlayers()) do
-                        if plr ~= game.Players.LocalPlayer then
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer then
                             killPlayer(plr)
                         end
                     end
@@ -321,7 +299,7 @@ KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
     end
 end)
 
--- Optional single target
+-- Single target
 local targetKillPlayer = nil
 
 local playerDropdown = KillFolder:AddDropdown("Select Target Player", {
@@ -337,8 +315,8 @@ local playerDropdown = KillFolder:AddDropdown("Select Target Player", {
 task.spawn(function()
     while true do
         local list = {}
-        for _, plr in ipairs(game.Players:GetPlayers()) do
-            if plr ~= game.Players.LocalPlayer then
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
                 table.insert(list, plr.Name .. " | " .. plr.DisplayName)
             end
         end
@@ -354,10 +332,8 @@ KillFolder:AddSwitch("Kill Selected Player Only", function(state)
             while getgenv().killSingle do
                 pcall(function()
                     if targetKillPlayer then
-                        local target = game.Players:FindFirstChild(targetKillPlayer)
-                        if target then
-                            killPlayer(target)
-                        end
+                        local target = Players:FindFirstChild(targetKillPlayer)
+                        if target then killPlayer(target) end
                     end
                 end)
                 task.wait(0.08)
@@ -366,48 +342,79 @@ KillFolder:AddSwitch("Kill Selected Player Only", function(state)
     end
 end)
 
-Evil Karma Kill function (targets players with more Evil Karma than Good Karma)
-local function evilKarmaKill(toggleState)
-    getgenv().killEvil = toggleState
-    if toggleState then
-        equipTool("Punch")
-        task.spawn(function()
-            while getgenv().killEvil do
-                local character = LocalPlayer.Character
-                local leftHand = character and character:FindFirstChild("LeftHand")
-                if not leftHand then
-                    task.wait(0.3)
-                    continue
+-- Spectate Player
+KillFolder:AddInput("Spectate Player", {
+    Title = "Spectate Player",
+    Description = "Enter username or display name",
+    Default = "",
+    Placeholder = "Player name...",
+    Numeric = false,
+    Finished = true,
+    Callback = function(Value)
+        local targetPlayer
+        targetPlayer = Players:FindFirstChild(Value)
+        if not targetPlayer then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player.DisplayName:lower() == Value:lower() then
+                    targetPlayer = player
+                    break
                 end
-                local muscleEvent = LocalPlayer:FindFirstChild("muscleEvent")
-                if muscleEvent then
-                    muscleEvent:FireServer("punch", "rightHand")
-                    muscleEvent:FireServer("punch", "leftHand")
-                end
-                for _, player in pairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer then
-                        local goodKarma = player:FindFirstChild("goodKarma")
-                        local evilKarma = player:FindFirstChild("evilKarma")
-           ... (29 KB left)
-
-----killl bad and good---
-local Section = Tabs.Killer:CreateSection("⏬Auto Kill Karma⏬")
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- Equip Punch tool
-local function equipTool(toolName)
-    local character = LocalPlayer.Character
-    local backpack = LocalPlayer.Backpack
-    if not (character and backpack) then return end
-    local tool = backpack:FindFirstChild(toolName)
-    if tool then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid:EquipTool(tool)
+            end
+        end
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") then
+            local camera = workspace.CurrentCamera
+            camera.CameraSubject = targetPlayer.Character.Humanoid
+            print("Now spectating: " .. targetPlayer.DisplayName .. " (@" .. targetPlayer.Name .. ")")
+        else
+            print("Player not found or no character")
         end
     end
-end)
+})
 
-local Stats = window:AddTab("Stats")
+-- Stats Tab
+local StatsTab = window:AddTab("Stats")
+local StatsFolder = StatsTab:AddFolder("Player Stats")
+
+local RunService = game:GetService("RunService")
+local sessionStartTime = os.time()
+
+local strengthGained = 0
+local rebirthsGained = 0
+
+local lastStrength = nil
+local lastRebirths = nil
+
+local sessionLabel = StatsFolder:AddLabel("Session Time", "Session Time: Calculating...")
+local strengthLabel = StatsFolder:AddLabel("Strength Gained", "Strength Gained: 0")
+local rebirthLabel = StatsFolder:AddLabel("Rebirths Gained", "Rebirths Gained: 0")
+
+RunService.Heartbeat:Connect(function()
+    local elapsed = os.time() - sessionStartTime
+    local h = math.floor(elapsed / 3600)
+    local m = math.floor((elapsed % 3600) / 60)
+    local s = elapsed % 60
+    sessionLabel:SetText(string.format("Session Time: %02d:%02d:%02d", h, m, s))
+
+    pcall(function()
+        local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+        if not leaderstats then return end
+
+        local strength = leaderstats:FindFirstChild("Strength")
+        if strength then
+            local curr = strength.Value
+            if lastStrength == nil then lastStrength = curr end
+            if curr > lastStrength then strengthGained = strengthGained + (curr - lastStrength) end
+            lastStrength = curr
+            strengthLabel:SetText("Strength Gained: " .. strengthGained)
+        end
+
+        local rebirths = leaderstats:FindFirstChild("Rebirths")
+        if rebirths then
+            local curr = rebirths.Value
+            if lastRebirths == nil then lastRebirths = curr end
+            if curr > lastRebirths then rebirthsGained = rebirthsGained + (curr - lastRebirths) end
+            lastRebirths = curr
+            rebirthLabel:SetText("Rebirths Gained: " .. rebirthsGained)
+        end
+    end)
+end)
