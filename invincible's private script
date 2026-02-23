@@ -100,7 +100,7 @@ main:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- TELEPORTS (unchanged)
+-- TELEPORTS
 local Teleport = window:AddTab("Teleport")
 local function tpTo(pos)
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -120,7 +120,7 @@ Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836
 Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- KILL TAB (unchanged)
+-- KILL TAB
 local KillTab = window:AddTab("Kill")
 local KillFolder = KillTab:AddFolder("Auto Kill")
 
@@ -285,7 +285,7 @@ RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
 end)
 
 -- BETTER FARMING - Fast Strength
-local BetterFarm = window:AddTab("better farming")
+local BetterFarmTab = window:AddTab("better farming")
 local fastStrengthRunning = false
 
 local function startStrengthAutomation()
@@ -311,11 +311,11 @@ local function startStrengthAutomation()
                 if muscleEvent then muscleEvent:FireServer("rep") end
             end
         end)
-        task.wait(0.05)  -- slightly increased to reduce lag/kick risk
+        task.wait(0.05)  -- balanced for performance
     end
 end
 
-BetterFarm:AddSwitch("Fast Strength Gain", function(state)
+BetterFarmTab:AddSwitch("Fast Strength Gain", function(state)
     fastStrengthRunning = state
     if state then
         task.spawn(startStrengthAutomation)
