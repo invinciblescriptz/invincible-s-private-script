@@ -39,7 +39,7 @@ end
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 local RockFarmFolder = main:AddFolder("Rock Farm")
-local BetterFarmingTab = window:AddTab("better farming")  -- fixed & correct
+local BetterFarmingTab = window:AddTab("better farming")
 
 Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
 Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
@@ -258,10 +258,6 @@ RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
                 pcall(function()
                     local durVal = LocalPlayer:FindFirstChild("Durability")
                     if durVal and durVal.Value >= selectedDur then
-                        -- Optional: TP near rock (uncomment if needed)
-                        -- local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        -- if hrp then hrp.CFrame = CFrame.new(-39, 6, 1886) end  -- Tiny Island example
-
                         for _, desc in pairs(workspace:FindFirstChild("machinesFolder") and workspace.machinesFolder:GetDescendants() or {}) do
                             if desc.Name == "neededDurability" and desc.Value == selectedDur then
                                 local rock = desc.Parent:FindFirstChild("Rock")
@@ -299,7 +295,7 @@ local function startStrengthAutomation()
                 local uniquePets = petsFolder:FindFirstChild("Unique")
                 if uniquePets then
                     for _, pet in pairs(uniquePets:GetChildren()) do
-                        if pet.Name == "Swift Samurai" then  -- ← CHANGE THIS TO YOUR BEST PET
+                        if pet.Name == "Swift Samurai" then  -- ← change to your best pet
                             local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
                             if rEvents and rEvents:FindFirstChild("equipPetEvent") then
                                 rEvents.equipPetEvent:FireServer("equipPet", pet)
@@ -310,7 +306,7 @@ local function startStrengthAutomation()
                     end
                 end
             end
-            equipPunch()  -- auto-equip punch every cycle
+            equipPunch()
             for i = 1, 30 do
                 if muscleEvent then muscleEvent:FireServer("rep") end
             end
@@ -419,6 +415,34 @@ rebirthTab:AddSwitch("Hide All Frames", function(state)
         end
     end)
     print("Hide Frames " .. (state and "ENABLED" or "DISABLED"))
+end)
+
+-- FAST REBIRTH SPAM (on rebirth tab)
+local fastRebirthRunning = false
+
+local function startRebirthAutomation()
+    while fastRebirthRunning do
+        pcall(function()
+            local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
+            if rEvents then
+                local rebirthRemote = rEvents:FindFirstChild("rebirthRemote")
+                if rebirthRemote then
+                    rebirthRemote:InvokeServer("rebirthRequest")
+                end
+            end
+        end)
+        task.wait(0.07)  -- fast but safe
+    end
+end
+
+rebirthTab:AddSwitch("Fast Rebirth Spam", function(state)
+    fastRebirthRunning = state
+    if state then
+        task.spawn(startRebirthAutomation)
+        print("Fast Rebirth Spam ENABLED")
+    else
+        print("Fast Rebirth Spam DISABLED")
+    end
 end)
 
 print("Invincibles Priv Script - Fully Fixed & Ready (2026)")
