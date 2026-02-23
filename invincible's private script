@@ -135,13 +135,18 @@ Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849,20,-6335)
 -- ================== KILL SYSTEM ==================
 local KillFolder = KILLER:AddFolder("Auto Kill")
 
--- Helper to check character
 local function checkCharacter()
     if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
     return LocalPlayer.Character
 end
 
--- Kill Player function
+local function gettool()
+    local tool = LocalPlayer.Backpack:FindFirstChild("Punch") or LocalPlayer.Character:FindFirstChild("Punch")
+    if tool then
+        LocalPlayer.Character.Humanoid:EquipTool(tool)
+    end
+end
+
 local function killPlayer(target)
     local char = checkCharacter()
     if not char or not char:FindFirstChild("LeftHand") then return end
