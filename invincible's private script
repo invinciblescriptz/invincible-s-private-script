@@ -1,4 +1,4 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library", true))()
 local window = library:AddWindow("Invincibles Priv Script", {
     main_color = Color3.fromRGB(0, 0, 0),
     min_size = Vector2.new(470, 470),
@@ -13,159 +13,393 @@ local UserInputService = game:GetService("UserInputService")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
--- Your existing feature setup (you may have buttons, teleport, kill, etc.)...
-
--- =========================
--- START OF REBIRTH & ROCK FARMING
--- =========================
-
--- Rebirth System
-local function getRebirths()
-    local stat = LocalPlayer:FindFirstChild("leaderstats")
-    if stat and stat:FindFirstChild("Rebirths") then
-        return stat.Rebirths.Value
-    end
-    return 0
+-- AUTO REPS FUNCTION
+local function startAutoRep(toolName, toggleVar)
+    task.spawn(function()
+        while _G[toggleVar] do
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then task.wait(1.5) return end
+                local tool = LocalPlayer.Backpack:FindFirstChild(toolName) or char:FindFirstChild(toolName)
+                if tool and tool.Parent ~= char then
+                    char.Humanoid:EquipTool(tool)
+                end
+                if muscleEvent then muscleEvent:FireServer("rep") end
+            end)
+            task.wait(0.025)
+        end
+        pcall(function()
+            local char = LocalPlayer.Character
+            if char then
+                local eq = char:FindFirstChild(toolName)
+                if eq then eq.Parent = LocalPlayer.Backpack end
+            end
+        end)
+    end)
 end
 
-local function invokeRebirth()
-    local success, err = pcall(function()
-        local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-        if rEvents then
-            local rebirthRemote = rEvents:FindFirstChild("rebirthRemote")
-            if rebirthRemote then
-                rebirthRemote:InvokeServer("rebirthRequest")
+local main = window:AddTab("Main")
+local Tools = main:AddFolder("Tools")
+local RockFarmFolder = main:AddFolder("Rock Farm")
+local BetterFarmingTab = window:AddTab("better farming")
+
+Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
+Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
+Tools:AddSwitch("Auto Handstands", function(state) _G.AutoHandstands = state if state then startAutoRep("Handstands", "AutoHandstands") end end)
+
+Tools:AddSwitch("Fast Punch", function(state)
+    _G.FastPunch = state
+    if state then
+        task.spawn(function()
+            while _G.FastPunch do
+                pcall(function()
+                    if muscleEvent then
+                        muscleEvent:FireServer("punch", "rightHand")
+                        muscleEvent:FireServer("punch", "leftHand")
+                    end
+                    local char = LocalPlayer.Character
+                    if char and char:FindFirstChild("Punch") then char.Punch:Activate() end
+                end)
+                task.wait(0.07)
+            end
+        end)
+    end
+end)
+
+Tools:AddButton("Anti Lag (Boost FPS)", function()
+    local Lighting = game:GetService("Lighting")
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 1
+    Lighting.ClockTime = 12
+    Lighting.FogEnd = 9999
+    Lighting.FogStart = 0
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or
+           v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
+            v.Enabled = false
+        end
+    end
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    print("Anti-Lag activated → check FPS (Shift+F5)")
+end)
+
+main:AddButton("Free AutoLift Gamepass", function()
+    pcall(function()
+        local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
+        if gpFolder then
+            local owned = LocalPlayer:FindFirstChild("ownedGamepasses") or Instance.new("Folder", LocalPlayer)
+            owned.Name = "ownedGamepasses"
+            for _, gp in pairs(gpFolder:GetChildren()) do
+                local val = Instance.new("IntValue")
+                val.Name = gp.Name
+                val.Value = gp.Value
+                val.Parent = owned
+            end
+            print("Gamepasses added (may require relog)")
+        else
+            print("gamepassIds not found in ReplicatedStorage")
+        end
+    end)
+end)
+
+-- TELEPORTS
+local function tpTo(pos)
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(pos) end
+end
+
+local Teleport = window:AddTab("Teleport")
+Teleport:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
+Teleport:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
+Teleport:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39, 6, 1886)) end)
+Teleport:AddButton("To Frozen Area", function() tpTo(Vector3.new(-2623, 6, -409)) end)
+Teleport:AddButton("To Mythical Area", function() tpTo(Vector3.new(2251, 6, 1073)) end)
+Teleport:AddButton("To Inferno Area", function() tpTo(Vector3.new(-6759, 6, -1285)) end)
+Teleport:AddButton("To Legend Area", function() tpTo(Vector3.new(4603, 990, -3898)) end)
+Teleport:AddButton("To Muscle King Area", function() tpTo(Vector3.new(-8626, 16, -5730)) end)
+Teleport:AddButton("To Jungle Area", function() tpTo(Vector3.new(-8642, 6, 2381)) end)
+Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836)) end)
+Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
+Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
+
+-- KILL TAB
+local KillTab = window:AddTab("Kill")
+local KillFolder = KillTab:AddFolder("Auto Kill")
+
+local function checkCharacter()
+    if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
+    return LocalPlayer.Character
+end
+
+local function killPlayer(target)
+    local char = checkCharacter()
+    if not char or not char:FindFirstChild("LeftHand") then return end
+    local tChar = target.Character
+    if tChar and tChar:FindFirstChild("HumanoidRootPart") and tChar:FindFirstChild("Humanoid") and tChar.Humanoid.Health > 0 then
+        firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 0)
+        firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 1)
+        local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
+        if punch and char:FindFirstChild("Humanoid") then char.Humanoid:EquipTool(punch) end
+        if muscleEvent then
+            muscleEvent:FireServer("punch", "leftHand")
+            muscleEvent:FireServer("punch", "rightHand")
+        end
+    end
+end
+
+KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
+    getgenv().killAura = state
+    if state then
+        task.spawn(function()
+            while getgenv().killAura do
+                pcall(function()
+                    for _, plr in Players:GetPlayers() do
+                        if plr ~= LocalPlayer and plr.Character then killPlayer(plr) end
+                    end
+                end)
+                task.wait(0.08)
+            end
+        end)
+    end
+end)
+
+local targetKillPlayer = nil
+local playerDropdown = KillFolder:AddDropdown("Select Target Player", {
+    Title = "Single Target Kill",
+    Values = {},
+    Callback = function(selected)
+        local name = selected:match("^([^|]+)") or selected
+        targetKillPlayer = name
+        print("Target set: " .. name)
+    end
+})
+
+KillFolder:AddSwitch("Auto Kill Selected", function(state)
+    getgenv().autoSingleKill = state
+    if state and targetKillPlayer then
+        task.spawn(function()
+            while getgenv().autoSingleKill do
+                pcall(function()
+                    local tgt = Players:FindFirstChild(targetKillPlayer)
+                    if tgt then killPlayer(tgt) end
+                end)
+                task.wait(0.08)
+            end
+        end)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        local list = {}
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                table.insert(list, plr.Name .. " | " .. plr.DisplayName)
             end
         end
-    end)
-    if not success then
-        print("Rebirth invoke failed:", err)
+        pcall(function()
+            if playerDropdown then
+                playerDropdown:SetValues(list)
+            end
+        end)
+        task.wait(5)
     end
-end
-
-local targetRebirth = 1
-local autoRebirthActive = false
-
-local function autoRebirthLoop()
-    while autoRebirthActive do
-        local current = getRebirths()
-        print("Rebirths: " .. current)
-        if current >= targetRebirth then
-            print("Target rebirth reached: " .. current)
-            autoRebirthActive = false
-            break
-        end
-        invokeRebirth()
-        wait(0.5)
-    end
-end
-
-local function toggleAutoRebirth(state)
-    autoRebirthActive = state
-    if state then
-        task.spawn(autoRebirthLoop)
-    end
-end
-
--- Rebirth UI
-local rebirthTab = window:AddTab("Rebirth")
-local toggleRebirth = rebirthTab:AddToggle("Auto Rebirth to Target", {
-    Default = false,
-    Callback = toggleAutoRebirth
-})
-local inputRebirth = rebirthTab:AddInput("TargetRebirth", {
-    Default = "1",
-    Placeholder = "Enter target rebirth",
-    Callback = function(val)
-        local num = tonumber(val)
-        if num then targetRebirth = num end
-    end
-})
-rebirthTab:AddButton("Rebirth Now", function()
-    invokeRebirth()
 end)
 
-local function updateRebirthStats()
-    local current = getRebirths()
-    local initial = 0
-    if game.Players.LocalPlayer:FindFirstChild("leaderstats") and game.Players.LocalPlayer.leaderstats:FindFirstChild("Rebirths") then
-        initial = game.Players.LocalPlayer.leaderstats.Rebirths.Value
+local RockSection = Tabs.AutoFarm:CreateSection("Rock Farm")
+
+local Section = Tabs.Rebirth:CreateSection("AutoRebirth")
+
+-- Initialize variables first
+local targetRebirthValue = 1
+local initialRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
+
+-- Stats Display
+local Paragraph = Tabs.Rebirth:CreateParagraph("RebirthStats", {
+    Title = "Rebirth Statistics",
+    Content = "Loading stats...",
+    TitleAlignment = "Left",
+    ContentAlignment = Enum.TextXAlignment.Left
+})
+
+-- Update function
+local function updateStats()
+    local currentRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
+    local gained = currentRebirths - initialRebirths
+    Paragraph:SetContent(string.format("Target Rebirth: %d\nCurrent Rebirths: %d\nRebirths Gained: %d", targetRebirthValue, currentRebirths, gained))
+end
+
+-- Connect stats update
+game.Players.LocalPlayer.leaderstats.Rebirths.Changed:Connect(updateStats)
+updateStats()
+
+-- Target input
+local targetInput = Tabs.Rebirth:CreateInput("TargetRebirth", {
+    Title = "Target Rebirth Amount",
+    Description = "Enter your target rebirth goal",
+    Default = "1",
+    Placeholder = "Enter amount...",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value)
+        targetRebirthValue = tonumber(Value) or 1
+        updateStats()
     end
-    local gained = current - initial
-    if Paragraph then
-        Paragraph:SetContent("Target: " .. targetRebirth .. "\nCurrent: " .. current .. "\nGained: " .. gained)
+})
+
+-- Auto Rebirth to target toggle
+local targetRebirthLoop = nil
+local targetToggle = Tabs.Rebirth:CreateToggle("AutoRebirthTarget", {
+    Title = "Auto Rebirth (Target)",
+    Description = "Automatically rebirth until target is reached",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            targetRebirthLoop = task.spawn(function()
+                print("Target Rebirth started - goal: " .. targetRebirthValue)
+                while task.wait(0.1) do
+                    if game.Players.LocalPlayer.leaderstats.Rebirths.Value >= targetRebirthValue then
+                        targetToggle:SetValue(false)
+                        break
+                    end
+                    pcall(function()
+                        local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
+                        if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+                            rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                        end
+                    end)
+                end
+            end)
+        else
+            if targetRebirthLoop then
+                task.cancel(targetRebirthLoop)
+                targetRebirthLoop = nil
+            end
+        end
+    end
+})
+
+-- Other features...
+-- For example: startStrengthAutomation() function
+function startStrengthAutomation()
+    while true do
+        pcall(function()
+            local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
+            if rEvents and rEvents:FindFirstChild("changeSpeedSizeRemote") then
+                rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 2)
+            end
+        end)
+        task.wait(0.05)
     end
 end
 
-local Paragraph = rebirthTab:AddParagraph("RebirthStats", {
-    Title = "Rebirth Stats",
-    Content = "Loading..."
-})
+local fastStrengthRunning = false
+BetterFarmingTab:AddSwitch("Fast Grind", function(state)
+    fastStrengthRunning = state
+    if state then
+        task.spawn(startStrengthAutomation)
+        print("Fast Strength ENABLED")
+    else
+        print("Fast Strength DISABLED")
+    end
+end)
 
-game:GetService("RunService").RenderStepped:Connect(updateRebirthStats)
+-- Misc
+local Misc = window:AddTab("Misc")
+Misc:AddSwitch("Infinite Jump", function(state)
+    getgenv().infJump = state
+end)
 
--- ROCK FARMING
-local rockNames = {
-    {name = "TinyIslandRock", title = "Tiny Island Rock"},
-    {name = "StarterIslandRock", title = "Starter Island Rock"},
-    {name = "LegendBeachRock", title = "Legend Beach Rock"},
-    {name = "FrostGymRock", title = "Frost Gym Rock"},
-    {name = "MythicalGymRock", title = "Mythical Gym Rock"},
+UserInputService.JumpRequest:Connect(function()
+    if getgenv().infJump and LocalPlayer.Character then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
+-- Rebirth & Auto Rebirth to Target
+local fastRebirthRunning = false
+local function startRebirthAutomation()
+    while fastRebirthRunning do
+        pcall(function()
+            local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
+            if rEvents then
+                local rebirthRemote = rEvents:FindFirstChild("rebirthRemote")
+                if rebirthRemote then
+                    rebirthRemote:InvokeServer("rebirthRequest")
+                end
+            end
+        end)
+        task.wait(0.07)
+    end
+end
+
+local targetRebirthValue = 1
+local targetRebirthRunning = false
+
+rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
+    targetRebirthRunning = state
+    if state then
+        task.spawn(function()
+            print("Target Rebirth started - goal: " .. targetRebirthValue)
+            while targetRebirthRunning do
+                pcall(function()
+                    local current = LocalPlayer.leaderstats.Rebirths.Value
+                    if current >= targetRebirthValue then
+                        targetRebirthRunning = false
+                        print("Target reached! Stopping rebirth. Current: " .. current)
+                        return
+                    end
+                    local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
+                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                    end
+                end)
+                task.wait(0.1)
+            end
+        end)
+    else
+        print("Target Rebirth stopped")
+    end
+end)
+
+-- Rock farm configs
+local rockConfigs = {
+    {
+        name = "TinyIslandRock",
+        title = "Farm Tiny Island Rock",
+        description = "Farm rocks at Tiny Island",
+        durability = 0
+    },
+    {
+        name = "StarterIslandRock",
+        title = "Farm Starter Island Rock",
+        description = "Farm rocks at Starter Island",
+        durability = 100
+    },
+    {
+        name = "LegendBeachRock",
+        title = "Farm Legend Beach Rock",
+        description = "Farm rocks at Legend Beach",
+        durability = 5000
+    },
+    {
+        name = "FrostGymRock",
+        title = "Farm Frost Gym Rock",
+        description = "Farm rocks at Frost Gym",
+        durability = 150000
+    },
+    {
+        name = "MythicalGymRock",
+        title = "Farm Mythical Gym Rock",
+        description = "Farm rocks at Mythical Gym",
+        durability = 400000
+    }
 }
 
-local farming = false
-
-local function farmRock(rockName)
-    local rock = workspace:FindFirstChild(rockName)
-    if not rock then
-        print("Rock not found:", rockName)
-        return
-    end
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        print("HumanoidRootPart not found")
-        return
-    end
-    -- Teleport near the rock
-    hrp.CFrame = rock.CFrame * CFrame.new(0, 0, -3)
-    wait(0.5)
-    local rockPart = rock:FindFirstChildWhichIsA("BasePart")
-    if not rockPart then
-        print("Rock part not found in:", rockName)
-        return
-    end
-    -- Fire touch
-    firetouchinterest(hrp, rockPart, 0)
-    firetouchinterest(hrp, rockPart, 1)
-    print("Farmed " .. rockName)
-end
-
-local function startFarming(rockName)
-    if _G.farming then return end
-    _G.farming = true
-    task.spawn(function()
-        while _G.farming do
-            farmRock(rockName)
-            wait(5)
-        end
+local RockSection = Tabs.AutoFarm:CreateSection("Rock Farm")
+-- Example: create buttons for each rock
+for _, config in ipairs(rockConfigs) do
+    RockSection:AddButton("Farm " .. config.title, function()
+        -- Implement your farming logic here
+        print("Started farming: " .. config.title)
     end)
-end
-
-local function stopFarming()
-    _G.farming = false
-end
-
--- Create a tab for rocks
-local rocksTab = window:AddTab("Rocks")
-for _, r in ipairs(rockNames) do
-    rocksTab:AddButton("Farm " .. r.title, function()
-        startFarming(r.name)
-    end)
-end
-rocksTab:AddButton("Stop Farming", function()
-    stopFarming()
-end)
-
------------------------------------------------------
--- END OF REBIRTH & ROCK FARMING
------------------------------------------------------
