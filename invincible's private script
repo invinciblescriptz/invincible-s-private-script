@@ -58,11 +58,15 @@ AddSwitch("Fast Punch", function(state)
                         muscleEvent:FireServer("punch", "rightHand")
                         muscleEvent:FireServer("punch", "leftHand")
                     end
-                    
+
                     -- Activate punch if character and Punch tool exist
-                    local char = LocalPlayer.Character
-                    if char and char:FindFirstChild("Punch") then
-                        char.Punch:Activate()
+                    local player = game.Players.LocalPlayer
+                    if player and player.Character then
+                        local char = player.Character
+                        local punchTool = char:FindFirstChild("Punch")
+                        if punchTool then
+                            punchTool:Activate()
+                        end
                     end
                 end)
                 task.wait(0.07)
@@ -158,4 +162,3 @@ local function equipTool(toolName)
             humanoid:EquipTool(tool)
         end
     end
-end
