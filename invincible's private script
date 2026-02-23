@@ -10,6 +10,7 @@ local LocalPlayer = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
@@ -24,10 +25,34 @@ local KILLER = window:AddTab("KILLER")
 local Tools = main:AddFolder("Tools")
 local RockFolder = main:AddFolder("Rock") -- moved rock farm buttons here
 
+-- ================== Helper Functions ==================
+local function gettool()
+    local tool = LocalPlayer.Backpack:FindFirstChild("Punch") or LocalPlayer.Character:FindFirstChild("Punch")
+    if tool then
+        LocalPlayer.Character.Humanoid:EquipTool(tool)
+    end
+end
+
+local function tpTo(pos)
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(pos) end
+end
+
 -- ================== Tools Buttons ==================
-Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
-Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
-Tools:AddSwitch("Auto Handstands", function(state) _G.AutoHandstands = state if state then startAutoRep("Handstands", "AutoHandstands") end end)
+Tools:AddSwitch("Auto Pushups", function(state)
+    _G.AutoPushups = state
+    if state then startAutoRep("Pushups", "AutoPushups") end
+end)
+
+Tools:AddSwitch("Auto Weight", function(state)
+    _G.AutoWeight = state
+    if state then startAutoRep("Weight", "AutoWeight") end
+end)
+
+Tools:AddSwitch("Auto Handstands", function(state)
+    _G.AutoHandstands = state
+    if state then startAutoRep("Handstands", "AutoHandstands") end
+end)
 
 Tools:AddSwitch("Fast Punch", function(state)
     _G.FastPunch = state
@@ -40,7 +65,9 @@ Tools:AddSwitch("Fast Punch", function(state)
                         muscleEvent:FireServer("punch", "leftHand")
                     end
                     local char = LocalPlayer.Character
-                    if char and char:FindFirstChild("Punch") then char.Punch:Activate() end
+                    if char and char:FindFirstChild("Punch") then
+                        char.Punch:Activate()
+                    end
                 end)
                 task.wait(0.07)
             end
@@ -106,6 +133,7 @@ Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -633
 
 -- ================== KILL SYSTEM ==================
 local KillFolder = KILLER:AddFolder("Auto Kill")
+
 local function checkCharacter()
     if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
     return LocalPlayer.Character
@@ -119,7 +147,9 @@ local function killPlayer(target)
         firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 0)
         firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 1)
         local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
-        if punch and char:FindFirstChild("Humanoid") then char.Humanoid:EquipTool(punch) end
+        if punch and char:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid:EquipTool(punch)
+        end
         if muscleEvent then
             muscleEvent:FireServer("punch", "leftHand")
             muscleEvent:FireServer("punch", "rightHand")
@@ -127,41 +157,56 @@ local function killPlayer(target)
     end
 end
 
-KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
-    getgenv().killAura = state
-    if state then
-        task.spawn(function()
-            while getgenv().killAura do
-                pcall(function()
-                    for _, plr in ipairs(Players:GetPlayers()) do
-                        if plr ~= LocalPlayer and plr.Character then killPlayer(plr) end
-                    end
-                end)
-                task.wait(0.08)
-            end
-        end)
+local killAura = false
+local killAuraThread = nil
+KILLER:AddSwitch("Kill All Players (Aura)", {
+    Title = "Kill All Players (Aura)",
+    Default = false,
+    Callback = function(state)
+        getgenv().killAura = state
+        if state then
+            killAuraThread = task.spawn(function()
+                while getgenv().killAura do
+                    pcall(function()
+                        for _, plr in ipairs(Players:GetPlayers()) do
+                            if plr ~= LocalPlayer and plr.Character then
+                                killPlayer(plr)
+                            end
+                        end
+                    end)
+                    task.wait(0.08)
+                end
+            end)
+        else
+            getgenv().killAura = false
+        end
     end
-end)
+})
 
-local targetPlayerName = nil
-local playerDropdown = KillFolder:AddDropdown("Target Player", {
+local targetPlayerName = ""
+local playerDropdown = KILLER:AddDropdown("Target Player", {
     Values = {},
     Callback = function(val) targetPlayerName = val end
 })
 
-local autoKillTarget = false
-KillFolder:AddSwitch("Auto Kill Selected", function(state)
-    autoKillTarget = state
-    if state and targetPlayerName then
-        task.spawn(function()
-            while autoKillTarget do
-                local target = Players:FindFirstChild(targetPlayerName)
-                if target then killPlayer(target) end
-                task.wait(0.08)
-            end
-        end)
+local autoKill = false
+local autoKillThread = nil
+KILLER:AddSwitch("Auto Kill Selected", {
+    Title = "Auto Kill Selected",
+    Default = false,
+    Callback = function(state)
+        autoKill = state
+        if state and targetPlayerName ~= "" then
+            autoKillThread = task.spawn(function()
+                while autoKill do
+                    local target = Players:FindFirstChild(targetPlayerName)
+                    if target then killPlayer(target) end
+                    task.wait(0.08)
+                end
+            end)
+        end
     end
-end)
+})
 
 -- update player list periodically
 task.spawn(function()
@@ -181,7 +226,6 @@ end)
 local initialRebirths = LocalPlayer:FindFirstChild("leaderstats") and LocalPlayer.leaderstats:FindFirstChild("Rebirths").Value or 0
 local targetRebirth = 1
 local autoRebirth = false
-
 local function getRebirths()
     local stat = LocalPlayer:FindFirstChild("leaderstats")
     if stat and stat:FindFirstChild("Rebirths") then
@@ -278,38 +322,40 @@ local function stopAutoFarm()
 end
 
 -- Add buttons inside the "Rock" folder under "Main"
-local RockSection = main:AddFolder("Rock")
 for _, r in ipairs(rockConfigs) do
-    RockSection:AddButton("Farm " .. r.title, function()
+    RockFolder:AddButton("Farm " .. r.title, function()
         startAutoFarm(r.name)
     end)
 end
-RockSection:AddButton("Stop Farming", function()
+RockFolder:AddButton("Stop Farming", function()
     stopAutoFarm()
 end)
 
-local MISC = main:AddFolder("MISC")
+-- ================== MISC ==================
+local miscFolder = main:AddFolder("MISC")
+local noclipEnabled = false
+local noclipConnection = nil
 
-local Toggle = Tabs.MISC:CreateToggle("NoClip", {
-    Title = "NoClip",
-    Description = "Be able to walk through anything",
-    Default = false,
-    Callback = function(Value)
-        local RunService = game:GetService("RunService")
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-        if Value then
-            getgenv().noclipConnection = RunService.Stepped:Connect(function()
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
+local function toggleNoClip(state)
+    if state then
+        getgenv().noclipConnection = RunService.Stepped:Connect(function()
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
                 end
-            end)
-        else
-            if getgenv().noclipConnection then
-                getgenv().noclipConnection:Disconnect()
             end
+        end)
+    else
+        if getgenv().noclipConnection then
+            getgenv().noclipConnection:Disconnect()
+            getgenv().noclipConnection = nil
         end
     end
+end
+
+local noClipToggle = miscFolder:AddToggle("NoClip", {
+    Title = "NoClip",
+    Description = "Walk through objects",
+    Default = false,
+    Callback = toggleNoClip
 })
