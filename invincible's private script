@@ -287,3 +287,29 @@ end
 RockSection:AddButton("Stop Farming", function()
     stopAutoFarm()
 end)
+
+local MISC = main:AddFolder("MISC")
+
+local Toggle = Tabs.Misc:CreateToggle("NoClip", {
+    Title = "NoClip",
+    Description = "Be able to walk through anything",
+    Default = false,
+    Callback = function(Value)
+        local RunService = game:GetService("RunService")
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        if Value then
+            getgenv().noclipConnection = RunService.Stepped:Connect(function()
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end)
+        else
+            if getgenv().noclipConnection then
+                getgenv().noclipConnection:Disconnect()
+            end
+        end
+    end
+})
