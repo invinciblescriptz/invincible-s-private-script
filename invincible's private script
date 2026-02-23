@@ -10,6 +10,7 @@ local LocalPlayer = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
@@ -181,6 +182,7 @@ end)
 local initialRebirths = LocalPlayer:FindFirstChild("leaderstats") and LocalPlayer.leaderstats:FindFirstChild("Rebirths").Value or 0
 local targetRebirth = 1
 local autoRebirth = false
+local fastRebirthRunning = false
 
 local function getRebirths()
     local stat = LocalPlayer:FindFirstChild("leaderstats")
@@ -201,29 +203,27 @@ local function invokeRebirth()
     if not success then print("Rebirth invoke failed:", err) end
 end
 
-local function autoRebirthLoop()
-    while autoRebirth do
-        local current = getRebirths()
-        if current >= targetRebirth then break end
+local function startRebirthAutomation()
+    while fastRebirthRunning do
         invokeRebirth()
-        wait(0.5)
+        wait(0.2)
     end
 end
 
-local rebirthTab = REBIRTH
-local toggleRebirth = rebirthTab:AddToggle("Auto Rebirth", {
-    Default = false,
-    Callback = function(val)
-        autoRebirth = val
-        if val then task.spawn(autoRebirthLoop) end
+-- ================== Add "Fast Rebirth" toggle under BETTER FARMING ==================
+local betterFarmingTab = window:GetTab("BETTER FARMING")
+betterFarmingTab:AddSwitch("Fast Rebirth", function(state)
+    fastRebirthRunning = state
+    if state then
+        task.spawn(function()
+            print("Fast Rebirth Spam ENABLED")
+            startRebirthAutomation()
+        end)
+    else
+        print("Fast Rebirth Spam DISABLED")
+        fastRebirthRunning = false
     end
-})
-local inputTargetRebirth = rebirthTab:AddInput("TargetRebirth", {
-    Default = "1",
-    Placeholder = "Enter target rebirth",
-    Callback = function(val) targetRebirth = tonumber(val) or 1 end
-})
-rebirthTab:AddButton("Rebirth Now", function() invokeRebirth() end)
+end)
 
 local function updateRebirthStats()
     local current = getRebirths()
@@ -237,53 +237,3 @@ local Paragraph = REBIRTH:AddParagraph("RebirthStats", {
     Content = "Loading..."
 })
 game:GetService("RunService").RenderStepped:Connect(updateRebirthStats)
-
--- ================== AUTO FARM ROCKS ==================
-local rockConfigs = {
-    {name = "TinyIslandRock", title = "Tiny Island Rock"},
-    {name = "StarterIslandRock", title = "Starter Island Rock"},
-    {name = "LegendBeachRock", title = "Legend Beach Rock"},
-    {name = "FrostGymRock", title = "Frost Gym Rock"},
-    {name = "MythicalGymRock", title = "Mythical Gym Rock"},
-}
-local autoFarming = false
-
-local function farmRock(rockName)
-    local rock = workspace:FindFirstChild(rockName)
-    if not rock then print("Rock not found: " .. rockName) return end
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then print("HumanoidRootPart not found") return end
-    hrp.CFrame = rock.CFrame * CFrame.new(0, 0, -3)
-    wait(0.5)
-    local rockPart = rock:FindFirstChildWhichIsA("BasePart")
-    if not rockPart then print("Rock part not found in " .. rockName) return end
-    firetouchinterest(hrp, rockPart, 0)
-    firetouchinterest(hrp, rockPart, 1)
-    print("Farmed " .. rockName)
-end
-
-local function startAutoFarm(rockName)
-    if autoFarming then return end
-    autoFarming = true
-    task.spawn(function()
-        while autoFarming do
-            farmRock(rockName)
-            wait(5)
-        end
-    end)
-end
-
-local function stopAutoFarm()
-    autoFarming = false
-end
-
--- Add buttons inside the "Rock" folder under "Main"
-local RockSection = main:AddFolder("Rock")
-for _, r in ipairs(rockConfigs) do
-    RockSection:AddButton("Farm " .. r.title, function()
-        startAutoFarm(r.name)
-    end)
-end
-RockSection:AddButton("Stop Farming", function()
-    stopAutoFarm()
-end)
