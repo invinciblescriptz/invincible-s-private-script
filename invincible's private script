@@ -39,7 +39,7 @@ end
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 local RockFarmFolder = main:AddFolder("Rock Farm")
-local BetterFarmingFolder = main:AddFolder("Better Farming")  -- fixed name, no spaces
+local BetterFarmingFolder = main:AddFolder("Better Farming")  -- Fixed name (no spaces)
 
 Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
 Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
@@ -291,7 +291,7 @@ local fastStrengthRunning = false
 local function startStrengthAutomation()
     while fastStrengthRunning do
         pcall(function()
-            -- Pet equip example (change to your pet name)
+            -- Pet equip example (change "Swift Samurai" to your pet name)
             local petsFolder = LocalPlayer:WaitForChild("petsFolder", 5)
             if petsFolder then
                 local uniquePets = petsFolder:FindFirstChild("Unique")
@@ -301,6 +301,8 @@ local function startStrengthAutomation()
                             local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
                             if rEvents and rEvents:FindFirstChild("equipPetEvent") then
                                 rEvents.equipPetEvent:FireServer("equipPet", pet)
+                            else
+                                warn("equipPetEvent not found - pet equip skipped")
                             end
                         end
                     end
@@ -311,7 +313,7 @@ local function startStrengthAutomation()
                 if muscleEvent then muscleEvent:FireServer("rep") end
             end
         end)
-        task.wait(0.05)  -- balanced for performance
+        task.wait(0.05)  -- balanced
     end
 end
 
@@ -412,5 +414,3 @@ rebirthTab:AddSwitch("Hide All Frames", function(state)
     end)
     print("Hide Frames " .. (state and "ENABLED" or "DISABLED"))
 end)
-
-print("Invincibles Priv Script - Fully Fixed & Ready (2026)")
