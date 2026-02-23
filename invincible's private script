@@ -123,8 +123,8 @@ Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
 -- KILL TAB (unchanged)
-local KillTab = window:AddTab("Kill")
-local KillFolder = KillTab:AddFolder("Auto Kill")
+local Killer = window:AddTab("Kill")
+local Killer = window:AddFolder("Auto Kill")
 
 local function checkCharacter()
     if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
@@ -147,7 +147,7 @@ local function killPlayer(target)
     end
 end
 
-KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
+Killer:AddSwitch("Kill All Players (Aura)", function(state)
     getgenv().killAura = state
     if state then
         task.spawn(function()
@@ -164,7 +164,7 @@ KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
 end)
 
 local targetKillPlayer = nil
-local playerDropdown = KillFolder:AddDropdown("Select Target Player", {
+local playerDropdown = Killer:AddDropdown("Select Target Player", {
     Title = "Single Target Kill",
     Values = {},
     Callback = function(selected)
@@ -174,7 +174,7 @@ local playerDropdown = KillFolder:AddDropdown("Select Target Player", {
     end
 })
 
-KillFolder:AddSwitch("Auto Kill Selected", function(state)
+Killer:AddSwitch("Auto Kill Selected", function(state)
     getgenv().autoSingleKill = state
     if state and targetKillPlayer then
         task.spawn(function()
@@ -495,45 +495,6 @@ Teleport:AddButton("To Jungle Area", function() tpTo(Vector3.new(-8642, 6, 2381)
 Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836)) end)
 Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
-
--- KILL TAB (unchanged)
-local Killer = window:AddTab("Kill")
-
-local function checkCharacter()
-    if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
-    return LocalPlayer.Character
-end
-
-local function killPlayer(target)
-    local char = checkCharacter()
-    if not char or not char:FindFirstChild("LeftHand") then return end
-    local tChar = target.Character
-    if tChar and tChar:FindFirstChild("HumanoidRootPart") and tChar:FindFirstChild("Humanoid") and tChar.Humanoid.Health > 0 then
-        firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 0)
-        firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 1)
-        local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
-        if punch and char:FindFirstChild("Humanoid") then char.Humanoid:EquipTool(punch) end
-        if muscleEvent then
-            muscleEvent:FireServer("punch", "leftHand")
-            muscleEvent:FireServer("punch", "rightHand")
-        end
-    end
-end
-
-Killer:AddSwitch("Auto Kill Selected", function(state)
-    getgenv().autoSingleKill = state
-    if state and targetKillPlayer then
-        task.spawn(function()
-            while getgenv().autoSingleKill do
-                pcall(function()
-                    local tgt = Players:FindFirstChild(targetKillPlayer)
-                    if tgt then killPlayer(tgt) end
-                end)
-                task.wait(0.08)
-            end
-        end)
-    end
-end)
 
 task.spawn(function()
     while true do
