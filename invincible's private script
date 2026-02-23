@@ -372,7 +372,7 @@ Tabs.Misc:CreateToggle("WalkOnWater", {
 	end
 })
 
-ocal targetRebirthValue = 1
+local targetRebirthValue = 1
 local initialRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
 
 local Paragraph = Tabs.Rebirth:CreateParagraph("RebirthStats", {
