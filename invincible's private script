@@ -290,7 +290,7 @@ end)
 
 local MISC = main:AddFolder("MISC")
 
-local Toggle = Tabs.Misc:CreateToggle("NoClip", {
+local Toggle = Tabs.MISC:CreateToggle("NoClip", {
     Title = "NoClip",
     Description = "Be able to walk through anything",
     Default = false,
