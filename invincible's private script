@@ -47,17 +47,15 @@ local function startAutoRep(toolName, toggleVar)
     end)
 end
 
--- Auto training
+-- Auto training switches
 Tools:AddSwitch("Auto Pushups", function(state)
     _G.AutoPushups = state
     if state then startAutoRep("Pushups", "AutoPushups") end
 end)
-
 Tools:AddSwitch("Auto Weight", function(state)
     _G.AutoWeight = state
     if state then startAutoRep("Weight", "AutoWeight") end
 end)
-
 Tools:AddSwitch("Auto Handstands", function(state)
     _G.AutoHandstands = state
     if state then startAutoRep("Handstands", "AutoHandstands") end
@@ -67,7 +65,6 @@ end)
 Tools:AddSwitch("Fast Punch", function(state)
     _G.FastPunch = state
     if state then
-        -- Cooldown setter loop
         task.spawn(function()
             while _G.FastPunch do
                 pcall(function()
@@ -79,7 +76,6 @@ Tools:AddSwitch("Fast Punch", function(state)
                 task.wait(0.25)
             end
         end)
-        -- Punch spam loop
         task.spawn(function()
             while _G.FastPunch do
                 pcall(function()
@@ -99,7 +95,7 @@ Tools:AddSwitch("Fast Punch", function(state)
     end
 end)
 
--- Anti-Lag button
+-- Anti-Lag
 Tools:AddButton("Anti Lag (Boost FPS)", function()
     local Lighting = game:GetService("Lighting")
     Lighting.GlobalShadows = false
@@ -117,31 +113,187 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     print("Anti-Lag activated → check FPS (Shift+F5)")
 end)
 
--- Rock farm helper function
+-- Rock farm helper
 local function startRockFarm(toggleVar, rockNameFilter, requiredDur)
+    print("Starting rock farm for dur >= " .. requiredDur .. " | Filter: " .. (rockNameFilter ~= "" and rockNameFilter or "Any") .. " | WARNING: Use at own risk!")
     task.spawn(function()
         while _G[toggleVar] do
             pcall(function()
-                local player = LocalPlayer
-                local char = player.Character
+                local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
                     task.wait(1)
                     return
                 end
-                if player:FindFirstChild("Durability") and player.Durability.Value >= requiredDur then
+                if LocalPlayer:FindFirstChild("Durability") and LocalPlayer.Durability.Value >= requiredDur then
                     for _, v in pairs(Workspace.machinesFolder:GetDescendants()) do
                         if v.Name == "neededDurability" and v.Value == requiredDur then
-                            local rockPart = v.Parent:FindFirstChild("Rock") or v.Parent -- fallback if named differently
+                            local rockPart = v.Parent:FindFirstChildWhichIsA("BasePart") or v.Parent -- improved fallback
                             if rockPart and rockPart:IsA("BasePart") then
-                                -- Filter by name if provided
-                                if rockNameFilter == "" or string.find(rockPart.Parent.Name, rockNameFilter) or string.find(rockPart.Name, rockNameFilter) then
+                                local parentName = rockPart.Parent.Name
+                                local partName = rockPart.Name
+                                if rockNameFilter == "" or string.find(parentName:lower(), rockNameFilter:lower()) or string.find(partName:lower(), rockNameFilter:lower()) then
                                     firetouchinterest(rockPart, char:FindFirstChild("RightHand"), 0)
+                                    task.wait(0.01)
                                     firetouchinterest(rockPart, char:FindFirstChild("RightHand"), 1)
                                     firetouchinterest(rockPart, char:FindFirstChild("LeftHand"), 0)
+                                    task.wait(0.01)
                                     firetouchinterest(rockPart, char:FindFirstChild("LeftHand"), 1)
                                 end
                             end
                         end
                     end
                 end
-                -- Equip & punch
+                gettool()  -- punch after touch attempt
+            end)
+            task.wait(0.15)  -- safer timing
+        end
+    end)
+end
+
+-- Improved gettool (equip only if needed)
+function gettool()
+    pcall(function()
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("Humanoid") then return end
+        local alreadyEquipped = char:FindFirstChild("Punch")
+        if not alreadyEquipped then
+            for _, v in pairs(LocalPlayer.Backpack:GetChildren()) do
+                if v.Name == "Punch" then
+                    char.Humanoid:EquipTool(v)
+                    break
+                end
+            end
+        end
+        local muscleEvent = LocalPlayer:FindFirstChild("muscleEvent")
+        if muscleEvent then
+            muscleEvent:FireServer("punch", "leftHand")
+            muscleEvent:FireServer("punch", "rightHand")
+        end
+    end)
+end
+
+-- Rock switches (enable one at a time recommended)
+Rocks:AddSwitch("Farm Tiny Island Rock (0 Dur)", function(state)
+    _G.FarmTiny = state
+    if state then startRockFarm("FarmTiny", "tiny", 0) end
+end)
+
+Rocks:AddSwitch("Farm Starter/Large Rock (100 Dur)", function(state)
+    _G.FarmStarter = state
+    if state then startRockFarm("FarmStarter", "starter", 100) end
+end)
+
+Rocks:AddSwitch("Farm Legend Beach/Golden (5k Dur)", function(state)
+    _G.FarmLegendBeach = state
+    if state then startRockFarm("FarmLegendBeach", "legend", 5000) end
+end)
+
+Rocks:AddSwitch("Farm Frost Gym Rock (150k Dur)", function(state)
+    _G.FarmFrost = state
+    if state then startRockFarm("FarmFrost", "frost", 150000) end
+end)
+
+Rocks:AddSwitch("Farm Mythical Gym Rock (400k Dur)", function(state)
+    _G.FarmMythical = state
+    if state then startRockFarm("FarmMythical", "mythical", 400000) end
+end)
+
+Rocks:AddSwitch("Farm Ancient Jungle Rock (10M Dur)", function(state)
+    _G.FarmAncientJungle = state
+    if state then startRockFarm("FarmAncientJungle", "ancient jungle", 10000000) end
+end)
+
+Rocks:AddSwitch("Farm Any 10M+ Rock (No Name Filter)", function(state)
+    _G.FarmAny10M = state
+    if state then startRockFarm("FarmAny10M", "", 10000000) end
+end)
+
+-- Teleport Tab (unchanged, but used Vector3 for clarity)
+local Teleport = window:AddTab("Teleport")
+local function tpTo(pos)
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(pos) end
+end
+
+Teleport:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(2, 8, 115)) end)
+Teleport:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
+Teleport:AddButton("To Tiny Area", function() tpTo(Vector3.new(-34, 7, 1903)) end)
+Teleport:AddButton("To Frozen Area", function() tpTo(Vector3.new(-2600.00244, 3.67686558, -403.884369)) end)
+Teleport:AddButton("To Mythical Area", function() tpTo(Vector3.new(2255, 7, 1071)) end)
+Teleport:AddButton("To Inferno Area", function() tpTo(Vector3.new(-6768, 7, -1287)) end)
+Teleport:AddButton("To Legend Area", function() tpTo(Vector3.new(4604, 991, -3887)) end)
+Teleport:AddButton("To Muscle King Area", function() tpTo(Vector3.new(-8646, 17, -5738)) end)
+Teleport:AddButton("To Jungle Area", function() tpTo(Vector3.new(-8659, 6, 2384)) end)
+Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836)) end)
+Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
+Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
+
+-- Kill Tab (unchanged - functional but risky)
+local KillTab = window:AddTab("Kill")
+local KillFolder = KillTab:AddFolder("Auto Kill")
+
+local function checkCharacter()
+    if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
+    return LocalPlayer.Character
+end
+
+local function killPlayer(targetPlayer)
+    local char = checkCharacter()
+    if not char or not char:FindFirstChild("LeftHand") then return end
+    if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and
+       targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health > 0 then
+        firetouchinterest(targetPlayer.Character.HumanoidRootPart, char.LeftHand, 0)
+        firetouchinterest(targetPlayer.Character.HumanoidRootPart, char.LeftHand, 1)
+        local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
+        if punch and char:FindFirstChild("Humanoid") then
+            char.Humanoid:EquipTool(punch)
+        end
+        local muscleEvent = LocalPlayer:FindFirstChild("muscleEvent")
+        if muscleEvent then
+            muscleEvent:FireServer("punch", "leftHand")
+            muscleEvent:FireServer("punch", "rightHand")
+        end
+    end
+end
+
+KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
+    getgenv().killAura = state
+    if state then
+        task.spawn(function()
+            while getgenv().killAura do
+                pcall(function()
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer and plr.Character then
+                            killPlayer(plr)
+                        end
+                    end
+                end)
+                task.wait(0.08)
+            end
+        end)
+    end
+end)
+
+-- Single target (dropdown + switch unchanged)
+local targetKillPlayer = nil
+local playerDropdown = KillFolder:AddDropdown("Select Target Player", {
+    Title = "Single Target Kill",
+    Values = {},
+    Callback = function(selected)
+        local name = selected:match("^([^|]+)") or selected
+        targetKillPlayer = name
+        print("Kill target set to: " .. name)
+    end
+})
+
+task.spawn(function()
+    while true do
+        local list = {}
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                table.insert(list, plr.Name .. " | " .. plr.DisplayName)
+            end
+        end
+        playerDropdown:SetValues(list)
+        task.wait(5)
+    end
