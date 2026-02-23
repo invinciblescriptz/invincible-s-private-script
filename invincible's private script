@@ -13,7 +13,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
--- AUTO REP
+-- AUTO REP (unchanged)
 local function startAutoRep(toolName, toggleVar)
     task.spawn(function()
         while _G[toggleVar] do
@@ -100,7 +100,7 @@ main:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- TELEPORTS
+-- TELEPORTS (unchanged)
 local Teleport = window:AddTab("Teleport")
 local function tpTo(pos)
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -120,7 +120,7 @@ Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836
 Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- KILL TAB
+-- KILL TAB (unchanged)
 local KillTab = window:AddTab("Kill")
 local KillFolder = KillTab:AddFolder("Auto Kill")
 
@@ -198,7 +198,7 @@ task.spawn(function()
     end
 end)
 
--- ROCK FARM
+-- ROCK FARM (unchanged)
 RockFarmFolder:AddSection("Rock Farm Controls")
 
 local rockOptions = {
@@ -284,7 +284,7 @@ RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
     end
 end)
 
--- BETTER FARMING - Fast Strength
+-- BETTER FARMING - Fast Strength (unchanged)
 local fastStrengthRunning = false
 
 local function startStrengthAutomation()
@@ -325,7 +325,7 @@ BetterFarmingTab:AddSwitch("Fast Strength Gain", function(state)
     end
 end)
 
--- MISC
+-- MISC (unchanged)
 local Misc = window:AddTab("Misc")
 Misc:AddSwitch("Infinite Jump", function(state)
     getgenv().infJump = state
@@ -337,7 +337,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- REBIRTH TAB
+-- REBIRTH TAB (with elerium-v2 compatible rebirth target)
 local rebirthTab = window:AddTab("rebirth")
 
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
@@ -417,7 +417,7 @@ rebirthTab:AddSwitch("Hide All Frames", function(state)
     print("Hide Frames " .. (state and "ENABLED" or "DISABLED"))
 end)
 
--- FAST REBIRTH SPAM (on rebirth tab)
+-- FAST REBIRTH SPAM (already good)
 local fastRebirthRunning = false
 
 local function startRebirthAutomation()
@@ -444,5 +444,39 @@ rebirthTab:AddSwitch("Fast Rebirth Spam", function(state)
         print("Fast Rebirth Spam DISABLED")
     end
 end)
+
+-- NEW TARGET REBIRTH (elerium-v2 compatible version)
+local targetRebirthValue = 1
+local targetRebirthRunning = false
+
+rebirthTab:AddSwitch("Auto Rebirth to Target", function(state)
+    targetRebirthRunning = state
+    if state then
+        task.spawn(function()
+            print("Target Rebirth started - goal: " .. targetRebirthValue)
+            while targetRebirthRunning do
+                pcall(function()
+                    local current = LocalPlayer.leaderstats.Rebirths.Value
+                    if current >= targetRebirthValue then
+                        targetRebirthRunning = false
+                        print("Target reached! Stopping rebirth. Current: " .. current)
+                        return
+                    end
+                    local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
+                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                    end
+                end)
+                task.wait(0.1)
+            end
+        end)
+    else
+        print("Target Rebirth stopped")
+    end
+end)
+
+-- Simple target input simulation (print to console since no input in elerium-v2)
+print("To set target rebirth amount, change 'targetRebirthValue = 1' line in script to your number, then re-execute.")
+-- Example: change to targetRebirthValue = 50 for goal of 50 rebirths
 
 print("Invincibles Priv Script - Fully Fixed & Ready (2026)")
