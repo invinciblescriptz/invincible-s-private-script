@@ -6,7 +6,29 @@ local window = library:AddWindow("Invincibles Priv Script", {
     can_resize = false,
 })
 
--- Create tabs
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+-- Ensure muscleEvent exists
+local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
+
+-- Placeholder for startStrengthAutomation
+local function startStrengthAutomation()
+    -- Example: auto-repeats strength training or similar
+    while _G.isStrengthAuto do
+        pcall(function()
+            -- Simulate pressing buttons, etc.
+            print("Auto Strength Running...")
+            -- Your automation logic here
+        end)
+        wait(1)
+    end
+end
+
+-- Create Tabs
 local mainTab = window:AddTab("Main")
 local farmingTab = window:AddTab("BETTER FARMING")
 local rebirthTab = window:AddTab("REBIRTH")
@@ -18,7 +40,6 @@ local teleportTab = window:AddTab("Teleport")
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local farmingFolder = farmingTab:AddFolder("Tools")
--- Add more folders as needed
 
 -- AUTO REPS
 local function startAutoRep(toolName, toggleVar)
@@ -54,24 +75,24 @@ local function startAutoRep(toolName, toggleVar)
     end)
 end
 
--- Example: Adding auto-rep toggles
-Tools:AddSwitch("Auto Pushups", function(state)
+-- Auto-rep toggle buttons
+toolsFolder:AddSwitch("Auto Pushups", function(state)
     _G.AutoPushups = state
     if state then startAutoRep("Pushups", "AutoPushups") end
 end)
 
-Tools:AddSwitch("Auto Weight", function(state)
+toolsFolder:AddSwitch("Auto Weight", function(state)
     _G.AutoWeight = state
     if state then startAutoRep("Weight", "AutoWeight") end
 end)
 
-Tools:AddSwitch("Auto Handstands", function(state)
+toolsFolder:AddSwitch("Auto Handstands", function(state)
     _G.AutoHandstands = state
     if state then startAutoRep("Handstands", "AutoHandstands") end
 end)
 
 -- Fast Punch toggle
-Tools:AddSwitch("Fast Punch", {
+toolsFolder:AddSwitch("Fast Punch", {
     Default = false,
     Callback = function(state)
         _G.FastPunch = state
@@ -88,7 +109,7 @@ Tools:AddSwitch("Fast Punch", {
                             char.Punch:Activate()
                         end
                     end)
-                    task.wait(0.07)
+                    wait(0.07)
                 end
             end)
         end
@@ -96,7 +117,7 @@ Tools:AddSwitch("Fast Punch", {
 })
 
 -- Anti Lag Button
-Tools:AddButton("Anti Lag (Boost FPS)", function()
+toolsFolder:AddButton("Anti Lag (Boost FPS)", function()
     local Lighting = game:GetService("Lighting")
     Lighting.GlobalShadows = false
     Lighting.Brightness = 1
@@ -113,8 +134,8 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     print("Anti-Lag activated → check FPS (Shift+F5)")
 end)
 
--- Auto-lift gamepass
-Tools:AddButton("Free AutoLift Gamepass", function()
+-- Auto Lift Gamepass button
+toolsFolder:AddButton("Free AutoLift Gamepass", function()
     pcall(function()
         local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
         if gpFolder then
@@ -139,32 +160,33 @@ local function tpTo(pos)
     if hrp then hrp.CFrame = CFrame.new(pos) end
 end
 
-local Teleport = window:AddTab("Teleport")
-Teleport:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
-Teleport:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
-Teleport:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39, 6, 1886)) end)
-Teleport:AddButton("To Frozen Area", function() tpTo(Vector3.new(-2623, 6, -409)) end)
-Teleport:AddButton("To Mythical Area", function() tpTo(Vector3.new(2251, 6, 1073)) end)
-Teleport:AddButton("To Inferno Area", function() tpTo(Vector3.new(-6759, 6, -1285)) end)
-Teleport:AddButton("To Legend Area", function() tpTo(Vector3.new(4603, 990, -3898)) end)
-Teleport:AddButton("To Muscle King Area", function() tpTo(Vector3.new(-8626, 16, -5730)) end)
-Teleport:AddButton("To Jungle Area", function() tpTo(Vector3.new(-8642, 6, 2381)) end)
-Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836)) end)
-Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
-Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
+local teleportTab = window:AddTab("Teleport")
+teleportTab:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
+teleportTab:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
+teleportTab:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39, 6, 1886)) end)
+teleportTab:AddButton("To Frozen Area", function() tpTo(Vector3.new(-2623, 6, -409)) end)
+teleportTab:AddButton("To Mythical Area", function() tpTo(Vector3.new(2251, 6, 1073)) end)
+teleportTab:AddButton("To Inferno Area", function() tpTo(Vector3.new(-6759, 6, -1285)) end)
+teleportTab:AddButton("To Legend Area", function() tpTo(Vector3.new(4603, 990, -3898)) end)
+teleportTab:AddButton("To Muscle King Area", function() tpTo(Vector3.new(-8626, 16, -5730)) end)
+teleportTab:AddButton("To Jungle Area", function() tpTo(Vector3.new(-8642, 6, 2381)) end)
+teleportTab:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836)) end)
+teleportTab:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
+teleportTab:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- Toggle for Fast Strength (ensure startStrengthAutomation is defined elsewhere)
-local strengthToggle = farmingTab:AddToggle("UltimateStrength", {
+-- Toggle for Ultimate Strength (make sure startStrengthAutomation exists)
+local farmingFolder = farmingTab:AddFolder("Tools")
+local toggleStrength = farmingFolder:AddToggle("UltimateStrength", {
     Default = false,
     Callback = function(val)
-        isRunning = val
+        _G.isStrengthAuto = val
         if val then
             task.spawn(startStrengthAutomation)
         end
     end
 })
 
--- Function to Equip Tool
+-- Function to equip tools
 local function equipTool(toolName)
     local character = LocalPlayer.Character
     local backpack = LocalPlayer.Backpack
