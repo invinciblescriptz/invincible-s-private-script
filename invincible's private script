@@ -530,6 +530,7 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 -- REBIRTH TAB (with elerium-v2 compatible rebirth target)
+
 local rebirthTab = window:AddTab("rebirth")
 
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
