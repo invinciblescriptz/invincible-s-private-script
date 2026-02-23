@@ -497,8 +497,7 @@ Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
 -- KILL TAB (unchanged)
-local KillTab = window:AddTab("Kill")
-local KillFolder = KillTab:AddFolder("Auto Kill")
+local Killer = window:AddTab("Kill")
 
 local function checkCharacter()
     if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
@@ -521,7 +520,7 @@ local function killPlayer(target)
     end
 end
 
-KillFolder:AddSwitch("Auto Kill Selected", function(state)
+Killer:AddSwitch("Auto Kill Selected", function(state)
     getgenv().autoSingleKill = state
     if state and targetKillPlayer then
         task.spawn(function()
@@ -576,9 +575,9 @@ end)
 
 -- REBIRTH TAB (with elerium-v2 compatible rebirth target)
 
-local rebirthTab = window:AddTab("rebirth")
+local Rebirth = window:AddTab("rebirth")
 
-rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
+Rebirth:AddSwitch("Auto Rebirth (Infinite)", function(state)
     getgenv().autoRebirth = state
     if state then
         task.spawn(function()
@@ -719,81 +718,3 @@ Tabs.Misc:CreateToggle("WalkOnWater", {
 		end
 	end
 })
-
-local Section = Tabs.Killer:CreateSection("Auto Kill")
-local Players = game:GetService("Players")
-
-local function checkCharacter()
-    if not game.Players.LocalPlayer.Character then
-        repeat
-            task.wait()
-        until game.Players.LocalPlayer.Character
-    end
-    return game.Players.LocalPlayer.Character
-end
-
-local function killPlayer(target)
-    local character = checkCharacter()
-    if character and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-        if character:FindFirstChild("LeftHand") then
-            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 0)
-            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 1)
-            gettool()
-        end
-    end
-end
-
-Tabs.Killer:AddToggle("Kill Player", {
-    Title = "Start Killing",
-    Default = false,
-    Callback = function(v)
-        getgenv().killallv2 = v
-        task.spawn(function()
-            while getgenv().killallv2 do
-                for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
-                    if player ~= game.Players.LocalPlayer then
-                        if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-                            killPlayer(player)
-                        end
-                    end
-                end
-                task.wait()
-            end
-        end)
-    end
-})
-
-local PlayerDropdown = Tabs.Killer:CreateDropdown("PlayerList", {
-	Title = "Kill Target",
-	Description = "Choose player to target",
-	Values = {},
-	Multi = false,
-	Default = nil,
-	Callback = function(Value)
-		local username = string.match(Value, "(.+) |")
-		targetPlayer = username
-		print("Target set to:", targetPlayer)
-	end
-})
-
-Killer:AddSwitch("fast punch", function (state)
-fast punch = state
-if state then
-print("hello)
-end
-end)
-
-Killer:AddSwitch("Auto Kill Selected", function(state)
-    getgenv().autoSingleKill = state
-    if state and targetKillPlayer then
-        task.spawn(function()
-            while getgenv().autoSingleKill do
-                pcall(function()
-                    local tgt = Players:FindFirstChild(targetKillPlayer)
-                    if tgt then killPlayer(tgt) end
-                end)
-                task.wait(0.08)
-            end
-        end)
-    end
-end)
