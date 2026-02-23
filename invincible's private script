@@ -39,7 +39,7 @@ end
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 local RockFarmFolder = main:AddFolder("Rock Farm")
-local BetterFarmingFolder = main:AddFolder("Better Farming")
+local BetterFarmingTab = window:AddTab("better farming")  -- fixed & correct
 
 Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
 Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
@@ -198,7 +198,7 @@ task.spawn(function()
     end
 end)
 
--- ROCK FARM (dropdown + single toggle)
+-- ROCK FARM
 RockFarmFolder:AddSection("Rock Farm Controls")
 
 local rockOptions = {
@@ -258,7 +258,7 @@ RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
                 pcall(function()
                     local durVal = LocalPlayer:FindFirstChild("Durability")
                     if durVal and durVal.Value >= selectedDur then
-                        -- Optional TP (uncomment if rocks are far)
+                        -- Optional: TP near rock (uncomment if needed)
                         -- local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                         -- if hrp then hrp.CFrame = CFrame.new(-39, 6, 1886) end  -- Tiny Island example
 
@@ -289,7 +289,6 @@ RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
 end)
 
 -- BETTER FARMING - Fast Strength
-local BetterFarmTab = window:AddTab("better farming")
 local fastStrengthRunning = false
 
 local function startStrengthAutomation()
@@ -300,7 +299,7 @@ local function startStrengthAutomation()
                 local uniquePets = petsFolder:FindFirstChild("Unique")
                 if uniquePets then
                     for _, pet in pairs(uniquePets:GetChildren()) do
-                        if pet.Name == "Swift Samurai" then  -- ← CHANGE TO YOUR BEST PET
+                        if pet.Name == "Swift Samurai" then  -- ← CHANGE THIS TO YOUR BEST PET
                             local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
                             if rEvents and rEvents:FindFirstChild("equipPetEvent") then
                                 rEvents.equipPetEvent:FireServer("equipPet", pet)
@@ -311,7 +310,7 @@ local function startStrengthAutomation()
                     end
                 end
             end
-            equipPunch()  -- added auto-equip punch in loop
+            equipPunch()  -- auto-equip punch every cycle
             for i = 1, 30 do
                 if muscleEvent then muscleEvent:FireServer("rep") end
             end
@@ -320,7 +319,7 @@ local function startStrengthAutomation()
     end
 end
 
-BetterFarmTab:AddSwitch("Fast Strength Gain", function(state)
+BetterFarmingTab:AddSwitch("Fast Strength Gain", function(state)
     fastStrengthRunning = state
     if state then
         task.spawn(startStrengthAutomation)
