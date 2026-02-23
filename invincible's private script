@@ -9,14 +9,15 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
-local Rocks = main:AddFolder("Rocks") -- unused, kept for compatibility
+local Rocks = main:AddFolder("Rocks") -- unused, kept
 
-local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8) -- safer wait
+local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
 
--- ==================== AUTO REP ====================
+-- AUTO REP (unchanged from your fixed version)
 local function startAutoRep(toolName, toggleVar)
     task.spawn(function()
         while _G[toggleVar] do
@@ -33,7 +34,6 @@ local function startAutoRep(toolName, toggleVar)
             end)
             task.wait(0.025)
         end
-        -- Unequip
         pcall(function()
             local char = LocalPlayer.Character
             if char then
@@ -48,7 +48,7 @@ Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state 
 Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
 Tools:AddSwitch("Auto Handstands", function(state) _G.AutoHandstands = state if state then startAutoRep("Handstands", "AutoHandstands") end end)
 
--- ==================== FAST PUNCH (fixed) ====================
+-- FAST PUNCH (unchanged)
 Tools:AddSwitch("Fast Punch", function(state)
     _G.FastPunch = state
     if state then
@@ -60,9 +60,7 @@ Tools:AddSwitch("Fast Punch", function(state)
                         muscleEvent:FireServer("punch", "leftHand")
                     end
                     local char = LocalPlayer.Character
-                    if char and char:FindFirstChild("Punch") then
-                        char.Punch:Activate()
-                    end
+                    if char and char:FindFirstChild("Punch") then char.Punch:Activate() end
                 end)
                 task.wait(0.07)
             end
@@ -70,7 +68,7 @@ Tools:AddSwitch("Fast Punch", function(state)
     end
 end)
 
--- ==================== ANTI-LAG ====================
+-- ANTI-LAG (unchanged)
 Tools:AddButton("Anti Lag (Boost FPS)", function()
     local Lighting = game:GetService("Lighting")
     Lighting.GlobalShadows = false
@@ -88,7 +86,7 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     print("Anti-Lag activated → check FPS (Shift+F5)")
 end)
 
--- ==================== TELEPORTS (updated coords 2026) ====================
+-- TELEPORTS (unchanged)
 local Teleport = window:AddTab("Teleport")
 local function tpTo(pos)
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -108,16 +106,18 @@ Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836
 Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- Free Gamepass (your added code, kept + fixed)
+-- Free Gamepass Button (unchanged)
 Teleport:AddButton("Free AutoLift Gamepass", function()
     pcall(function()
         local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
         if gpFolder then
+            local owned = LocalPlayer:FindFirstChild("ownedGamepasses") or Instance.new("Folder", LocalPlayer)
+            owned.Name = "ownedGamepasses"
             for _, gp in pairs(gpFolder:GetChildren()) do
                 local val = Instance.new("IntValue")
                 val.Name = gp.Name
                 val.Value = gp.Value
-                val.Parent = LocalPlayer:FindFirstChild("ownedGamepasses") or Instance.new("Folder", LocalPlayer); val.Parent.Name = "ownedGamepasses"
+                val.Parent = owned
             end
             print("Gamepasses added (may require relog)")
         else
@@ -126,7 +126,7 @@ Teleport:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- ==================== KILL TAB ====================
+-- KILL TAB (unchanged from previous fix)
 local KillTab = window:AddTab("Kill")
 local KillFolder = KillTab:AddFolder("Auto Kill")
 
@@ -204,34 +204,51 @@ task.spawn(function()
     end
 end)
 
--- ==================== BETTER FARMING TAB (new) ====================
+-- BETTER FARMING TAB (kept minimal)
 local BetterFarm = window:AddTab("better farming")
 
+-- MISC TAB (fixed Infinite Jump)
 local Misc = window:AddTab("Misc")
-
 Misc:AddSwitch("Infinite Jump", function(state)
-    if state then
-        LocalPlayer:GetMouse().KeyDown:Connect(function(key)
-            if key == " " and LocalPlayer.Character then
-                LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-            end
-        end)
+    getgenv().infJump = state
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if getgenv().infJump and LocalPlayer.Character then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
     end
 end)
 
-local rebirth = window:AddTab("rebirth")
+-- REBIRTH TAB (fixed syntax + improved logic)
+local rebirthTab = window:AddTab("rebirth")
 
-AddButton:rebirth("Auto Rebirth (example)", function()
-    -- Simple loop example; adjust threshold as needed
-    task.spawn(function()
-        while true do
-            pcall(function()
-                if LocalPlayer.leaderstats.Strength.Value >= 1000000 then -- change to your goal
-                    ReplicatedStorage:FindFirstChild("RebirthEvent"):FireServer() -- common rebirth remote; may need exact name
-                end
-            end)
-            task.wait(1)
-        end
-    end)
-    print("Auto Rebirth loop started (edit threshold/remote)")
-en
+rebirthTab:AddButton("Auto Rebirth (example)", function()
+    getgenv().autoRebirth = not getgenv().autoRebirth  -- toggle on button press (or add switch)
+    if getgenv().autoRebirth then
+        task.spawn(function()
+            while getgenv().autoRebirth do
+                pcall(function()
+                    local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+                    if leaderstats and leaderstats:FindFirstChild("Strength") then
+                        if leaderstats.Strength.Value >= 1000000 then  -- edit threshold
+                            -- Replace with ACTUAL remote name (inspect ReplicatedStorage)
+                            local rebirthRemote = ReplicatedStorage:FindFirstChild("Rebirth") or ReplicatedStorage:FindFirstChild("DoRebirth")  -- common variants
+                            if rebirthRemote and rebirthRemote:IsA("RemoteEvent") then
+                                rebirthRemote:FireServer()
+                                print("Rebirth fired!")
+                            else
+                                print("Rebirth remote not found - check ReplicatedStorage for 'Rebirth' or similar")
+                            end
+                        end
+                    end
+                end)
+                task.wait(1)  -- check every second
+            end
+        end)
+        print("Auto Rebirth started (threshold: 1M strength)")
+    else
+        print("Auto Rebirth stopped")
+    end
+end)
+
+print("Invincibles Priv Script - Fully Fixed & Updated (Feb 2026)")
