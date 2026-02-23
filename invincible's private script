@@ -408,7 +408,6 @@ local function equipTool(toolName)
             humanoid:EquipTool(tool)
         end
     end
-end
-
+end)
 
 local Stats = window:AddTab("Stats")
