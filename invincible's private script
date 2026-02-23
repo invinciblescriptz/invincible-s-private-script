@@ -281,16 +281,6 @@ BetterFarmingTab:AddSwitch("Fast Grind", function(state)
     end
 end)
 
-better farming:AddSwitch("Fast Rebirth", function(state)
-    fastRebirthRunning = state
-    if state then
-        task.spawn(startRebirthAutomation)
-        print("Fast Rebirth Spam ENABLED")
-    else
-        print("Fast Rebirth Spam DISABLED")
-    end
-end)
-
 -- MISC (unchanged)
 local Misc = window:AddTab("Misc")
 Misc:AddSwitch("Infinite Jump", function(state)
