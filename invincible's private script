@@ -337,7 +337,6 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- REBIRTH TAB (only one tab)
 local rebirthTab = window:AddTab("rebirth")
 
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
@@ -444,5 +443,3 @@ rebirthTab:AddSwitch("Fast Rebirth Spam", function(state)
         print("Fast Rebirth Spam DISABLED")
     end
 end)
-
-print("Invincibles Priv Script - Fully Fixed & Ready (2026)")
