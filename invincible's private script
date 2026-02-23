@@ -287,41 +287,23 @@ end)
 -- BETTER FARMING - Fast Strength (unchanged)
 local fastStrengthRunning = false
 
-local function startStrengthAutomation()
-    while fastStrengthRunning do
-        pcall(function()
-            local petsFolder = LocalPlayer:WaitForChild("petsFolder", 5)
-            if petsFolder then
-                local uniquePets = petsFolder:FindFirstChild("Unique")
-                if uniquePets then
-                    for _, pet in pairs(uniquePets:GetChildren()) do
-                        if pet.Name == "Swift Samurai" then  -- ← change to your best pet
-                            local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-                            if rEvents and rEvents:FindFirstChild("equipPetEvent") then
-                                rEvents.equipPetEvent:FireServer("equipPet", pet)
-                            else
-                                warn("equipPetEvent not found - skipping pet equip")
-                            end
-                        end
-                    end
-                end
-            end
-            equipPunch()
-            for i = 1, 30 do
-                if muscleEvent then muscleEvent:FireServer("rep") end
-            end
-        end)
-        task.wait(0.05)
-    end
-end
-
-BetterFarmingTab:AddSwitch("Fast Strength Gain", function(state)
+BetterFarmingTab:AddSwitch("Fast Grind", function(state)
     fastStrengthRunning = state
     if state then
         task.spawn(startStrengthAutomation)
         print("Fast Strength ENABLED")
     else
         print("Fast Strength DISABLED")
+    end
+end)
+
+rebirthTab:AddSwitch("Fast Rebirth", function(state)
+    fastRebirthRunning = state
+    if state then
+        task.spawn(startRebirthAutomation)
+        print("Fast Rebirth Spam ENABLED")
+    else
+        print("Fast Rebirth Spam DISABLED")
     end
 end)
 
@@ -434,16 +416,6 @@ local function startRebirthAutomation()
         task.wait(0.07)
     end
 end
-
-rebirthTab:AddSwitch("Fast Rebirth Spam", function(state)
-    fastRebirthRunning = state
-    if state then
-        task.spawn(startRebirthAutomation)
-        print("Fast Rebirth Spam ENABLED")
-    else
-        print("Fast Rebirth Spam DISABLED")
-    end
-end)
 
 -- NEW TARGET REBIRTH (elerium-v2 compatible version)
 local targetRebirthValue = 1
