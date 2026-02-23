@@ -136,8 +136,6 @@ local MainToggle = Tabs.BETTER FARMING:CreateToggle("UltimateStrength", {
     end
 })
 
-local Section = Tabs.KILLER:CreateSection("⏬Auto Kill Karma⏬")
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
