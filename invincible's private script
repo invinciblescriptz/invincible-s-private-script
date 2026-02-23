@@ -1,4 +1,4 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library", true))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
 local window = library:AddWindow("Invincibles Priv Script", {
     main_color = Color3.fromRGB(0, 0, 0),
     min_size = Vector2.new(470, 470),
@@ -13,7 +13,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
--- AUTO REPS (unchanged)
+-- AUTO REPS FUNCTION
 local function startAutoRep(toolName, toggleVar)
     task.spawn(function()
         while _G[toggleVar] do
@@ -21,9 +21,7 @@ local function startAutoRep(toolName, toggleVar)
                 local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then task.wait(1.5) return end
                 local tool = LocalPlayer.Backpack:FindFirstChild(toolName) or char:FindFirstChild(toolName)
-                if tool and tool.Parent ~= char then
-                    char.Humanoid:EquipTool(tool)
-                end
+                if tool and tool.Parent ~= char then char.Humanoid:EquipTool(tool) end
                 if muscleEvent then muscleEvent:FireServer("rep") end
             end)
             task.wait(0.025)
@@ -206,77 +204,99 @@ task.spawn(function()
     end
 end)
 
--- Auto Rebirth to target
+-- REBIRTH & Auto Rebirth
 local targetRebirthValue = 1
-local initialRebirths = game.Players.LocalPlayer.leaderstats.Rebirths and game.Players.LocalPlayer.leaderstats.Rebirths.Value or 0
+local initialRebirths = 0
+if game.Players.LocalPlayer:FindFirstChild("leaderstats") then
+    if game.Players.LocalPlayer.leaderstats:FindFirstChild("Rebirths") then
+        initialRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
+    end
+end
+
 local autoRebirthActive = false
 
-local function autoRebirthToTarget()
-    if autoRebirthActive then return end
-    autoRebirthActive = true
-    task.spawn(function()
-        print("Auto Rebirth to target started: " .. targetRebirthValue)
-        while autoRebirthActive do
-            local current = game.Players.LocalPlayer.leaderstats.Rebirths and game.Players.LocalPlayer.leaderstats.Rebirths.Value or 0
-            if current >= targetRebirthValue then
-                print("Reached target rebirth: " .. current)
-                autoRebirthActive = false
-                break
-            end
-            -- Invoke rebirth
-            local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
-            if rEvents and rEvents:FindFirstChild("rebirthRemote") then
-                rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-            end
-            task.wait(0.5)
+local function getRebirthCount()
+    local stat = LocalPlayer:FindFirstChild("leaderstats")
+    if stat and stat:FindFirstChild("Rebirths") then
+        return stat.Rebirths.Value
+    end
+    return 0
+end
+
+local function invokeRebirth()
+    local success, err = pcall(function()
+        local rEvents = ReplicatedStorage:WaitForChild("rEvents")
+        local rebirthRemote = rEvents:FindFirstChild("rebirthRemote")
+        if rebirthRemote then
+            rebirthRemote:InvokeServer("rebirthRequest")
         end
-        autoRebirthActive = false
     end)
+    if not success then
+        print("Failed to invoke rebirth remote:", err)
+    end
+end
+
+local function autoRebirthLoop()
+    while autoRebirthActive do
+        local current = getRebirthCount()
+        if current >= targetRebirthValue then
+            print("Target rebirth reached: " .. current)
+            autoRebirthActive = false
+            break
+        end
+        invokeRebirth()
+        wait(0.5)
+    end
 end
 
 local function toggleAutoRebirth(state)
+    autoRebirthActive = state
     if state then
-        -- Start auto rebirth
-        autoRebirthActive = false -- reset
-        autoRebirthToTarget()
-    else
-        -- stop auto rebirth
-        autoRebirthActive = false
+        task.spawn(autoRebirthLoop)
     end
 end
 
-local autoRebirthToggle = Tabs.Rebirth:CreateToggle("Auto Rebirth to Target", {
+local rebirthTab = window:AddTab("Rebirth")
+local toggleRebirth = rebirthTab:AddToggle("Auto Rebirth to Target", {
     Default = false,
     Callback = toggleAutoRebirth
 })
+local inputRebirthTarget = rebirthTab:AddInput("TargetRebirth", {
+    Default = "1",
+    Placeholder = "Enter target rebirth",
+    Callback = function(val)
+        local num = tonumber(val)
+        if num then targetRebirthValue = num end
+    end
+})
+rebirthTab:AddButton("Rebirth Now", function()
+    invokeRebirth()
+end)
 
--- update stats display
 local function updateRebirthStats()
-    local current = game.Players.LocalPlayer.leaderstats and game.Players.LocalPlayer.leaderstats.Rebirths and game.Players.LocalPlayer.leaderstats.Rebirths.Value or 0
+    local current = getRebirthCount()
     local gained = current - initialRebirths
     if Paragraph then
-        Paragraph:SetContent("Target Rebirth: " .. targetRebirthValue .. "\nCurrent Rebirths: " .. current .. "\nRebirths Gained: " .. gained)
+        Paragraph:SetContent("Target: " .. targetRebirthValue .. "\nCurrent: " .. current .. "\nGained: " .. gained)
     end
 end
 
-game.Players.LocalPlayer.leaderstats.Rebirths.Changed:Connect(updateRebirthStats)
-updateRebirthStats()
+local Paragraph = rebirthTab:AddParagraph("RebirthStats", {
+    Title = "Rebirth Stats",
+    Content = "Loading...",
+    TitleAlignment = "Left",
+    ContentAlignment = Enum.TextXAlignment.Left
+})
 
--- Button for manual rebirth
-Tabs.Rebirth:AddButton("Manual Rebirth", function()
-    local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
-    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
-        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-    end
-end)
+game:GetService("RunService").RenderStepped:Connect(updateRebirthStats)
 
--- Rock Names for farming
+-- ROCK NAMES for farming
 local rockNames = {
     {name = "TinyIslandRock", title = "Tiny Island Rock"},
     {name = "StarterIslandRock", title = "Starter Island Rock"},
     {name = "LegendBeachRock", title = "Legend Beach Rock"},
     {name = "FrostGymRock", title = "Frost Gym Rock"},
-    {name = "MythicalGymRock", title = "Mythical Gym Rock"}
+    {name = "MythicalGymRock", title = "Mythical Gym Rock"},
 }
 
 local function farmRock(rockName)
@@ -290,15 +310,13 @@ local function farmRock(rockName)
         print("HumanoidRootPart not found")
         return
     end
-    -- Teleport close to the rock
     hrp.CFrame = rock.CFrame * CFrame.new(0, 0, -3)
-    task.wait(0.5)
+    wait(0.5)
     local rockPart = rock:FindFirstChildWhichIsA("BasePart")
     if not rockPart then
         print("Rock part not found in: " .. rockName)
         return
     end
-    -- Touch the rock
     firetouchinterest(hrp, rockPart, 0)
     firetouchinterest(hrp, rockPart, 1)
     print("Farmed " .. rockName)
@@ -310,7 +328,7 @@ local function startFarming(rockName)
     task.spawn(function()
         while _G.farming do
             farmRock(rockName)
-            task.wait(5)
+            wait(5)
         end
     end)
 end
@@ -319,15 +337,15 @@ local function stopFarming()
     _G.farming = false
 end
 
--- Add buttons for each rock
+-- Create buttons for each rock
 for _, rock in ipairs(rockNames) do
     -- Button to farm each specific rock
-    RockSection:AddButton("Farm " .. rock.title, function()
+    RockFarmFolder:AddButton("Farm " .. rock.title, function()
         startFarming(rock.name)
     end)
 end
 
--- Button to stop farming
-RockSection:AddButton("Stop Farming", function()
+-- Add stop farming button
+RockFarmFolder:AddButton("Stop Farming", function()
     stopFarming()
 end)
