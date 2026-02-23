@@ -10,6 +10,7 @@ local LocalPlayer = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
@@ -22,7 +23,7 @@ local KILLER = window:AddTab("KILLER")
 
 -- Tools Folder
 local Tools = main:AddFolder("Tools")
-local Rock Farm = main:AddFolder("Rock Farm") -- moved rock farm buttons here
+local RockFolder = main:AddFolder("Rock") -- moved rock farm buttons here
 
 -- ================== Tools Buttons ==================
 Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
@@ -119,7 +120,7 @@ local function killPlayer(target)
         firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 0)
         firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 1)
         local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
-        if punch and char:FindFirstChild("Humanoid") then char.Humanoid:EquipTool(punch) end
+        if punch and char:FindFirstChild("Humanoid") then char.Humanoid:EquipTools(punch) end
         if muscleEvent then
             muscleEvent:FireServer("punch", "leftHand")
             muscleEvent:FireServer("punch", "rightHand")
@@ -127,41 +128,64 @@ local function killPlayer(target)
     end
 end
 
-KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
-    getgenv().killAura = state
-    if state then
-        task.spawn(function()
-            while getgenv().killAura do
-                pcall(function()
-                    for _, plr in ipairs(Players:GetPlayers()) do
-                        if plr ~= LocalPlayer and plr.Character then killPlayer(plr) end
+local function startKillAllAura()
+    getgenv().killAura = true
+    task.spawn(function()
+        while getgenv().killAura do
+            pcall(function()
+                for _, plr in ipairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character then
+                        killPlayer(plr)
                     end
-                end)
-                task.wait(0.08)
-            end
-        end)
-    end
-end)
+                end
+            end)
+            task.wait(0.08)
+        end
+    end)
+end
 
-local targetPlayerName = nil
-local playerDropdown = KillFolder:AddDropdown("Target Player", {
+local function stopKillAllAura()
+    getgenv().killAura = false
+end
+
+local function startAutoKillTarget()
+    getgenv().autoKillTarget = true
+    task.spawn(function()
+        while getgenv().autoKillTarget do
+            local target = Players:FindFirstChild(targetPlayerName)
+            if target then killPlayer(target) end
+            task.wait(0.08)
+        end
+    end)
+end
+
+local function stopAutoKillTarget()
+    getgenv().autoKillTarget = false
+end
+
+KILLER:AddSwitch("Kill All Players (Aura)", {
+    Default = false,
+    Callback = function(val)
+        if val then startKillAllAura() else stopKillAllAura() end
+    end
+})
+
+local targetPlayerName = ""
+local playerDropdown = KILLER:AddDropdown("Target Player", {
     Values = {},
     Callback = function(val) targetPlayerName = val end
 })
 
-local autoKillTarget = false
-KillFolder:AddSwitch("Auto Kill Selected", function(state)
-    autoKillTarget = state
-    if state and targetPlayerName then
-        task.spawn(function()
-            while autoKillTarget do
-                local target = Players:FindFirstChild(targetPlayerName)
-                if target then killPlayer(target) end
-                task.wait(0.08)
-            end
-        end)
+KILLER:AddSwitch("Auto Kill Selected", {
+    Default = false,
+    Callback = function(val)
+        if val and targetPlayerName ~= "" then
+            startAutoKillTarget()
+        else
+            stopAutoKillTarget()
+        end
     end
-end)
+})
 
 -- update player list periodically
 task.spawn(function()
@@ -180,7 +204,6 @@ end)
 -- ================== REBIRTH SYSTEM ==================
 local initialRebirths = LocalPlayer:FindFirstChild("leaderstats") and LocalPlayer.leaderstats:FindFirstChild("Rebirths").Value or 0
 local targetRebirth = 1
-local autoRebirth = false
 
 local function getRebirths()
     local stat = LocalPlayer:FindFirstChild("leaderstats")
@@ -201,8 +224,8 @@ local function invokeRebirth()
     if not success then print("Rebirth invoke failed:", err) end
 end
 
-local function autoRebirthLoop()
-    while autoRebirth do
+local function autoRebirth()
+    while true do
         local current = getRebirths()
         if current >= targetRebirth then break end
         invokeRebirth()
@@ -214,15 +237,18 @@ local rebirthTab = REBIRTH
 local toggleRebirth = rebirthTab:AddToggle("Auto Rebirth", {
     Default = false,
     Callback = function(val)
-        autoRebirth = val
-        if val then task.spawn(autoRebirthLoop) end
+        if val then
+            task.spawn(autoRebirth)
+        end
     end
 })
+
 local inputTargetRebirth = rebirthTab:AddInput("TargetRebirth", {
     Default = "1",
     Placeholder = "Enter target rebirth",
     Callback = function(val) targetRebirth = tonumber(val) or 1 end
 })
+
 rebirthTab:AddButton("Rebirth Now", function() invokeRebirth() end)
 
 local function updateRebirthStats()
@@ -246,6 +272,7 @@ local rockConfigs = {
     {name = "FrostGymRock", title = "Frost Gym Rock"},
     {name = "MythicalGymRock", title = "Mythical Gym Rock"},
 }
+
 local autoFarming = false
 
 local function farmRock(rockName)
@@ -277,8 +304,7 @@ local function stopAutoFarm()
     autoFarming = false
 end
 
--- Add buttons inside the "Rock" folder under "Main"
-local RockSection = main:AddFolder("Rock")
+local RockSection = main:AddFolder("Rock") -- create a folder in main for rock farming buttons
 for _, r in ipairs(rockConfigs) do
     RockSection:AddButton("Farm " .. r.title, function()
         startAutoFarm(r.name)
@@ -288,4 +314,57 @@ RockSection:AddButton("Stop Farming", function()
     stopAutoFarm()
 end)
 
-Rock Farm:AddSwitch ("Jungle Rock",  function(state) _G.Jungle Rock = state if state then startAutoFarm("Jungle Rock") end end)
+-- ================== Specific Rock Toggle: Jungle Rock ==================
+-- Assuming you want to add a toggle for Jungle Rock
+local function startAutoFarm(rockName)
+    if autoFarming then return end
+    autoFarming = true
+    task.spawn(function()
+        while autoFarming do
+            farmRock(rockName)
+            wait(5)
+        end
+    end)
+end
+
+local function stopAutoFarm()
+    autoFarming = false
+end
+
+-- Add a toggle for Jungle Rock
+local jungleRockToggle = main:AddFolder("Jungle Rock") -- create a folder for jungle rock toggle
+local jungleRockSwitch = jungleRockToggle:AddSwitch("Jungle Rock", function(state)
+    _G.JungleRock = state
+    if state then
+        startAutoFarm("JungleRock")
+    end
+end)
+
+-- ================== MISC ==================
+local miscFolder = main:AddFolder("MISC")
+local noclipEnabled = false
+local noclipConnection = nil
+
+local function toggleNoClip(state)
+    if state then
+        getgenv().noclipConnection = RunService.Stepped:Connect(function()
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end)
+    else
+        if getgenv().noclipConnection then
+            getgenv().noclipConnection:Disconnect()
+            getgenv().noclipConnection = nil
+        end
+    end
+end
+
+local noClipToggle = miscFolder:AddToggle("NoClip", {
+    Title = "NoClip",
+    Description = "Walk through objects",
+    Default = false,
+    Callback = toggleNoClip
+})
