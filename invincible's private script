@@ -256,8 +256,8 @@ local Toggle = Tabs.AutoFarm:CreateToggle("LegendBeachRock", {
 	Default = false,
 	Callback = function(Value)
 		selectrock = "Legend Beach Rock"
-		getgenv().autoFarm = Value
-		while getgenv().autoFarm do
+		getgenv().Main = Value
+		while getgenv().Main do
 			task.wait()
 			if game:GetService("Players").LocalPlayer.Durability.Value >= 5000 then
 				for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
