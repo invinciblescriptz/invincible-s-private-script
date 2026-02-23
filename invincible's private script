@@ -39,6 +39,7 @@ end
 local main = window:AddTab("Main")
 local Tools = main:AddFolder("Tools")
 local RockFarmFolder = main:AddFolder("Rock Farm")
+local BetterFarmingFolder = main:AddFolder("Better Farming")  -- Fixed name
 
 Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
 Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
@@ -99,7 +100,7 @@ main:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- TELEPORTS
+-- TELEPORTS (unchanged)
 local Teleport = window:AddTab("Teleport")
 local function tpTo(pos)
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -119,7 +120,7 @@ Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836
 Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- KILL TAB
+-- KILL TAB (unchanged)
 local KillTab = window:AddTab("Kill")
 local KillFolder = KillTab:AddFolder("Auto Kill")
 
@@ -257,10 +258,6 @@ RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
                 pcall(function()
                     local durVal = LocalPlayer:FindFirstChild("Durability")
                     if durVal and durVal.Value >= selectedDur then
-                        -- Optional: TP to rock area (uncomment if needed)
-                        -- local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        -- if hrp then hrp.CFrame = CFrame.new(-39, 6, 1886) end  -- example for Tiny
-
                         for _, desc in pairs(workspace.machinesFolder:GetDescendants()) do
                             if desc.Name == "neededDurability" and desc.Value == selectedDur then
                                 local rock = desc.Parent:FindFirstChild("Rock")
@@ -290,33 +287,38 @@ end)
 -- BETTER FARMING - Fast Strength
 local BetterFarm = window:AddTab("better farming")
 local fastStrengthRunning = false
-BetterFarm:AddSwitch("Fast Strength Gain", function(state)
-    fastStrengthRunning = state
-    if state then
-        task.spawn(function()
-            while fastStrengthRunning do
-                pcall(function()
-                    local petsFolder = LocalPlayer:WaitForChild("petsFolder", 5)
-                    if petsFolder then
-                        local uniquePets = petsFolder:FindFirstChild("Unique")
-                        if uniquePets then
-                            for _, pet in pairs(uniquePets:GetChildren()) do
-                                if pet.Name == "Swift Samurai" then  -- ← change to your best pet
-                                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-                                    if rEvents and rEvents:FindFirstChild("equipPetEvent") then
-                                        rEvents.equipPetEvent:FireServer("equipPet", pet)
-                                    end
-                                end
+
+local function startStrengthAutomation()
+    while fastStrengthRunning do
+        pcall(function()
+            -- Pet equip example (change "Swift Samurai" to your pet)
+            local petsFolder = LocalPlayer:WaitForChild("petsFolder", 5)
+            if petsFolder then
+                local uniquePets = petsFolder:FindFirstChild("Unique")
+                if uniquePets then
+                    for _, pet in pairs(uniquePets:GetChildren()) do
+                        if pet.Name == "Swift Samurai" then
+                            local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
+                            if rEvents and rEvents:FindFirstChild("equipPetEvent") then
+                                rEvents.equipPetEvent:FireServer("equipPet", pet)
                             end
                         end
                     end
-                    for i = 1, 30 do
-                        if muscleEvent then muscleEvent:FireServer("rep") end
-                    end
-                end)
-                task.wait(0.05)  -- slightly slower to reduce lag risk
+                end
+            end
+            -- Spam reps
+            for i = 1, 30 do
+                if muscleEvent then muscleEvent:FireServer("rep") end
             end
         end)
+        task.wait(0.05)  -- slightly increased to reduce lag/kick risk
+    end
+end
+
+BetterFarm:AddSwitch("Fast Strength Gain", function(state)
+    fastStrengthRunning = state
+    if state then
+        task.spawn(startStrengthAutomation)
         print("Fast Strength ENABLED")
     else
         print("Fast Strength DISABLED")
@@ -371,7 +373,7 @@ rebirthTab:AddSwitch("Auto Size 2", function(state)
                         rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 2)
                     end
                 end)
-                task.wait(0.05)  -- adjusted for stability
+                task.wait(0.05)
             end
         end)
         print("Auto Size 2 ENABLED")
@@ -410,5 +412,3 @@ rebirthTab:AddSwitch("Hide All Frames", function(state)
     end)
     print("Hide Frames " .. (state and "ENABLED" or "DISABLED"))
 end)
-
-print("Invincibles Priv Script - Fully Fixed & Ready (February 23, 2026)")
