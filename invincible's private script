@@ -13,7 +13,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
--- AUTO REP (unchanged)
+-- AUTO REP
 local function startAutoRep(toolName, toggleVar)
     task.spawn(function()
         while _G[toggleVar] do
@@ -100,7 +100,7 @@ main:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- TELEPORTS (unchanged)
+-- TELEPORTS
 local Teleport = window:AddTab("Teleport")
 local function tpTo(pos)
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -120,7 +120,7 @@ Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836
 Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- KILL TAB (unchanged)
+-- KILL TAB
 local KillTab = window:AddTab("Kill")
 local KillFolder = KillTab:AddFolder("Auto Kill")
 
@@ -198,7 +198,7 @@ task.spawn(function()
     end
 end)
 
--- ROCK FARM (optimized single toggle + dropdown)
+-- ROCK FARM (optimized dropdown + single toggle)
 RockFarmFolder:AddSection("Rock Farm Controls")
 
 local rockOptions = {
@@ -258,6 +258,10 @@ RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
                 pcall(function()
                     local durVal = LocalPlayer:FindFirstChild("Durability")
                     if durVal and durVal.Value >= selectedDur then
+                        -- Optional: teleport near rock zone (uncomment if needed)
+                        -- local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        -- if hrp then hrp.CFrame = CFrame.new(-39, 6, 1886) end  -- example for Tiny Island
+
                         for _, desc in pairs(workspace.machinesFolder:GetDescendants()) do
                             if desc.Name == "neededDurability" and desc.Value == selectedDur then
                                 local rock = desc.Parent:FindFirstChild("Rock")
@@ -296,7 +300,7 @@ local function startStrengthAutomation()
                 local uniquePets = petsFolder:FindFirstChild("Unique")
                 if uniquePets then
                     for _, pet in pairs(uniquePets:GetChildren()) do
-                        if pet.Name == "Swift Samurai" then  -- ← change to your best pet
+                        if pet.Name == "Swift Samurai" then  -- ← CHANGE TO YOUR BEST PET
                             local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
                             if rEvents and rEvents:FindFirstChild("equipPetEvent") then
                                 rEvents.equipPetEvent:FireServer("equipPet", pet)
