@@ -1,4 +1,4 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library", true))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
 local window = library:AddWindow("Invincibles Priv Script", {
     main_color = Color3.fromRGB(0, 0, 0),
     min_size = Vector2.new(470, 470),
@@ -13,15 +13,18 @@ local UserInputService = game:GetService("UserInputService")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
 
--- ================== Your existing setup ==================
+-- ================== Main UI Tabs ==================
 local main = window:AddTab("Main")
 local BetterFarmingTab = window:AddTab("BETTER FARMING")
-local Tools = main:AddFolder("Tools")
-local RockFolder = main:AddFolder("Rock") -- moved rock farm buttons here
 local REBIRTH = window:AddTab("REBIRTH")
 local MISC = window:AddTab("MISC")
 local KILLER = window:AddTab("KILLER")
 
+-- Tools Folder
+local Tools = main:AddFolder("Tools")
+local RockFolder = main:AddFolder("Rock") -- moved rock farm buttons here
+
+-- ================== Tools Buttons ==================
 Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
 Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
 Tools:AddSwitch("Auto Handstands", function(state) _G.AutoHandstands = state if state then startAutoRep("Handstands", "AutoHandstands") end end)
@@ -62,7 +65,7 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     print("Anti-Lag activated → check FPS (Shift+F5)")
 end)
 
-main:AddButton("Free AutoLift Gamepass", function()
+Tools:AddButton("Free AutoLift Gamepass", function()
     pcall(function()
         local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
         if gpFolder then
@@ -81,6 +84,7 @@ main:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
+-- ================== Teleport Buttons ==================
 local function tpTo(pos)
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if hrp then hrp.CFrame = CFrame.new(pos) end
@@ -100,12 +104,13 @@ Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836
 Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- ======================= KILL SYSTEM (unchanged) ========================
+-- ================== KILL SYSTEM ==================
 local KillFolder = KILLER:AddFolder("Auto Kill")
 local function checkCharacter()
     if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
     return LocalPlayer.Character
 end
+
 local function killPlayer(target)
     local char = checkCharacter()
     if not char or not char:FindFirstChild("LeftHand") then return end
@@ -121,6 +126,7 @@ local function killPlayer(target)
         end
     end
 end
+
 KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
     getgenv().killAura = state
     if state then
@@ -136,11 +142,13 @@ KillFolder:AddSwitch("Kill All Players (Aura)", function(state)
         end)
     end
 end)
+
 local targetPlayerName = nil
 local playerDropdown = KillFolder:AddDropdown("Target Player", {
     Values = {},
     Callback = function(val) targetPlayerName = val end
 })
+
 local autoKillTarget = false
 KillFolder:AddSwitch("Auto Kill Selected", function(state)
     autoKillTarget = state
@@ -154,7 +162,8 @@ KillFolder:AddSwitch("Auto Kill Selected", function(state)
         end)
     end
 end)
--- update player list
+
+-- update player list periodically
 task.spawn(function()
     while true do
         local list = {}
@@ -167,9 +176,8 @@ task.spawn(function()
         task.wait(5)
     end
 end)
--- ======================= END KILL SYSTEM ========================
 
--- ======================= REBIRTH SYSTEM ===========================
+-- ================== REBIRTH SYSTEM ==================
 local initialRebirths = LocalPlayer:FindFirstChild("leaderstats") and LocalPlayer.leaderstats:FindFirstChild("Rebirths").Value or 0
 local targetRebirth = 1
 local autoRebirth = false
@@ -230,7 +238,7 @@ local Paragraph = REBIRTH:AddParagraph("RebirthStats", {
 })
 game:GetService("RunService").RenderStepped:Connect(updateRebirthStats)
 
--- ======================= AUTO FARM ROCKS ===========================
+-- ================== AUTO FARM ROCKS ==================
 local rockConfigs = {
     {name = "TinyIslandRock", title = "Tiny Island Rock"},
     {name = "StarterIslandRock", title = "Starter Island Rock"},
@@ -238,8 +246,7 @@ local rockConfigs = {
     {name = "FrostGymRock", title = "Frost Gym Rock"},
     {name = "MythicalGymRock", title = "Mythical Gym Rock"},
 }
-local autoFarmActive = false
-local selectedRock = nil
+local autoFarming = false
 
 local function farmRock(rockName)
     local rock = workspace:FindFirstChild(rockName)
@@ -256,10 +263,10 @@ local function farmRock(rockName)
 end
 
 local function startAutoFarm(rockName)
-    if _G.autoFarming then return end
-    _G.autoFarming = true
+    if autoFarming then return end
+    autoFarming = true
     task.spawn(function()
-        while _G.autoFarming do
+        while autoFarming do
             farmRock(rockName)
             wait(5)
         end
@@ -267,10 +274,10 @@ local function startAutoFarm(rockName)
 end
 
 local function stopAutoFarm()
-    _G.autoFarming = false
+    autoFarming = false
 end
 
--- Add buttons inside "Rock" folder in "Main"
+-- Add buttons inside the "Rock" folder under "Main"
 local RockSection = main:AddFolder("Rock")
 for _, r in ipairs(rockConfigs) do
     RockSection:AddButton("Farm " .. r.title, function()
