@@ -35,11 +35,11 @@ local function startAutoRep(toolName, toggleVar)
         end)
     end)
 end
-local Rebirth = window:AddTab("Rebirth")
 local main = window:AddTab("Main")
+local BetterFarmingTab = window:AddTab("better farming")
 local Tools = main:AddFolder("Tools")
 local RockFarmFolder = main:AddFolder("Rock Farm")
-local BetterFarmingTab = window:AddTab("better farming")
+local rebirth = windowAddTab("Rebirth")
 
 Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
 Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
