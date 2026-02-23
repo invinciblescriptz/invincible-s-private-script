@@ -1,19 +1,26 @@
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library", true))()
+
 local window = library:AddWindow("Invincibles Priv Script", {
     main_color = Color3.fromRGB(0, 0, 0),
     min_size = Vector2.new(470, 470),
     can_resize = false,
 })
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
+-- Create tabs
+local mainTab = window:AddTab("Main")
+local farmingTab = window:AddTab("BETTER FARMING")
+local rebirthTab = window:AddTab("REBIRTH")
+local miscTab = window:AddTab("MISC")
+local killerTab = window:AddTab("KILLER")
+local teleportTab = window:AddTab("Teleport")
 
-local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
+-- Create folders inside tabs
+local toolsFolder = mainTab:AddFolder("Tools")
+local rockFarmFolder = mainTab:AddFolder("Rock Farm")
+local farmingFolder = farmingTab:AddFolder("Tools")
+-- Add more folders as needed
 
--- AUTO REP function
+-- AUTO REPS
 local function startAutoRep(toolName, toggleVar)
     task.spawn(function()
         while _G[toggleVar] do
@@ -36,7 +43,7 @@ local function startAutoRep(toolName, toggleVar)
             end)
             task.wait(0.025)
         end
-        -- Unequip tool after stopping
+        -- Un-equip tool after stopping
         pcall(function()
             local char = LocalPlayer.Character
             if char then
@@ -47,53 +54,46 @@ local function startAutoRep(toolName, toggleVar)
     end)
 end
 
-local main = window:AddTab("Main")
-local BetterFarmingTab = window:AddTab("BETTER FARMING")
-local Tools = main:AddFolder("Tools")
-local RockFarmFolder = main:AddFolder("Rock Farm")
-local REBIRTH = window:AddTab("REBIRTH")
-local MISC = window:AddTab("MISC")
-local KILLER = window:AddTab("KILLER")
-
--- Auto push-ups
+-- Example: Adding auto-rep toggles
 Tools:AddSwitch("Auto Pushups", function(state)
     _G.AutoPushups = state
     if state then startAutoRep("Pushups", "AutoPushups") end
 end)
 
--- Auto weight
 Tools:AddSwitch("Auto Weight", function(state)
     _G.AutoWeight = state
     if state then startAutoRep("Weight", "AutoWeight") end
 end)
 
--- Auto handstands
 Tools:AddSwitch("Auto Handstands", function(state)
     _G.AutoHandstands = state
     if state then startAutoRep("Handstands", "AutoHandstands") end
 end)
 
--- Fast Punch
-Tools:AddSwitch("Fast Punch", function(state)
-    _G.FastPunch = state
-    if state then
-        task.spawn(function()
-            while _G.FastPunch do
-                pcall(function()
-                    if muscleEvent then
-                        muscleEvent:FireServer("punch", "rightHand")
-                        muscleEvent:FireServer("punch", "leftHand")
-                    end
-                    local char = LocalPlayer.Character
-                    if char and char:FindFirstChild("Punch") then
-                        char.Punch:Activate()
-                    end
-                end)
-                task.wait(0.07)
-            end
-        end)
+-- Fast Punch toggle
+Tools:AddSwitch("Fast Punch", {
+    Default = false,
+    Callback = function(state)
+        _G.FastPunch = state
+        if state then
+            task.spawn(function()
+                while _G.FastPunch do
+                    pcall(function()
+                        if muscleEvent then
+                            muscleEvent:FireServer("punch", "rightHand")
+                            muscleEvent:FireServer("punch", "leftHand")
+                        end
+                        local char = LocalPlayer.Character
+                        if char and char:FindFirstChild("Punch") then
+                            char.Punch:Activate()
+                        end
+                    end)
+                    task.wait(0.07)
+                end
+            end)
+        end
     end
-end)
+})
 
 -- Anti Lag Button
 Tools:AddButton("Anti Lag (Boost FPS)", function()
@@ -104,8 +104,8 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     Lighting.FogEnd = 9999
     Lighting.FogStart = 0
     for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or
-           v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles")
+           or v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
             v.Enabled = false
         end
     end
@@ -113,7 +113,7 @@ Tools:AddButton("Anti Lag (Boost FPS)", function()
     print("Anti-Lag activated → check FPS (Shift+F5)")
 end)
 
--- Free auto-lift gamepass
+-- Auto-lift gamepass
 Tools:AddButton("Free AutoLift Gamepass", function()
     pcall(function()
         local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
@@ -134,12 +134,12 @@ Tools:AddButton("Free AutoLift Gamepass", function()
 end)
 
 -- Teleports
-local Teleport = window:AddTab("Teleport")
 local function tpTo(pos)
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if hrp then hrp.CFrame = CFrame.new(pos) end
 end
 
+local Teleport = window:AddTab("Teleport")
 Teleport:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
 Teleport:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
 Teleport:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39, 6, 1886)) end)
@@ -153,23 +153,18 @@ Teleport:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836
 Teleport:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
 Teleport:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- Toggle for Fast Strength Gain (make sure startStrengthAutomation is defined)
-local MainToggle = Tabs["BETTER FARMING"]:CreateToggle("UltimateStrength", {
-    Title = "Fast Grind",
+-- Toggle for Fast Strength (ensure startStrengthAutomation is defined elsewhere)
+local strengthToggle = farmingTab:AddToggle("UltimateStrength", {
     Default = false,
-    Callback = function(Value)
-        isRunning = Value
-        if Value then
+    Callback = function(val)
+        isRunning = val
+        if val then
             task.spawn(startStrengthAutomation)
         end
     end
 })
 
--- Re-initialize Players and LocalPlayer if needed
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- Equip Tool function
+-- Function to Equip Tool
 local function equipTool(toolName)
     local character = LocalPlayer.Character
     local backpack = LocalPlayer.Backpack
