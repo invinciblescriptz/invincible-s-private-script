@@ -131,8 +131,3 @@ rockFarmTab:AddToggle("Farm Tiny Island Rock", {
         if val then autoFarmRocks(0) end
     end
 })
-
--- Note: You can add more rock farming toggles similarly.
-
--- END OF SCRIPT
-print("Script loaded. Use the UI buttons to activate features.")
