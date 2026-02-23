@@ -432,40 +432,85 @@ local LP = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local RS = game:GetService("ReplicatedStorage")
 
+ocal rockOptions = {
+    {name = "Tiny Island Rock", dur = 0},
+    {name = "Starter Island Rock", dur = 100},
+    {name = "Legend Beach Rock", dur = 5000},
+    {name = "Frost Gym Rock", dur = 150000},
+    {name = "Mythical Gym Rock", dur = 400000},
+    {name = "Eternal Gym Rock", dur = 750000},
+    {name = "Legend Gym Rock", dur = 1000000},
+    {name = "Muscle King Gym Rock", dur = 5000000},
+    {name = "Ancient Jungle Rock", dur = 10000000},
+}
 
-local RockSection = Tabs.AutoFarm:CreateSection("Rock Farm")
-local selectrock = ""
-
-local rockConfigs = {RockFarmFolder
-    {
-        name = "TinyIslandRock",
-        title = "Farm Tiny Island Rock",
-        description = "Farm rocks at Tiny Island",
-        durability = 0
-    },
-    {
-        name = "StarterIslandRock",
-        title = "Farm Starter Island Rock",
-        description = "Farm rocks at Starter Island",
-        durability = 100
-    },
-    {
-        name = "LegendBeachRock",
-        title = "Farm Legend Beach Rock",
-        description = "Farm rocks at Legend Beach",
-        durability = 5000
-    },
-    {
-        name = "FrostGymRock",
-        title = "Farm Frost Gym Rock",
-        description = "Farm rocks at Frost Gym",
-        durability = 150000
-    },
-    {
-        name = "MythicalGymRock",
-        title = "Farm Mythical Gym Rock",
-        description = "Farm rocks at Mythical Gym",
-        durability = 400000
-    },
+local selectedDur = nil
+local rockDropdown = RockFarmFolder:AddDropdown("Select Rock", {
+    Title = "Select Rock to Farm",
+    Values = {"None"},
+    Callback = function(selected)
+        selectedDur = nil
+        for _, opt in ipairs(rockOptions) do
+            if opt.name == selected then
+                selectedDur = opt.dur
+                break
+            end
+        end
+        print("Selected rock durability: " .. (selectedDur or "None"))
     end
-end}
+})
+
+local rockValues = {"None"}
+for _, opt in ipairs(rockOptions) do table.insert(rockValues, opt.name) end
+rockDropdown:SetValues(rockValues)
+
+local function equipPunch()
+    pcall(function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+                if tool.Name == "Punch" then
+                    char.Humanoid:EquipTool(tool)
+                end
+            end
+            if muscleEvent then
+                muscleEvent:FireServer("punch", "leftHand")
+                muscleEvent:FireServer("punch", "rightHand")
+            end
+        end
+    end)
+end
+
+RockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
+    getgenv().autoRockFarm = state
+    if state and selectedDur then
+        task.spawn(function()
+            while getgenv().autoRockFarm do
+                pcall(function()
+                    local durVal = LocalPlayer:FindFirstChild("Durability")
+                    if durVal and durVal.Value >= selectedDur then
+                        for _, desc in pairs(workspace:FindFirstChild("machinesFolder") and workspace.machinesFolder:GetDescendants() or {}) do
+                            if desc.Name == "neededDurability" and desc.Value == selectedDur then
+                                local rock = desc.Parent:FindFirstChild("Rock")
+                                if rock then
+                                    local char = LocalPlayer.Character
+                                    if char and char:FindFirstChild("RightHand") and char:FindFirstChild("LeftHand") then
+                                        firetouchinterest(rock, char.RightHand, 0)
+                                        firetouchinterest(rock, char.RightHand, 1)
+                                        firetouchinterest(rock, char.LeftHand, 0)
+                                        firetouchinterest(rock, char.LeftHand, 1)
+                                        equipPunch()
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.15)
+            end
+        end)
+        print("Rock farm started for durability >= " .. selectedDur)
+    else
+        print("Rock farm stopped or no rock selected")
+    end
+end)
