@@ -322,7 +322,7 @@ rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
     end
 end)
 
-rebirthTab:AddSwitch("Auto Size 2", function(state)
+RebirthTab:AddSwitch("Auto Size 2", function(state)
     if state then
         getgenv().autoSizeLoop = task.spawn(function()
             while true do
@@ -344,7 +344,7 @@ rebirthTab:AddSwitch("Auto Size 2", function(state)
     end
 end)
 
-rebirthTab:AddSwitch("Auto Teleport to Muscle King", function(state)
+RebirthTab:AddSwitch("Auto Teleport to Muscle King", function(state)
     if state then
         getgenv().kingTeleportLoop = task.spawn(function()
             while true do
@@ -362,7 +362,7 @@ rebirthTab:AddSwitch("Auto Teleport to Muscle King", function(state)
     end
 end)
 
-rebirthTab:AddSwitch("Hide All Frames", function(state)
+RebirthTab:AddSwitch("Hide All Frames", function(state)
     pcall(function()
         for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
             if obj:IsA("Frame") or obj.Name:match("Frame$") then obj.Visible = not state end
