@@ -1,373 +1,200 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
-local window = library:AddWindow("Invincibles Priv Script", {
-    main_color = Color3.fromRGB(50, 50, 50), -- dark grey
-    min_size   = Vector2.new(470, 470),
+-- Invincibles Priv Script – fixed & cleaned for Elerium v2 (Feb 2026)
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library", true))()
+
+local window = library:AddWindow("Invincibles Priv", {
+    main_color = Color3.fromRGB(50, 50, 50),
+    min_size = Vector2.new(470, 470),
     can_resize = false,
 })
 
 -- Services
 local Players           = game:GetService("Players")
-local LocalPlayer       = Players.LocalPlayer
+local RunService        = game:GetService("RunService")
+local UserInputService  = game:GetService("UserInputService")
 local Workspace         = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService  = game:GetService("UserInputService")
-local RunService        = game:GetService("RunService")
 
-local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
+local lp = Players.LocalPlayer
+local muscleEvent = lp:WaitForChild("muscleEvent", 10)
 
--- =============================================================
--- State variables (using locals + getters for safety)
--- =============================================================
+-- State
 local states = {
-    AutoPushups     = false,
-    AutoWeight      = false,
-    AutoHandstands  = false,
-    FastPunch       = false,
-    InfiniteJump    = false,
-    AutoRebirth     = false,
-    AutoRebirthTarget = false,
-    KillAura        = false,
+    AutoPushups      = false,
+    AutoWeight       = false,
+    AutoHandstands   = false,
+    FastPunch        = false,
+    FastStrength     = false,
+    InfiniteJump     = false,
+    KillAura         = false,
     AutoKillSelected = false,
-    FastStrength    = false,
+    AutoRebirth      = false,
+    AutoRebirthTarget= false,
+    AutoSize2        = false,
+    AutoTPKing       = false,
+    HidePets         = false,
 }
 
-local targetRebirths = 1
-local selectedTargetPlayer = nil
+local connections   = {}
+local targetRebirth = 1
+local selectedTarget = nil
 
--- Rock farm state
-getgenv().rockFarmActive         = false
-getgenv().selectedRockDurability = 0
+getgenv().rockFarmActive = false
+getgenv().selectedRockDur = 0
 
 -- =============================================================
--- Auto Rep (now uses state table)
+-- Helpers
 -- =============================================================
-local function startAutoRep(toolName, stateKey)
+local function safeEquip(toolName)
     task.spawn(function()
-        while states[stateKey] do
-            pcall(function()
-                local char = LocalPlayer.Character
-                if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
-                    task.wait(1.5) return
-                end
-                local tool = LocalPlayer.Backpack:FindFirstChild(toolName) or char:FindFirstChild(toolName)
-                if tool and tool.Parent ~= char then
-                    char.Humanoid:EquipTool(tool)
-                end
-                if muscleEvent then muscleEvent:FireServer("rep") end
-            end)
-            task.wait(0.025)
+        local char = lp.Character
+        if not char or not char:FindFirstChild("Humanoid") then return end
+        local tool = lp.Backpack:FindFirstChild(toolName) or char:FindFirstChild(toolName)
+        if tool and tool.Parent ~= char then
+            char.Humanoid:EquipTool(tool)
         end
-        pcall(function()
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild(toolName) then
-                char[toolName].Parent = LocalPlayer.Backpack
-            end
-        end)
     end)
 end
 
--- =============================================================
--- Fast Farm
--- =============================================================
-
--- Function to start fast strength gain
-local function startStrengthAutomation()
-    while isRunning do
-        -- Equip the desired pet for strength gain
-        equipPet("Swift Samurai") -- Change this to the pet you want to use for strength gain
-
-        -- Grind strength continuously
-        while isRunning do
-            -- Corrected loop to use proper syntax
-            for i = 1, 30 do
-                LocalPlayer.muscleEvent:FireServer("rep")
-            end
-            task.wait()
-        end
-    end
-end
-
--- Toggle for Fast Strength Gain
-local MainToggle = Tabs.Fast Farming:CreateToggle("UltimateStrength", {
-    Title = "Fast Strength Gain",
-    Default = false,
-    Callback = function(Value)
-        isRunning = Value
-        if Value then
-            task.spawn(startStrengthAutomation) -- Start the automation when toggled on
-        end
-    end
-})
-
-local toggle = Tabs.Fast Farming:AddToggle("HidePetsToggle", {
-    Title = "Hide Pets",
-    Description = "Toggle to hide or show pets",
-    Default = false,
-    Callback = function(state)
-        if state then
-            game:GetService("ReplicatedStorage").rEvents.showPetsEvent:FireServer("hidePets")
-        else
-            game:GetService("ReplicatedStorage").rEvents.showPetsEvent:FireServer("showPets")
-        end
-    end
-})
-
--- =============================================================
--- Tabs & Folders
--- =============================================================
-local mainTab     = window:AddTab("Main")
-local farmingTab  = window:AddTab("Fast Farming")
-local rebirthTab  = window:AddTab("Rebirth")
-local teleportTab = window:AddTab("Teleport")
-local killTab     = window:AddTab("Kill")
-local miscTab     = window:AddTab("Misc")
-
-local toolsFolder    = mainTab:AddFolder("Tools")
-local rockFarmFolder = mainTab:AddFolder("Rock Farm")
-local killFolder     = killTab:AddFolder("Auto Kill")
-
--- =============================================================
--- Main → Tools
--- =============================================================
-toolsFolder:AddSwitch("Auto Pushups", function(s)
-    states.AutoPushups = s
-    if s then startAutoRep("Pushups", "AutoPushups") end
-end)
-
-toolsFolder:AddSwitch("Auto Weight", function(s)
-    states.AutoWeight = s
-    if s then startAutoRep("Weight", "AutoWeight") end
-end)
-
-toolsFolder:AddSwitch("Auto Handstands", function(s)
-    states.AutoHandstands = s
-    if s then startAutoRep("Handstands", "AutoHandstands") end
-end)
-
-toolsFolder:AddSwitch("Auto Punch (Fast)", function(state)
-    states.FastPunch = state
-    if state then
-        task.spawn(function()
-            while states.FastPunch do
-                pcall(function()
-                    if muscleEvent then
-                        muscleEvent:FireServer("punch", "rightHand")
-                        muscleEvent:FireServer("punch", "leftHand")
-                    end
-                    local char = LocalPlayer.Character
-                    if char then
-                        local punch = char:FindFirstChild("Punch") or LocalPlayer.Backpack:FindFirstChild("Punch")
-                        if punch and punch.Parent ~= char then
-                            char.Humanoid:EquipTool(punch)
-                        end
-                        if punch and punch.Parent == char then
-                            local atk = punch:FindFirstChild("attackTime")
-                            if atk and atk:IsA("NumberValue") then atk.Value = 0.01 end
-                            punch:Activate()
-                        end
-                    end
-                end)
-                task.wait(0.035)
-            end
-        end)
-    end
-end)
-
-toolsFolder:AddButton("Anti Lag (Boost FPS)", function()
-    local Lighting = game:GetService("Lighting")
-    Lighting.GlobalShadows = false
-    Lighting.Brightness = 1
-    Lighting.ClockTime = 12
-    Lighting.FogEnd = 9999
-    Lighting.FogStart = 0
-    for _, v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or
-           v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
-            v.Enabled = false
-        end
-    end
-    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    print("Anti-Lag activated → check FPS (Shift+F5)")
-end)
-
-toolsFolder:AddButton("Free AutoLift Gamepass", function()
-    pcall(function()
-        local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
-        if gpFolder then
-            local owned = LocalPlayer:FindFirstChild("ownedGamepasses") or Instance.new("Folder")
-            owned.Name = "ownedGamepasses"
-            owned.Parent = LocalPlayer
-            for _, gp in pairs(gpFolder:GetChildren()) do
-                local val = Instance.new("IntValue")
-                val.Name = gp.Name
-                val.Value = gp.Value
-                val.Parent = owned
-            end
-            print("Gamepasses spoofed (may require relog)")
-        else
-            print("gamepassIds not found")
-        end
-    end)
-end)
-
--- =============================================================
--- Teleport Tab
--- =============================================================
 local function tpTo(pos)
-    pcall(function()
-        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then hrp.CFrame = CFrame.new(pos) end
+    local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3.5, 0)) end
+end
+
+-- =============================================================
+-- Auto rep
+-- =============================================================
+local function startAutoRep(toolName, key)
+    task.spawn(function()
+        while states[key] do
+            pcall(function()
+                local char = lp.Character
+                if char and char.Humanoid and char.Humanoid.Health > 0 then
+                    safeEquip(toolName)
+                    if muscleEvent then muscleEvent:FireServer("rep") end
+                end
+            end)
+            task.wait(0.085 + math.random()/90)
+        end
     end)
 end
 
-teleportTab:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
-teleportTab:AddButton("To Secret Area",       function() tpTo(Vector3.new(1947, 2, 6191)) end)
-teleportTab:AddButton("To Tiny Area",         function() tpTo(Vector3.new(-39, 6, 1886)) end)
-teleportTab:AddButton("To Frozen Area",       function() tpTo(Vector3.new(-2623, 6, -409)) end)
-teleportTab:AddButton("To Mythical Area",     function() tpTo(Vector3.new(2251, 6, 1073)) end)
-teleportTab:AddButton("To Inferno Area",      function() tpTo(Vector3.new(-6759, 6, -1285)) end)
-teleportTab:AddButton("To Legend Area",       function() tpTo(Vector3.new(4603, 990, -3898)) end)
-teleportTab:AddButton("To Muscle King Area",  function() tpTo(Vector3.new(-8626, 16, -5730)) end)
-teleportTab:AddButton("To Jungle Area",       function() tpTo(Vector3.new(-8642, 6, 2381)) end)
-teleportTab:AddButton("To Lava Brawl",        function() tpTo(Vector3.new(4471, 119, -8836)) end)
-teleportTab:AddButton("To Desert Brawl",      function() tpTo(Vector3.new(960, 17, -7398)) end)
-teleportTab:AddButton("To Beach Brawl",       function() tpTo(Vector3.new(-1849, 20, -6335)) end)
+-- =============================================================
+-- Fast Strength / Fast Punch
+-- =============================================================
+local function toggleFastStrength(enabled)
+    states.FastStrength = enabled
+    if connections.FastStr then connections.FastStr:Disconnect() connections.FastStr = nil end
+    if enabled then
+        connections.FastStr = RunService.Heartbeat:Connect(function()
+            pcall(function()
+                if muscleEvent then
+                    muscleEvent:FireServer("rep")
+                    muscleEvent:FireServer("punch", "rightHand")
+                end
+            end)
+        end)
+    end
+end
+
+local function toggleFastPunch(enabled)
+    states.FastPunch = enabled
+    if connections.FastPunch then connections.FastPunch:Disconnect() connections.FastPunch = nil end
+    if enabled then
+        connections.FastPunch = RunService.Heartbeat:Connect(function()
+            pcall(function()
+                if muscleEvent then
+                    muscleEvent:FireServer("punch", "rightHand")
+                    muscleEvent:FireServer("punch", "leftHand")
+                end
+                safeEquip("Punch")
+                local char = lp.Character
+                if char then
+                    local t = char:FindFirstChild("Punch")
+                    if t then
+                        local atk = t:FindFirstChild("attackTime")
+                        if atk and atk:IsA("NumberValue") then atk.Value = 0.025 end
+                        t:Activate()
+                    end
+                end
+            end)
+            task.wait(0.07)
+        end)
+    end
+end
 
 -- =============================================================
--- Rock Farm (inside Rock Farm folder)
+-- Infinite Jump
 -- =============================================================
+local function toggleInfiniteJump(enabled)
+    states.InfiniteJump = enabled
+    if connections.InfJump then connections.InfJump:Disconnect() connections.InfJump = nil end
+    if enabled then
+        connections.InfJump = UserInputService.JumpRequest:Connect(function()
+            local hum = lp.Character and lp.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+        end)
+    end
+end
 
--- Unified rock farm loop
+-- =============================================================
+-- Rock Farm (now exclusive)
+-- =============================================================
 task.spawn(function()
     while true do
-        if not getgenv().rockFarmActive or getgenv().selectedRockDurability == 0 then
-            task.wait(0.5)
-            continue
+        if not getgenv().rockFarmActive or getgenv().selectedRockDur == 0 then
+            task.wait(0.6) continue
         end
-
         pcall(function()
-            local char = LocalPlayer.Character
-            if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
-                task.wait(1) return
-            end
-
-            local dur = LocalPlayer:FindFirstChild("Durability")
-            if not dur or dur.Value < getgenv().selectedRockDurability then
-                task.wait(0.4) return
-            end
-
-            local hum = char:FindFirstChild("Humanoid")
-            if hum then
-                local punch = char:FindFirstChild("Punch") or LocalPlayer.Backpack:FindFirstChild("Punch")
-                if punch and punch.Parent ~= char then
-                    hum:EquipTool(punch)
-                end
-            end
-
-            local touched = false
+            local char = lp.Character
+            if not char or not char.Humanoid or char.Humanoid.Health <= 0 then return end
+            local durVal = lp:FindFirstChild("Durability")
+            if not durVal or durVal.Value < getgenv().selectedRockDur then return end
+            safeEquip("Punch")
             for _, obj in pairs(Workspace.machinesFolder:GetDescendants()) do
-                if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Value == getgenv().selectedRockDurability then
+                if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Value == getgenv().selectedRockDur then
                     local rock = obj.Parent:FindFirstChild("Rock")
-                    if rock and rock:IsA("BasePart") then
-                        touched = true
-                        if char:FindFirstChild("RightHand") then
-                            firetouchinterest(rock, char.RightHand, 0)
-                            task.wait(0.015 + math.random()/50)
-                            firetouchinterest(rock, char.RightHand, 1)
-                        end
-                        if char:FindFirstChild("LeftHand") then
-                            firetouchinterest(rock, char.LeftHand, 0)
-                            task.wait(0.015 + math.random()/50)
-                            firetouchinterest(rock, char.LeftHand, 1)
-                        end
+                    if rock and rock:IsA("BasePart") and char:FindFirstChild("RightHand") then
+                        firetouchinterest(rock, char.RightHand, 0)
+                        task.wait(0.04)
+                        firetouchinterest(rock, char.RightHand, 1)
+                        if muscleEvent then muscleEvent:FireServer("punch", "rightHand") end
                     end
                 end
             end
-
-            if touched and muscleEvent then
-                muscleEvent:FireServer("punch", "leftHand")
-                muscleEvent:FireServer("punch", "rightHand")
-            end
         end)
-
-        task.wait(0.12 + math.random()/20)
+        task.wait(0.25 + math.random()/40)
     end
 end)
 
-rockFarmFolder:AddSwitch("Farm Tiny Island Rock (0)", function(s)
-    getgenv().rockFarmActive = s
-    getgenv().selectedRockDurability = s and 0 or 0
-    print(s and "[Rock Farm] Tiny Island → ON" or "[Rock Farm] OFF")
-end)
-
-rockFarmFolder:AddSwitch("Farm Starter Island Rock (100)", function(s)
-    getgenv().rockFarmActive = s
-    getgenv().selectedRockDurability = s and 100 or 0
-    print(s and "[Rock Farm] Starter Island → ON" or "[Rock Farm] OFF")
-end)
-
-rockFarmFolder:AddSwitch("Farm Legend Beach Rock (5000)", function(s)
-    getgenv().rockFarmActive = s
-    getgenv().selectedRockDurability = s and 5000 or 0
-    print(s and "[Rock Farm] Legend Beach → ON" or "[Rock Farm] OFF")
-end)
-
-rockFarmFolder:AddSwitch("Farm Frost Gym Rock (150k)", function(s)
-    getgenv().rockFarmActive = s
-    getgenv().selectedRockDurability = s and 150000 or 0
-    print(s and "[Rock Farm] Frost Gym → ON" or "[Rock Farm] OFF")
-end)
-
-rockFarmFolder:AddSwitch("Farm Mythical Gym Rock (400k)", function(s)
-    getgenv().rockFarmActive = s
-    getgenv().selectedRockDurability = s and 400000 or 0
-    print(s and "[Rock Farm] Mythical Gym → ON" or "[Rock Farm] OFF")
-end)
-
-rockFarmFolder:AddSwitch("Farm Eternal Gym Rock (750k)", function(s)
-    getgenv().rockFarmActive = s
-    getgenv().selectedRockDurability = s and 750000 or 0
-    print(s and "[Rock Farm] Eternal Gym → ON" or "[Rock Farm] OFF")
-end)
-
-rockFarmFolder:AddSwitch("Farm Legend Gym Rock (1M)", function(s)
-    getgenv().rockFarmActive = s
-    getgenv().selectedRockDurability = s and 1000000 or 0
-    print(s and "[Rock Farm] Legend Gym → ON" or "[Rock Farm] OFF")
-end)
-
-rockFarmFolder:AddSwitch("Farm Muscle King Gym Rock (5M)", function(s)
-    getgenv().rockFarmActive = s
-    getgenv().selectedRockDurability = s and 5000000 or 0
-    print(s and "[Rock Farm] Muscle King → ON" or "[Rock Farm] OFF")
-end)
-
-rockFarmFolder:AddSwitch("Farm Ancient Jungle Rock (10M)", function(s)
-    getgenv().rockFarmActive = s
-    getgenv().selectedRockDurability = s and 10000000 or 0
-    print(s and "[Rock Farm] Ancient Jungle → ON" or "[Rock Farm] OFF")
-end)
-
-rockFarmFolder:AddButton("STOP All Rock Farming", function()
-    getgenv().rockFarmActive = false
-    getgenv().selectedRockDurability = 0
-    print("[Rock Farm] All farming stopped")
-end)
+local function toggleRockFarm(dur, enabled)
+    if enabled then
+        getgenv().rockFarmActive = false
+        task.wait(0.1)
+        getgenv().selectedRockDur = dur
+        getgenv().rockFarmActive = true
+        print("[Rock Farm] Activated → " .. dur)
+    else
+        if getgenv().selectedRockDur == dur then
+            getgenv().rockFarmActive = false
+            getgenv().selectedRockDur = 0
+            print("[Rock Farm] Stopped")
+        end
+    end
+end
 
 -- =============================================================
--- Kill Tab
+-- Kill logic
 -- =============================================================
 local function killPlayer(target)
     pcall(function()
-        local char = LocalPlayer.Character
+        local char = lp.Character
         if not char or not char:FindFirstChild("LeftHand") then return end
         local tChar = target.Character
-        if tChar and tChar:FindFirstChild("HumanoidRootPart") and tChar.Humanoid and tChar.Humanoid.Health > 0 then
+        if tChar and tChar:FindFirstChild("HumanoidRootPart") and tChar.Humanoid.Health > 0 then
             firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 0)
-            task.wait()
+            task.wait(0.04)
             firetouchinterest(tChar.HumanoidRootPart, char.LeftHand, 1)
-            local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
-            if punch then char.Humanoid:EquipTool(punch) end
+            safeEquip("Punch")
             if muscleEvent then
                 muscleEvent:FireServer("punch", "leftHand")
                 muscleEvent:FireServer("punch", "rightHand")
@@ -376,35 +203,81 @@ local function killPlayer(target)
     end)
 end
 
-killFolder:AddSwitch("Kill Aura (All)", function(state)
-    getgenv().killAura = state
-    if state then
+-- =============================================================
+-- UI – Elerium style (no Fluent methods)
+-- =============================================================
+local mainTab    = window:AddTab("Main")
+local farmTab    = window:AddTab("Farm")
+local rebirthTab = window:AddTab("Rebirth")
+local tpTab      = window:AddTab("Teleport")
+local killTab    = window:AddTab("Kill")
+local miscTab    = window:AddTab("Misc")
+
+local toolsSec   = mainTab:AddFolder("Auto Tools")
+local rockSec    = farmTab:AddFolder("Rock Farm")
+local killSec    = killTab:AddFolder("Kill")
+
+-- Tools
+toolsSec:AddSwitch("Auto Pushups",    function(v) states.AutoPushups = v    if v then startAutoRep("Pushups",    "AutoPushups")    end end)
+toolsSec:AddSwitch("Auto Weight",     function(v) states.AutoWeight = v     if v then startAutoRep("Weight",     "AutoWeight")     end end)
+toolsSec:AddSwitch("Auto Handstands", function(v) states.AutoHandstands = v if v then startAutoRep("Handstands", "AutoHandstands") end end)
+toolsSec:AddSwitch("Fast Punch",      toggleFastPunch)
+toolsSec:AddSwitch("Fast Strength",   toggleFastStrength)
+toolsSec:AddSwitch("Infinite Jump",   toggleInfiniteJump)
+
+-- Rock farm
+rockSec:AddSwitch("Tiny Island (0)",      function(v) toggleRockFarm(0,         v) end)
+rockSec:AddSwitch("Starter Island (100)", function(v) toggleRockFarm(100,       v) end)
+rockSec:AddSwitch("Legend Beach (5k)",    function(v) toggleRockFarm(5000,      v) end)
+rockSec:AddSwitch("Frost Gym (150k)",     function(v) toggleRockFarm(150000,    v) end)
+rockSec:AddSwitch("Mythical Gym (400k)",  function(v) toggleRockFarm(400000,    v) end)
+rockSec:AddSwitch("Eternal Gym (750k)",   function(v) toggleRockFarm(750000,    v) end)
+rockSec:AddSwitch("Legend Gym (1M)",      function(v) toggleRockFarm(1000000,   v) end)
+rockSec:AddSwitch("Muscle King (5M)",     function(v) toggleRockFarm(5000000,   v) end)
+rockSec:AddSwitch("Ancient Jungle (10M)", function(v) toggleRockFarm(10000000,  v) end)
+rockSec:AddButton("STOP Rock Farm", function()
+    getgenv().rockFarmActive = false
+    getgenv().selectedRockDur = 0
+end)
+
+-- Teleports
+tpTab:AddButton("Spawn / Safe",     function() tpTo(Vector3.new(-6,    5, -196)) end)
+tpTab:AddButton("Secret Area",      function() tpTo(Vector3.new(1947,  2, 6191)) end)
+tpTab:AddButton("Tiny Area",        function() tpTo(Vector3.new(-39,   6, 1886)) end)
+tpTab:AddButton("Frozen Area",      function() tpTo(Vector3.new(-2623, 6, -409)) end)
+tpTab:AddButton("Mythical Area",    function() tpTo(Vector3.new(2251,  6, 1073)) end)
+tpTab:AddButton("Inferno Area",     function() tpTo(Vector3.new(-6759, 6, -1285)) end)
+tpTab:AddButton("Legend Area",      function() tpTo(Vector3.new(4603,990,-3898)) end)
+tpTab:AddButton("Muscle King Area", function() tpTo(Vector3.new(-8626,16,-5730)) end)
+tpTab:AddButton("Jungle Area",      function() tpTo(Vector3.new(-8642, 6, 2381)) end)
+
+-- Kill
+killSec:AddSwitch("Kill Aura (All)", function(v)
+    states.KillAura = v
+    if v then
         task.spawn(function()
-            while getgenv().killAura do
+            while states.KillAura do
                 for _, plr in Players:GetPlayers() do
-                    if plr ~= LocalPlayer and plr.Character then
-                        killPlayer(plr)
-                    end
+                    if plr ~= lp and plr.Character then killPlayer(plr) end
                 end
-                task.wait(0.08)
+                task.wait(0.15)
             end
         end)
     end
 end)
 
-local selectedTarget = nil
-local playerDropdown = killFolder:AddDropdown("Select Target Player", function(val)
+local playerDrop = killSec:AddDropdown("Select Target", function(val)
     selectedTarget = val:match("^([^|]+)") or val
 end)
 
-killFolder:AddSwitch("Auto Kill Selected", function(state)
-    getgenv().autoKillSelected = state
-    if state and selectedTarget then
+killSec:AddSwitch("Auto Kill Selected", function(v)
+    states.AutoKillSelected = v
+    if v and selectedTarget then
         task.spawn(function()
-            while getgenv().autoKillSelected do
+            while states.AutoKillSelected do
                 local plr = Players:FindFirstChild(selectedTarget)
                 if plr then killPlayer(plr) end
-                task.wait(0.08)
+                task.wait(0.15)
             end
         end)
     end
@@ -413,209 +286,107 @@ end)
 task.spawn(function()
     while true do
         local opts = {}
-        for _, plr in Players:GetPlayers() do
-            if plr ~= LocalPlayer then
-                table.insert(opts, plr.Name .. " | " .. (plr.DisplayName or plr.Name))
-            end
+        for _, p in Players:GetPlayers() do
+            if p ~= lp then table.insert(opts, p.Name .. " | " .. (p.DisplayName or p.Name)) end
         end
-        playerDropdown:SetValues(opts)
-        task.wait(5)
+        playerDrop:SetValues(opts)
+        task.wait(7)
     end
 end)
 
--- =============================================================
--- Better Farming + Misc + Rebirth
--- =============================================================
-
-Better Farming:AddSwitch("Fast Grind / Strength", function(state)
-    toggleFastStrength(state)
-end)
-
-Misc:AddSwitch("Infinite Jump", function(state)
-    infJump = state
-end)
-
-UserInputService.JumpRequest:Connect(function()
-    if infJump and LocalPlayer.Character then
-        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
-    end
-end)
-
-Rebirth:AddSwitch("Auto Rebirth (Infinite)", function(state)
-    autoRebirth = state
-    if state then
+-- Rebirth & extras
+rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(v)
+    states.AutoRebirth = v
+    if v then
         task.spawn(function()
-            while autoRebirth do
+            while states.AutoRebirth do
                 pcall(function()
-                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
-                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                    end
+                    local ev = ReplicatedStorage.rEvents and ReplicatedStorage.rEvents.rebirthRemote
+                    if ev then ev:InvokeServer("rebirthRequest") end
                 end)
-                task.wait(0.08)
+                task.wait(0.14)
             end
         end)
     end
 end)
 
-Rebirth:AddInput("Target Rebirths", function(value)
-    local num = tonumber(value)
-    targetRebirths = num and num > 0 and num or 1
-    print("Target rebirths set to: " .. targetRebirths)
+rebirthTab:AddInput("Target Rebirths", function(val)
+    local n = tonumber(val)
+    if n and n > 0 then targetRebirth = n end
 end)
 
-Rebirth:AddSwitch("Auto Rebirth to Target", function(state)
-    autoRebirthTarget = state
-    if state then
+rebirthTab:AddSwitch("Auto Rebirth → Target", function(v)
+    states.AutoRebirthTarget = v
+    if v then
         task.spawn(function()
-            while autoRebirthTarget do
+            while states.AutoRebirthTarget do
                 pcall(function()
-                    if LocalPlayer.leaderstats and LocalPlayer.leaderstats:FindFirstChild("Rebirths") then
-                        if LocalPlayer.leaderstats.Rebirths.Value >= targetRebirths then
-                            autoRebirthTarget = false
-                            print("Target rebirth reached → stopped")
-                            return
-                        end
+                    local rebirths = lp.leaderstats and lp.leaderstats.Rebirths
+                    if rebirths and rebirths.Value >= targetRebirth then
+                        states.AutoRebirthTarget = false
+                        return
                     end
-                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
-                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                    end
+                    local ev = ReplicatedStorage.rEvents and ReplicatedStorage.rEvents.rebirthRemote
+                    if ev then ev:InvokeServer("rebirthRequest") end
                 end)
-                task.wait(0.1)
+                task.wait(0.16)
             end
         end)
     end
 end)
 
-Rebirth:AddSwitch("Auto Size 2", function(state)
-    if state then
-        getgenv().sizeLoop = task.spawn(function()
-            while true do
+rebirthTab:AddSwitch("Auto Size 2", function(v)
+    states.AutoSize2 = v
+    if v then
+        connections.Size = task.spawn(function()
+            while states.AutoSize2 do
                 pcall(function()
-                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-                    if rEvents and rEvents:FindFirstChild("changeSpeedSizeRemote") then
-                        rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 2)
-                    end
+                    local ev = ReplicatedStorage.rEvents and ReplicatedStorage.rEvents.changeSpeedSizeRemote
+                    if ev then ev:InvokeServer("changeSize", 2) end
                 end)
-                task.wait(0.05)
+                task.wait(0.09)
             end
         end)
     else
-        if getgenv().sizeLoop then task.cancel(getgenv().sizeLoop) end
+        if connections.Size then task.cancel(connections.Size) end
     end
 end)
 
-Rebirth:AddSwitch("Auto TP Muscle King", function(state)
-    if state then
-        getgenv().kingTpLoop = task.spawn(function()
-            while true do
-                pcall(function()
-                    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp then hrp.CFrame = CFrame.new(-8646, 17, -5738) end
-                end)
-                task.wait(0.1)
+rebirthTab:AddSwitch("Auto TP Muscle King", function(v)
+    states.AutoTPKing = v
+    if v then
+        connections.TP = task.spawn(function()
+            while states.AutoTPKing do
+                tpTo(Vector3.new(-8646, 17, -5738))
+                task.wait(0.3)
             end
         end)
     else
-        if getgenv().kingTpLoop then task.cancel(getgenv().kingTpLoop) end
+        if connections.TP then task.cancel(connections.TP) end
     end
 end)
 
-print("Invincibles Priv Script – fully fixed & triple-checked (Feb 2026)")
+miscTab:AddSwitch("Hide Pets", function(v)
+    states.HidePets = v
+    pcall(function()
+        local ev = ReplicatedStorage.rEvents and ReplicatedStorage.rEvents.showPetsEvent
+        if ev then ev:FireServer(v and "hidePets" or "showPets") end
+    end)
+end)
 
-local petTypes = {
-    ["Swift Samurai"] = "Equip All Swift Samurai",
-    ["Tribal Overlord"] = "Equip All Tribal Overlord",
-    ["Mighty Monster"] = "Equip All Mighty Monster",
-    ["Wild Wizard"] = "Equip All Wild Wizard"
-}
-
-for petName, buttonTitle in pairs(petTypes) do
-    Tabs.Fast Farming:CreateButton({
-        Title = buttonTitle,
-        Callback = function()
-            unequipAllPets()
-            for _, pet in pairs(game:GetService("Players").LocalPlayer.petsFolder.Unique:GetChildren()) do
-                if pet.Name == petName then
-                    game:GetService("ReplicatedStorage").rEvents.equipPetEvent:fireServer("equipPet", pet)
-                end
-            end
-        end
-    })
-
- local PlayerDropdown = Tabs.Kill:CreateDropdown("PlayerList", {
-    Title = "Select Target",
-    Description = "Choose player to target",
-    Values = {},
-    Multi = false,
-    Default = nil,
-    Callback = function(Value)
-        local username = string.match(Value, "(.+) |")
-        targetPlayer = username
-        print("Target set to:", targetPlayer)
-    end
-})   
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- Function to get list of player DisplayNames
-local function getPlayerList()
-    local playerList = {}
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            table.insert(playerList, player.DisplayName)
+miscTab:AddButton("Anti Lag (FPS Boost)", function()
+    local Lighting = game:GetService("Lighting")
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 1
+    Lighting.ClockTime = 12
+    Lighting.FogEnd = 9999
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") then
+            v.Enabled = false
         end
     end
-    return playerList
-end
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    print("Anti-Lag applied")
+end)
 
-local Dropdown = Tabs.Kill:CreateDropdown("SpectatePlayer", {
-    Title = "Spectate Player",
-    Description = "Piliin ang player na panoorin",
-    Options = getPlayerList(),
-    Default = "",
-    Callback = function(Value)
-        local targetPlayer = nil
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.DisplayName == Value then
-                targetPlayer = player
-                break
-            end
-        end
-        if targetPlayer and targetPlayer.Character then
-            local camera = workspace.CurrentCamera
-            camera.CameraSubject = targetPlayer.Character.Humanoid
-            print("Now spectating: " .. targetPlayer.DisplayName .. " (@" .. targetPlayer.Name .. ")")
-        else
-            print("Hindi mahanap ang player o walang character.")
-        end
-    end
-})
-
-Tabs.Kill:AddToggle("GoodKarmaKillToggle", {
-    Title = "Good Karma Kill",
-    Description = "Toggle to kill players with more Evil Karma",
-    Default = false,
-    Callback = function(state)
-        evilKarmaKill(state)
-        pcall(function()
-            Library:Notify("Good Karma Kill " .. (state and "Enabled" or "Disabled"), 2)
-        end)
-    end
-})
-
--- Evil Karma Kill toggle
-Tabs.Kill:AddToggle("EvilKarmaKillToggle", {
-    Title = "Evil Karma Kill",
-    Description = "Toggle to kill players with more Good Karma",
-    Default = false,
-    Callback = function(state)
-        goodKarmaKill(state)
-        pcall(function()
-            Library:Notify("Evil Karma Kill " .. (state and "Enabled" or "Disabled"), 2)
-        end)
-    end
-})
+print("Invincibles Priv – fixed & Elerium compatible – loaded")
