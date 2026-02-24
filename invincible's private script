@@ -36,13 +36,14 @@ local function startAutoRep(toolName, toggleVar)
     end)
 end
 
-local Inventory = window:AddTab("Inventory")
 local main = window:AddTab("Main")
 local BetterFarmingTab = window:AddTab("better farming")
 local Tools = main:AddFolder("Tools")
 local RockFarmFolder = main:AddFolder("Rock Farm")
 local rebirth = window:AddTab("Rebirth")
 local Misc = window:AddTab("Misc")
+local MiscFolder = Misc:AddFolder("Misc 1")
+local Inventory = window:AddTab("Inventory")
 
 Tools:AddSwitch("Auto Pushups", function(state) _G.AutoPushups = state if state then startAutoRep("Pushups", "AutoPushups") end end)
 Tools:AddSwitch("Auto Weight", function(state) _G.AutoWeight = state if state then startAutoRep("Weight", "AutoWeight") end end)
@@ -426,7 +427,7 @@ end)
 print("To set target rebirth amount, change 'targetRebirthValue = 1' line in script to your number, then re-execute.")
 -- Example: change to targetRebirthValue = 50 for goal of 50 rebirth
 
-local Toggle = Tabs.Misc:CreateToggle("InfiniteJump", {
+local Toggle = Folder.Misc 1:CreateToggle("InfiniteJump", {
 	Title = "Infinite Jump",
 	Description = "Jump Infinite",
 	Default = false,
@@ -442,7 +443,7 @@ local Toggle = Tabs.Misc:CreateToggle("InfiniteJump", {
 	end
 })
 
-local Toggle = Tabs.Misc:CreateToggle("AntiPortal", {
+local Toggle = Folder.Misc 1:CreateToggle("AntiPortal", {
 	Title = "Remove Portals",
 	Description = "Removes all portal",
 	Default = false,
