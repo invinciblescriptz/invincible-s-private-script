@@ -524,3 +524,98 @@ Rebirth:AddSwitch("Auto TP Muscle King", function(state)
 end)
 
 print("Invincibles Priv Script – fully fixed & triple-checked (Feb 2026)")
+
+local petTypes = {
+    ["Swift Samurai"] = "Equip All Swift Samurai",
+    ["Tribal Overlord"] = "Equip All Tribal Overlord",
+    ["Mighty Monster"] = "Equip All Mighty Monster",
+    ["Wild Wizard"] = "Equip All Wild Wizard"
+}
+
+for petName, buttonTitle in pairs(petTypes) do
+    Tabs.Fast Farming:CreateButton({
+        Title = buttonTitle,
+        Callback = function()
+            unequipAllPets()
+            for _, pet in pairs(game:GetService("Players").LocalPlayer.petsFolder.Unique:GetChildren()) do
+                if pet.Name == petName then
+                    game:GetService("ReplicatedStorage").rEvents.equipPetEvent:fireServer("equipPet", pet)
+                end
+            end
+        end
+    })
+
+ local PlayerDropdown = Tabs.Kill:CreateDropdown("PlayerList", {
+    Title = "Select Target",
+    Description = "Choose player to target",
+    Values = {},
+    Multi = false,
+    Default = nil,
+    Callback = function(Value)
+        local username = string.match(Value, "(.+) |")
+        targetPlayer = username
+        print("Target set to:", targetPlayer)
+    end
+})   
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Function to get list of player DisplayNames
+local function getPlayerList()
+    local playerList = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(playerList, player.DisplayName)
+        end
+    end
+    return playerList
+end
+
+local Dropdown = Tabs.Kill:CreateDropdown("SpectatePlayer", {
+    Title = "Spectate Player",
+    Description = "Piliin ang player na panoorin",
+    Options = getPlayerList(),
+    Default = "",
+    Callback = function(Value)
+        local targetPlayer = nil
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.DisplayName == Value then
+                targetPlayer = player
+                break
+            end
+        end
+        if targetPlayer and targetPlayer.Character then
+            local camera = workspace.CurrentCamera
+            camera.CameraSubject = targetPlayer.Character.Humanoid
+            print("Now spectating: " .. targetPlayer.DisplayName .. " (@" .. targetPlayer.Name .. ")")
+        else
+            print("Hindi mahanap ang player o walang character.")
+        end
+    end
+})
+
+Tabs.Kill:AddToggle("GoodKarmaKillToggle", {
+    Title = "Good Karma Kill",
+    Description = "Toggle to kill players with more Evil Karma",
+    Default = false,
+    Callback = function(state)
+        evilKarmaKill(state)
+        pcall(function()
+            Library:Notify("Good Karma Kill " .. (state and "Enabled" or "Disabled"), 2)
+        end)
+    end
+})
+
+-- Evil Karma Kill toggle
+Tabs.Kill:AddToggle("EvilKarmaKillToggle", {
+    Title = "Evil Karma Kill",
+    Description = "Toggle to kill players with more Good Karma",
+    Default = false,
+    Callback = function(state)
+        goodKarmaKill(state)
+        pcall(function()
+            Library:Notify("Evil Karma Kill " .. (state and "Enabled" or "Disabled"), 2)
+        end)
+    end
+})
