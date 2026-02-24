@@ -334,4 +334,43 @@ rebirthTab:AddSwitch("Auto TP Muscle King", function(state)
     end
 end)
 
-print("Invincibles Priv Script - fixed & cleaned")
+local Input = Tabs.Kill:CreateInput("SpectatePlayer", {
+	Title = "Spectate Player",
+	Description = "",
+	Default = "",
+	Placeholder = "Player name...",
+	Numeric = false,
+	Finished = true,
+	Callback = function(Value)
+		local Players = game:GetService("Players")
+		local targetPlayer
+		targetPlayer = Players:FindFirstChild(Value)
+		if not targetPlayer then
+			for _, player in pairs(Players:GetPlayers()) do
+				if player.DisplayName:lower() == Value:lower() then
+					targetPlayer = player
+					break
+				end
+			end
+		end
+		if targetPlayer and targetPlayer.Character then
+			local camera = workspace.CurrentCamera
+			camera.CameraSubject = targetPlayer.Character.Humanoid
+			print("Now spectating: " .. targetPlayer.DisplayName .. " (@" .. targetPlayer.Name .. ")")
+		else
+			print("")
+		end
+	end
+})
+
+
+Tabs.Kill:CreateButton{
+	Title = "Stop Spying",
+	Description = "Switch camera back to your character",
+	Callback = function()
+		local Players = game:GetService("Players")
+		local camera = workspace.CurrentCamera
+		camera.CameraSubject = Players.LocalPlayer.Character.Humanoid
+		print("")
+	end
+}
