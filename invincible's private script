@@ -334,7 +334,7 @@ rebirthTab:AddSwitch("Auto TP Muscle King", function(state)
     end
 end)
 
-local Input = Tabs.Kill:CreateInput("SpectatePlayer", {
+local Input = Folder.Auto Kill:CreateInput("SpectatePlayer", {
 	Title = "Spectate Player",
 	Description = "",
 	Default = "",
@@ -363,8 +363,7 @@ local Input = Tabs.Kill:CreateInput("SpectatePlayer", {
 	end
 })
 
-
-Tabs.Kill:CreateButton{
+Folder.Auto Kill:CreateButton{
 	Title = "Stop Spying",
 	Description = "Switch camera back to your character",
 	Callback = function()
