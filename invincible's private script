@@ -67,39 +67,56 @@ local function startAutoRep(toolName, stateKey)
 end
 
 -- =============================================================
--- Fast Strength
+-- Fast Farm
 -- =============================================================
-local fastStrengthConn
-local function toggleFastStrength(state)
-    states.FastStrength = state
-    if state then
-        if fastStrengthConn then fastStrengthConn:Disconnect() end
-        fastStrengthConn = RunService.Heartbeat:Connect(function()
-            pcall(function()
-                if muscleEvent then
-                    muscleEvent:FireServer("rep")
-                    muscleEvent:FireServer("punch", "rightHand")
-                    muscleEvent:FireServer("punch", "leftHand")
-                end
-                local char = LocalPlayer.Character
-                if char then
-                    local tool = char:FindFirstChildWhichIsA("Tool")
-                    if tool then tool:Activate() end
-                end
-            end)
-        end)
-        print("[Fast Strength] ENABLED")
-    else
-        if fastStrengthConn then fastStrengthConn:Disconnect() fastStrengthConn = nil end
-        print("[Fast Strength] DISABLED")
+
+-- Function to start fast strength gain
+local function startStrengthAutomation()
+    while isRunning do
+        -- Equip the desired pet for strength gain
+        equipPet("Swift Samurai") -- Change this to the pet you want to use for strength gain
+
+        -- Grind strength continuously
+        while isRunning do
+            -- Corrected loop to use proper syntax
+            for i = 1, 30 do
+                LocalPlayer.muscleEvent:FireServer("rep")
+            end
+            task.wait()
+        end
     end
 end
+
+-- Toggle for Fast Strength Gain
+local MainToggle = Tabs.Fast Farming:CreateToggle("UltimateStrength", {
+    Title = "Fast Strength Gain",
+    Default = false,
+    Callback = function(Value)
+        isRunning = Value
+        if Value then
+            task.spawn(startStrengthAutomation) -- Start the automation when toggled on
+        end
+    end
+})
+
+local toggle = Tabs.Fast Farming:AddToggle("HidePetsToggle", {
+    Title = "Hide Pets",
+    Description = "Toggle to hide or show pets",
+    Default = false,
+    Callback = function(state)
+        if state then
+            game:GetService("ReplicatedStorage").rEvents.showPetsEvent:FireServer("hidePets")
+        else
+            game:GetService("ReplicatedStorage").rEvents.showPetsEvent:FireServer("showPets")
+        end
+    end
+})
 
 -- =============================================================
 -- Tabs & Folders
 -- =============================================================
 local mainTab     = window:AddTab("Main")
-local farmingTab  = window:AddTab("Better Farming")
+local farmingTab  = window:AddTab("Fast Farming")
 local rebirthTab  = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local killTab     = window:AddTab("Kill")
@@ -409,11 +426,12 @@ end)
 -- =============================================================
 -- Better Farming + Misc + Rebirth
 -- =============================================================
-betterFarmingTab:AddSwitch("Fast Grind / Strength", function(state)
+
+Better Farming:AddSwitch("Fast Grind / Strength", function(state)
     toggleFastStrength(state)
 end)
 
-miscTab:AddSwitch("Infinite Jump", function(state)
+Misc:AddSwitch("Infinite Jump", function(state)
     infJump = state
 end)
 
@@ -424,7 +442,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
-rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
+Rebirth:AddSwitch("Auto Rebirth (Infinite)", function(state)
     autoRebirth = state
     if state then
         task.spawn(function()
@@ -441,13 +459,13 @@ rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
     end
 end)
 
-rebirthTab:AddInput("Target Rebirths", function(value)
+Rebirth:AddInput("Target Rebirths", function(value)
     local num = tonumber(value)
     targetRebirths = num and num > 0 and num or 1
     print("Target rebirths set to: " .. targetRebirths)
 end)
 
-rebirthTab:AddSwitch("Auto Rebirth to Target", function(state)
+Rebirth:AddSwitch("Auto Rebirth to Target", function(state)
     autoRebirthTarget = state
     if state then
         task.spawn(function()
@@ -471,7 +489,7 @@ rebirthTab:AddSwitch("Auto Rebirth to Target", function(state)
     end
 end)
 
-rebirthTab:AddSwitch("Auto Size 2", function(state)
+Rebirth:AddSwitch("Auto Size 2", function(state)
     if state then
         getgenv().sizeLoop = task.spawn(function()
             while true do
@@ -489,7 +507,7 @@ rebirthTab:AddSwitch("Auto Size 2", function(state)
     end
 end)
 
-rebirthTab:AddSwitch("Auto TP Muscle King", function(state)
+Rebirth:AddSwitch("Auto TP Muscle King", function(state)
     if state then
         getgenv().kingTpLoop = task.spawn(function()
             while true do
