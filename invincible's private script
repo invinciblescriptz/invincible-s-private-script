@@ -1,4 +1,4 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/UI-Librarys/main/Elerium"))()
 local window = library:AddWindow("Invincibles Priv Script", {
     main_color = Color3.fromRGB(0, 255, 0),
     min_size = Vector2.new(470, 470),
@@ -33,7 +33,7 @@ local function startAutoRep(toolName, toggleVar)
             end)
             task.wait(0.025)
         end
-        -- Unequip
+        -- Unequip on disable
         pcall(function()
             local char = LocalPlayer.Character
             if char then
@@ -59,8 +59,8 @@ local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 -- =============================================
 -- TOOLS
 -- =============================================
-toolsFolder:AddSwitch("Auto Pushups",    function(s) _G.AutoPushups = s    if s then startAutoRep("Pushups", "AutoPushups") end end)
-toolsFolder:AddSwitch("Auto Weight",     function(s) _G.AutoWeight = s     if s then startAutoRep("Weight", "AutoWeight") end end)
+toolsFolder:AddSwitch("Auto Pushups",    function(s) _G.AutoPushups = s    if s then startAutoRep("Pushups",    "AutoPushups")    end end)
+toolsFolder:AddSwitch("Auto Weight",     function(s) _G.AutoWeight  = s    if s then startAutoRep("Weight",     "AutoWeight")     end end)
 toolsFolder:AddSwitch("Auto Handstands", function(s) _G.AutoHandstands = s if s then startAutoRep("Handstands", "AutoHandstands") end end)
 
 toolsFolder:AddSwitch("Fast Punch", function(state)
@@ -104,8 +104,9 @@ toolsFolder:AddButton("Free AutoLift Gamepass", function()
     pcall(function()
         local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
         if gpFolder then
-            local owned = LocalPlayer:FindFirstChild("ownedGamepasses") or Instance.new("Folder", LocalPlayer)
+            local owned = LocalPlayer:FindFirstChild("ownedGamepasses") or Instance.new("Folder")
             owned.Name = "ownedGamepasses"
+            owned.Parent = LocalPlayer
             for _, gp in pairs(gpFolder:GetChildren()) do
                 local val = Instance.new("IntValue")
                 val.Name = gp.Name
@@ -210,7 +211,7 @@ task.spawn(function()
 end)
 
 -- =============================================
--- ROCK FARM (fixed nil check + debounce)
+-- ROCK FARM
 -- =============================================
 local selectedRock = "None"
 local rockFarmRunning = false
@@ -263,7 +264,6 @@ rockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
                                 firetouchinterest(rock, char.LeftHand,  0) task.wait(0.02)
                                 firetouchinterest(rock, char.LeftHand,  1)
 
-                                -- Equip Punch
                                 local hum = char:FindFirstChild("Humanoid")
                                 if hum then
                                     for _, t in pairs(LocalPlayer.Backpack:GetChildren()) do
@@ -284,11 +284,10 @@ rockFarmFolder:AddSwitch("Auto Farm Selected Rock", function(state)
 end)
 
 -- =============================================
--- REBIRTH (fixed loop + safe checks)
+-- REBIRTH
 -- =============================================
-local targetRebirth = 10  -- ← CHANGE THIS NUMBER
+local targetRebirth = 10  -- Change this to your desired target
 
--- Infinite Rebirth
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
     getgenv().autoRebirth = state
     if state then
@@ -306,7 +305,6 @@ rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(state)
     end
 end)
 
--- Target Rebirth (FIXED - no ghost loops)
 local targetRebirthRunning = false
 rebirthTab:AddSwitch("Auto Rebirth to Target (" .. targetRebirth .. ")", function(state)
     targetRebirthRunning = state
@@ -315,8 +313,9 @@ rebirthTab:AddSwitch("Auto Rebirth to Target (" .. targetRebirth .. ")", functio
             while targetRebirthRunning do
                 task.wait(0.12)
                 pcall(function()
-                    if not LocalPlayer:FindFirstChild("leaderstats") or not LocalPlayer.leaderstats:FindFirstChild("Rebirths") then return end
-                    if LocalPlayer.leaderstats.Rebirths.Value >= targetRebirth then
+                    local ls = LocalPlayer:FindFirstChild("leaderstats")
+                    if not ls or not ls:FindFirstChild("Rebirths") then return end
+                    if ls.Rebirths.Value >= targetRebirth then
                         print("🎯 Target Rebirth Reached! Stopping...")
                         targetRebirthRunning = false
                         return
@@ -345,7 +344,7 @@ rebirthTab:AddSwitch("Auto Size 2", function(state)
             end
         end)
     else
-        if getgenv().autoSizeLoop then task.cancel(getgenv().autoSizeLoop) end
+        if getgenv().autoSizeLoop then task.cancel(getgenv().autoSizeLoop) getgenv().autoSizeLoop = nil end
     end
 end)
 
@@ -361,7 +360,7 @@ rebirthTab:AddSwitch("Auto TP Muscle King", function(state)
             end
         end)
     else
-        if getgenv().kingTpLoop then task.cancel(getgenv().kingTpLoop) end
+        if getgenv().kingTpLoop then task.cancel(getgenv().kingTpLoop) getgenv().kingTpLoop = nil end
     end
 end)
 
