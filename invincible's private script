@@ -154,6 +154,7 @@ local mainTab     = window:AddTab("Main")
 local farmingTab  = window:AddTab("Better Farming")
 local rebirthTab  = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
+local StatsTab = window:AddTab("Stats")
 local killerTab   = window:AddTab("Killer")
 local miscTab     = window:AddTab("Misc")
 
@@ -358,7 +359,7 @@ miscTab:AddSwitch("Infinite Jump", toggleInfiniteJump)
 miscTab:AddSwitch("Anti-AFK", toggleAntiAfk)
 
 -- Rebirth Tab
-rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
+Rebirth:AddSwitch("Auto Rebirth (Infinite)", function(s)
     states.AutoRebirth = s
     if s then
         task.spawn(function()
@@ -375,12 +376,12 @@ rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
     end
 end)
 
-rebirthTab:AddInput("Target Rebirths", function(value)
+Rebirth:AddInput("Target Rebirths", function(value)
     local num = tonumber(value)
     targetRebirths = num and num > 0 and num or 1
 end)
 
-rebirthTab:AddSwitch("Auto Rebirth to Target", function(s)
+Rebirth:AddSwitch("Auto Rebirth to Target", function(s)
     states.AutoRebirthTarget = s
     if s then
         task.spawn(function()
@@ -402,7 +403,7 @@ rebirthTab:AddSwitch("Auto Rebirth to Target", function(s)
     end
 end)
 
-rebirthTab:AddSwitch("Auto Size 2", function(s)
+Rebirth:AddSwitch("Auto Size 2", function(s)
     if s then
         getgenv().sizeLoop = task.spawn(function()
             while getgenv().NexusRunning do
@@ -420,7 +421,7 @@ rebirthTab:AddSwitch("Auto Size 2", function(s)
     end
 end)
 
-rebirthTab:AddSwitch("Auto TP Muscle King", function(s)
+Rebirth:AddSwitch("Auto TP Muscle King", function(s)
     if s then
         getgenv().kingTpLoop = task.spawn(function()
             while getgenv().NexusRunning do
@@ -457,3 +458,30 @@ end
 -- miscTab:AddButton("Unequip All Pets", unequipAllPets)
 
 print("Invincibles Priv Script – fixed & safer (Feb 2026)")
+
+local IntSection = Tabs.Stats:CreateSection("Player Stats")
+local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+
+local startTime = 0
+local sessionStartTime = os.time()
+local timerRunning = false
+
+local strengthGained = 0
+local lastStrengthValue = nil
+local rebirthsGained = 0
+local lastRebirthsValue = nil
+local killsGained = 0
+local lastKillsValue = nil
+local brawlsGained = 0
+local lastBrawlsValue = nil
+local goodKarmaGained = 0
+local lastGoodKarmaValue = nil
+local evilKarmaGained = 0
+local lastEvilKarmaValue = nil
+local durabilityGained = 0
+local lastDurabilityValue = nil
+local agilityGained = 0
+local lastAgilityValue = nil
+local muscleKingTimeGained = 0
+local lastMuscleKingTimeValue = nil
