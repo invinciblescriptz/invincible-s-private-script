@@ -149,15 +149,18 @@ local function killPlayer(target)
     end)
 end
 
--- Placeholder: implement your actual egg-opening logic here
+-- Placeholder – YOU MUST REPLACE THIS WITH THE REAL EGG REMOTE
 local function useOneEgg()
     pcall(function()
-        -- Example: find and fire the egg remote (adjust path/args to your game)
+        -- Example placeholders – change to actual values from your game
         local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-        if rEvents and rEvents:FindFirstChild("openEgg") then  -- CHANGE TO REAL REMOTE NAME
-            rEvents.openEgg:InvokeServer("Ultra Shake")        -- CHANGE ARGS TO MATCH GAME
+        if rEvents then
+            -- Common patterns – try these one by one in console first
+            -- rEvents.openEgg:FireServer("Ultra Shake")
+            -- rEvents.hatchEgg:InvokeServer("Ultra Shake")
+            -- rEvents.EggOpen:FireServer("Ultra Shake", 1)
+            warn("[useOneEgg] Real remote call not set – update me!")
         end
-        -- Or FireServer if it's not InvokeServer
     end)
 end
 
@@ -170,13 +173,13 @@ local rebirthTab      = window:AddTab("Rebirth")
 local teleportTab     = window:AddTab("Teleport")
 local killerTab       = window:AddTab("Killer")
 local miscTab         = window:AddTab("Misc")
+local brawlFarmingTab = window:AddTab("Brawl Farming")
 
-local MiscFolder = MiscTab:AddFolder("Brawl Farming")
 local toolsFolder    = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder     = killerTab:AddFolder("Auto Kill")
 
--- Tools switches
+-- Tools
 toolsFolder:AddSwitch("Auto Pushups",    function(s) states.AutoPushups = s    if s then startAutoRep("Pushups",    "AutoPushups")    end end)
 toolsFolder:AddSwitch("Auto Weight",     function(s) states.AutoWeight = s     if s then startAutoRep("Weight",     "AutoWeight")     end end)
 toolsFolder:AddSwitch("Auto Handstands", function(s) states.AutoHandstands = s if s then startAutoRep("Handstands", "AutoHandstands") end end)
@@ -255,7 +258,7 @@ teleportTab:AddButton("To Lava Brawl",        function() tpTo(Vector3.new(4471, 
 teleportTab:AddButton("To Desert Brawl",      function() tpTo(Vector3.new(960, 17, -7398)) end)
 teleportTab:AddButton("To Beach Brawl",       function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- Rock Farm (radio style)
+-- Rock Farm
 task.spawn(function()
     while getgenv().NexusRunning do
         if not getgenv().rockFarmActive or getgenv().selectedRockDurability <= 0 then
@@ -365,6 +368,32 @@ task.spawn(function()
     end
 end)
 
+killerTab:AddInput("Spectate Player", function(value)
+    pcall(function()
+        if value == "" then
+            workspace.CurrentCamera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+            return
+        end
+
+        local targetPlayer = Players:FindFirstChild(value)
+        if not targetPlayer then
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr.DisplayName:lower() == value:lower() or plr.Name:lower() == value:lower() then
+                    targetPlayer = plr
+                    break
+                end
+            end
+        end
+
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") then
+            workspace.CurrentCamera.CameraSubject = targetPlayer.Character.Humanoid
+            print("Spectating: " .. targetPlayer.DisplayName .. " (@" .. targetPlayer.Name .. ")")
+        else
+            print("Player not found")
+        end
+    end)
+end)
+
 -- Better Farming
 farmingTab:AddSwitch("Fast Grind / Strength", toggleFastStrength)
 
@@ -372,7 +401,7 @@ farmingTab:AddSwitch("Fast Grind / Strength", toggleFastStrength)
 miscTab:AddSwitch("Infinite Jump", toggleInfiniteJump)
 miscTab:AddSwitch("Anti-AFK", toggleAntiAfk)
 
--- Brawl Farming Tab
+-- Brawl Farming (now correct tab reference)
 brawlFarmingTab:AddSwitch("Auto Join Brawl", function(s)
     states.AutoJoinBrawl = s
     if s then
@@ -384,13 +413,13 @@ brawlFarmingTab:AddSwitch("Auto Join Brawl", function(s)
                         rEvents.brawlEvent:FireServer("joinBrawl")
                     end
                 end)
-                task.wait(2)  -- don't spam too fast
+                task.wait(2)
             end
         end)
     end
 end)
 
--- Auto Ultra Shake (Misc or Farming tab - placed in Misc here)
+-- Auto Ultra Shake
 miscTab:AddSwitch("Auto Ultra Shake", function(s)
     states.AutoUltraShake = s
     if s then
@@ -419,7 +448,9 @@ miscTab:AddSwitch("Auto Ultra Shake", function(s)
     end
 end)
 
--- Rebirth Tab (unchanged from previous)
+miscTab:AddButton("Use One Egg Now (Test)", useOneEgg)
+
+-- Rebirth Tab
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
     states.AutoRebirth = s
     if s then
@@ -495,26 +526,4 @@ rebirthTab:AddSwitch("Auto TP Muscle King", function(s)
     end
 end)
 
--- Spectate Player (in Killer tab)
-killerTab:AddInput("Spectate Player", function(value)
-    pcall(function()
-        local targetPlayer
-        targetPlayer = Players:FindFirstChild(value)
-        if not targetPlayer then
-            for _, plr in pairs(Players:GetPlayers()) do
-                if plr.DisplayName:lower() == value:lower() or plr.Name:lower() == value:lower() then
-                    targetPlayer = plr
-                    break
-                end
-            end
-        end
-        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") then
-            workspace.CurrentCamera.CameraSubject = targetPlayer.Character.Humanoid
-            print("Now spectating: " .. targetPlayer.DisplayName .. " (@" .. targetPlayer.Name .. ")")
-        else
-            print("Player not found or no character")
-        end
-    end)
-end)
-
-print("Invincibles Priv Script – fixed & safer (Feb 2026)")
+print("Invincibles Priv Script loaded – blood red theme (Feb 2026)")
