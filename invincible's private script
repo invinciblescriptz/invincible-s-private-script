@@ -161,6 +161,7 @@ local miscTab     = window:AddTab("Misc")
 local toolsFolder    = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder     = killerTab:AddFolder("Auto Kill")
+local Brawl FarmingFolder = miscTab:AddFolder("Brawl Farming")
 
 -- Tools switches (unchanged except safer delay)
 toolsFolder:AddSwitch("Auto Pushups",    function(s) states.AutoPushups = s    if s then startAutoRep("Pushups",    "AutoPushups")    end end)
@@ -485,3 +486,15 @@ local agilityGained = 0
 local lastAgilityValue = nil
 local muscleKingTimeGained = 0
 local lastMuscleKingTimeValue = nil
+
+local Toggle = Folder.Brawl Farming:AddToggle("Auto Join Brawl Toggle", {
+	Title = "Auto Join Brawl",
+	Default = false,
+	Callback = function(v)
+		getgenv().joinbrawl = v
+		while getgenv().joinbrawl do
+			wait()
+			game:GetService("ReplicatedStorage").rEvents.brawlEvent:FireServer("joinBrawl")
+		end
+	end
+})
