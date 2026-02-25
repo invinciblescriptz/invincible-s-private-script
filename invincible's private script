@@ -32,14 +32,22 @@ local states = {
     KillAura          = false,
     AutoKillSelected  = false,
     AntiAfk           = false,
+    AutoJoinBrawl     = false,
 }
 
 local targetRebirths = 1
 local selectedTarget = nil
+local targetPlayer   = nil  -- for tracking/spectate/kill target
 
 -- Rock farm
 getgenv().rockFarmActive         = false
 getgenv().selectedRockDurability = 0
+
+-- Stats tracking
+local sessionStartTime = os.time()
+local lastStrength     = nil
+local lastRebirths     = nil
+local lastDurability   = nil
 
 -- =============================================================
 -- Helpers
@@ -76,7 +84,6 @@ local function startAutoRep(toolName, stateKey)
     end)
 end
 
--- Fast Strength
 local fastStrengthConn
 local function toggleFastStrength(state)
     states.FastStrength = state
@@ -101,7 +108,6 @@ local function toggleFastStrength(state)
     end
 end
 
--- Infinite Jump
 local jumpConn
 local function toggleInfiniteJump(state)
     states.InfiniteJump = state
@@ -118,7 +124,6 @@ local function toggleInfiniteJump(state)
     end
 end
 
--- Anti-AFK (working 2026 method)
 local antiAfkConn
 local function toggleAntiAfk(state)
     states.AntiAfk = state
@@ -133,7 +138,6 @@ local function toggleAntiAfk(state)
     end
 end
 
--- Simple Kill Player (position under target - reliable)
 local function killPlayer(target)
     pcall(function()
         local myChar = LocalPlayer.Character
@@ -150,20 +154,72 @@ end
 -- =============================================================
 -- Tabs & Folders
 -- =============================================================
-local mainTab     = window:AddTab("Main")
-local farmingTab  = window:AddTab("Better Farming")
-local rebirthTab  = window:AddTab("Rebirth")
-local teleportTab = window:AddTab("Teleport")
-local StatsTab = window:AddTab("Stats")
-local killerTab   = window:AddTab("Killer")
-local miscTab     = window:AddTab("Misc")
+local mainTab         = window:AddTab("Main")
+local farmingTab      = window:AddTab("Better Farming")
+local rebirthTab      = window:AddTab("Rebirth")
+local teleportTab     = window:AddTab("Teleport")
+local killerTab       = window:AddTab("Killer")
+local miscTab         = window:AddTab("Misc")
+local statsTab        = window:AddTab("Stats")
+local brawlFarmingTab = window:AddTab("Brawl Farming")
 
 local toolsFolder    = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder     = killerTab:AddFolder("Auto Kill")
-local Brawl FarmingFolder = miscTab:AddFolder("Brawl Farming")
+local brawlFolder    = brawlFarmingTab:AddFolder("Brawl Farming")
 
--- Tools switches (unchanged except safer delay)
+-- Stats Tab
+statsTab:AddSection("Session Statistics")
+
+local sessionTimeLabel = statsTab:AddLabel("Session Time: 00:00:00")
+local strengthLabel    = statsTab:AddLabel("Strength Gained: 0")
+local rebirthLabel     = statsTab:AddLabel("Rebirths Gained: 0")
+local durabilityLabel  = statsTab:AddLabel("Durability Gained: 0")
+
+-- Live stats update
+task.spawn(function()
+    local start = os.time()
+    local lastStr, lastReb, lastDur = nil, nil, nil
+
+    while getgenv().NexusRunning do
+        local elapsed = os.time() - start
+        local h = math.floor(elapsed / 3600)
+        local m = math.floor((elapsed % 3600) / 60)
+        local s = elapsed % 60
+        sessionTimeLabel:Set(string.format("Session Time: %02d:%02d:%02d", h, m, s))
+
+        -- Strength
+        pcall(function()
+            local str = LocalPlayer.leaderstats and LocalPlayer.leaderstats:FindFirstChild("Strength")
+            if str then
+                if not lastStr then lastStr = str.Value end
+                strengthLabel:Set("Strength Gained: " .. (str.Value - lastStr))
+            end
+        end)
+
+        -- Rebirths
+        pcall(function()
+            local reb = LocalPlayer.leaderstats and LocalPlayer.leaderstats:FindFirstChild("Rebirths")
+            if reb then
+                if not lastReb then lastReb = reb.Value end
+                rebirthLabel:Set("Rebirths Gained: " .. (reb.Value - lastReb))
+            end
+        end)
+
+        -- Durability
+        pcall(function()
+            local dur = LocalPlayer:FindFirstChild("Durability")
+            if dur then
+                if not lastDur then lastDur = dur.Value end
+                durabilityLabel:Set("Durability Gained: " .. (dur.Value - lastDur))
+            end
+        end)
+
+        task.wait(1)
+    end
+end)
+
+-- Tools switches
 toolsFolder:AddSwitch("Auto Pushups",    function(s) states.AutoPushups = s    if s then startAutoRep("Pushups",    "AutoPushups")    end end)
 toolsFolder:AddSwitch("Auto Weight",     function(s) states.AutoWeight = s     if s then startAutoRep("Weight",     "AutoWeight")     end end)
 toolsFolder:AddSwitch("Auto Handstands", function(s) states.AutoHandstands = s if s then startAutoRep("Handstands", "AutoHandstands") end end)
@@ -228,7 +284,7 @@ toolsFolder:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- Teleport Tab (unchanged)
+-- Teleport Tab
 teleportTab:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
 teleportTab:AddButton("To Secret Area",       function() tpTo(Vector3.new(1947, 2, 6191)) end)
 teleportTab:AddButton("To Tiny Area",         function() tpTo(Vector3.new(-39, 6, 1886)) end)
@@ -242,7 +298,7 @@ teleportTab:AddButton("To Lava Brawl",        function() tpTo(Vector3.new(4471, 
 teleportTab:AddButton("To Desert Brawl",      function() tpTo(Vector3.new(960, 17, -7398)) end)
 teleportTab:AddButton("To Beach Brawl",       function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- Rock Farm Loop (single active)
+-- Rock Farm
 task.spawn(function()
     while getgenv().NexusRunning do
         if not getgenv().rockFarmActive or getgenv().selectedRockDurability <= 0 then
@@ -359,8 +415,26 @@ farmingTab:AddSwitch("Fast Grind / Strength", toggleFastStrength)
 miscTab:AddSwitch("Infinite Jump", toggleInfiniteJump)
 miscTab:AddSwitch("Anti-AFK", toggleAntiAfk)
 
+-- Brawl Farming Folder
+brawlFarmingTab:AddSwitch("Auto Join Brawl", function(s)
+    states.AutoJoinBrawl = s
+    if s then
+        task.spawn(function()
+            while states.AutoJoinBrawl and getgenv().NexusRunning do
+                pcall(function()
+                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
+                    if rEvents and rEvents:FindFirstChild("brawlEvent") then
+                        rEvents.brawlEvent:FireServer("joinBrawl")
+                    end
+                end)
+                task.wait(2)
+            end
+        end)
+    end
+end)
+
 -- Rebirth Tab
-Rebirth:AddSwitch("Auto Rebirth (Infinite)", function(s)
+rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
     states.AutoRebirth = s
     if s then
         task.spawn(function()
@@ -377,12 +451,12 @@ Rebirth:AddSwitch("Auto Rebirth (Infinite)", function(s)
     end
 end)
 
-Rebirth:AddInput("Target Rebirths", function(value)
+rebirthTab:AddInput("Target Rebirths", function(value)
     local num = tonumber(value)
     targetRebirths = num and num > 0 and num or 1
 end)
 
-Rebirth:AddSwitch("Auto Rebirth to Target", function(s)
+rebirthTab:AddSwitch("Auto Rebirth to Target", function(s)
     states.AutoRebirthTarget = s
     if s then
         task.spawn(function()
@@ -404,7 +478,7 @@ Rebirth:AddSwitch("Auto Rebirth to Target", function(s)
     end
 end)
 
-Rebirth:AddSwitch("Auto Size 2", function(s)
+rebirthTab:AddSwitch("Auto Size 2", function(s)
     if s then
         getgenv().sizeLoop = task.spawn(function()
             while getgenv().NexusRunning do
@@ -422,7 +496,7 @@ Rebirth:AddSwitch("Auto Size 2", function(s)
     end
 end)
 
-Rebirth:AddSwitch("Auto TP Muscle King", function(s)
+rebirthTab:AddSwitch("Auto TP Muscle King", function(s)
     if s then
         getgenv().kingTpLoop = task.spawn(function()
             while getgenv().NexusRunning do
@@ -435,8 +509,8 @@ Rebirth:AddSwitch("Auto TP Muscle King", function(s)
     end
 end)
 
--- Optional: Pet Unequip (call manually if needed)
-local function unequipAllPets()
+-- Optional Pet Unequip
+miscTab:AddButton("Unequip All Pets", function()
     pcall(function()
         local petsFolder = LocalPlayer:FindFirstChild("petsFolder")
         if not petsFolder then return end
@@ -453,136 +527,6 @@ local function unequipAllPets()
             end
         end
     end)
-end
+end)
 
--- Call unequipAllPets() somewhere if you want to add a button for it, e.g.:
--- miscTab:AddButton("Unequip All Pets", unequipAllPets)
-
-print("Invincibles Priv Script – fixed & safer (Feb 2026)")
-
-local IntSection = Tabs.Stats:CreateSection("Player Stats")
-local RunService = game:GetService("RunService")
-local player = game.Players.LocalPlayer
-
-local startTime = 0
-local sessionStartTime = os.time()
-local timerRunning = false
-
-local strengthGained = 0
-local lastStrengthValue = nil
-local rebirthsGained = 0
-local lastRebirthsValue = nil
-local killsGained = 0
-local lastKillsValue = nil
-local brawlsGained = 0
-local lastBrawlsValue = nil
-local goodKarmaGained = 0
-local lastGoodKarmaValue = nil
-local evilKarmaGained = 0
-local lastEvilKarmaValue = nil
-local durabilityGained = 0
-local lastDurabilityValue = nil
-local agilityGained = 0
-local lastAgilityValue = nil
-local muscleKingTimeGained = 0
-local lastMuscleKingTimeValue = nil
-
-local Toggle = Folder.Brawl Farming:AddToggle("Auto Join Brawl Toggle", {
-	Title = "Auto Join Brawl",
-	Default = false,
-	Callback = function(v)
-		getgenv().joinbrawl = v
-		while getgenv().joinbrawl do
-			wait()
-			game:GetService("ReplicatedStorage").rEvents.brawlEvent:FireServer("joinBrawl")
-		end
-	end
-})
-
-Tabs.Stats:CreateButton{
-	Title = "Track Player",
-	Description = "Start tracking selected player's stats",
-	Callback = function()
-		local foundPlayer = nil
-		for _, player in pairs(game.Players:GetPlayers()) do
-			local nameLower = player.Name:lower()
-			local displayLower = player.DisplayName:lower()
-			local searchLower = targetPlayer:lower()
-			if nameLower:find(searchLower) or displayLower:find(searchLower) then
-				foundPlayer = player
-				break
-			end
-		end
-		if foundPlayer then
-			local content = string.format("Strength: %s\nRebirths: %s\nKills: %s\nBrawls: %s\nGood Karma: %s\nEvil Karma: %s\nDurability: %s\nAgility: %s", formatNumber(foundPlayer.leaderstats.Strength.Value), formatNumber(foundPlayer.leaderstats.Rebirths.Value), formatNumber(foundPlayer.leaderstats.Kills.Value), formatNumber(foundPlayer.leaderstats.Brawls.Value), formatNumber(foundPlayer.goodKarma.Value), formatNumber(foundPlayer.evilKarma.Value), formatNumber(foundPlayer.Durability.Value), formatNumber(foundPlayer.Agility.Value))
-			TrackingParagraph:SetContent(content)
-			TrackingParagraph:SetTitle("Ã°Å¸â€œÅ  Tracking: " .. foundPlayer.Name)
-		end
-	end
-}
-
-local Section = Tabs.Killer:CreateSection("Auto Kill")
-local Players = game:GetService("Players")
-
-local function checkCharacter()
-    if not game.Players.LocalPlayer.Character then
-        repeat
-            task.wait()
-        until game.Players.LocalPlayer.Character
-    end
-    return game.Players.LocalPlayer.Character
-end
-
-local function killPlayer(target)
-    local character = checkCharacter()
-    if character and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-        if character:FindFirstChild("LeftHand") then
-            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 0)
-            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 1)
-            gettool()
-        end
-    end
-end
-
-Tabs.Killer:AddToggle("Kill Player", {
-    Title = "Start Killing",
-    Default = false,
-    Callback = function(v)
-        getgenv().killallv2 = v
-        task.spawn(function()
-            while getgenv().killallv2 do
-                for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
-                    if player ~= game.Players.LocalPlayer then
-                        if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-                            killPlayer(player)
-                        end
-                    end
-                end
-                task.wait()
-            end
-        end)
-    end
-})
-local PlayerDropdown = Tabs.Killer:CreateDropdown("PlayerList", {
-	Title = "Kill Target",
-	Description = "Choose player to target",
-	Values = {},
-	Multi = false,
-	Default = nil,
-	Callback = function(Value)
-		local username = string.match(Value, "(.+) |")
-		targetPlayer = username
-		print("Target set to:", targetPlayer)
-	end
-})
-
-local function updatePlayerList()
-	local playerInfo = {}
-	for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-		if player ~= game.Players.LocalPlayer then
-			local displayText = player.Name .. " | " .. player.DisplayName
-			table.insert(playerInfo, displayText)
-		end
-	end
-	PlayerDropdown:SetValues(playerInfo)
-end
+print("Invincible Paid loaded – blood red theme (Feb 2026)")
