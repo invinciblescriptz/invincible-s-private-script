@@ -498,3 +498,91 @@ local Toggle = Folder.Brawl Farming:AddToggle("Auto Join Brawl Toggle", {
 		end
 	end
 })
+
+Tabs.Stats:CreateButton{
+	Title = "Track Player",
+	Description = "Start tracking selected player's stats",
+	Callback = function()
+		local foundPlayer = nil
+		for _, player in pairs(game.Players:GetPlayers()) do
+			local nameLower = player.Name:lower()
+			local displayLower = player.DisplayName:lower()
+			local searchLower = targetPlayer:lower()
+			if nameLower:find(searchLower) or displayLower:find(searchLower) then
+				foundPlayer = player
+				break
+			end
+		end
+		if foundPlayer then
+			local content = string.format("Strength: %s\nRebirths: %s\nKills: %s\nBrawls: %s\nGood Karma: %s\nEvil Karma: %s\nDurability: %s\nAgility: %s", formatNumber(foundPlayer.leaderstats.Strength.Value), formatNumber(foundPlayer.leaderstats.Rebirths.Value), formatNumber(foundPlayer.leaderstats.Kills.Value), formatNumber(foundPlayer.leaderstats.Brawls.Value), formatNumber(foundPlayer.goodKarma.Value), formatNumber(foundPlayer.evilKarma.Value), formatNumber(foundPlayer.Durability.Value), formatNumber(foundPlayer.Agility.Value))
+			TrackingParagraph:SetContent(content)
+			TrackingParagraph:SetTitle("Ã°Å¸â€œÅ  Tracking: " .. foundPlayer.Name)
+		end
+	end
+}
+
+local Section = Tabs.Killer:CreateSection("Auto Kill")
+local Players = game:GetService("Players")
+
+local function checkCharacter()
+    if not game.Players.LocalPlayer.Character then
+        repeat
+            task.wait()
+        until game.Players.LocalPlayer.Character
+    end
+    return game.Players.LocalPlayer.Character
+end
+
+local function killPlayer(target)
+    local character = checkCharacter()
+    if character and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        if character:FindFirstChild("LeftHand") then
+            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 0)
+            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 1)
+            gettool()
+        end
+    end
+end
+
+Tabs.Killer:AddToggle("Kill Player", {
+    Title = "Start Killing",
+    Default = false,
+    Callback = function(v)
+        getgenv().killallv2 = v
+        task.spawn(function()
+            while getgenv().killallv2 do
+                for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+                    if player ~= game.Players.LocalPlayer then
+                        if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+                            killPlayer(player)
+                        end
+                    end
+                end
+                task.wait()
+            end
+        end)
+    end
+})
+local PlayerDropdown = Tabs.Killer:CreateDropdown("PlayerList", {
+	Title = "Kill Target",
+	Description = "Choose player to target",
+	Values = {},
+	Multi = false,
+	Default = nil,
+	Callback = function(Value)
+		local username = string.match(Value, "(.+) |")
+		targetPlayer = username
+		print("Target set to:", targetPlayer)
+	end
+})
+
+local function updatePlayerList()
+	local playerInfo = {}
+	for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+		if player ~= game.Players.LocalPlayer then
+			local displayText = player.Name .. " | " .. player.DisplayName
+			table.insert(playerInfo, displayText)
+		end
+	end
+	PlayerDropdown:SetValues(playerInfo)
+end
