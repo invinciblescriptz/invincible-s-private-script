@@ -586,3 +586,298 @@ local function updatePlayerList()
 	end
 	PlayerDropdown:SetValues(playerInfo)
 end
+
+local Section = Tabs.Killer:CreateSection("⏬Auto Kill Karma⏬")
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Equip Punch tool
+local function equipTool(toolName)
+    local character = LocalPlayer.Character
+    local backpack = LocalPlayer.Backpack
+    if not (character and backpack) then return end
+    local tool = backpack:FindFirstChild(toolName)
+    if tool then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:EquipTool(tool)
+        end
+    end
+end
+
+-- Evil Karma Kill function (targets players with more Evil Karma than Good Karma)
+local function evilKarmaKill(toggleState)
+    getgenv().killEvil = toggleState
+    if toggleState then
+        equipTool("Punch")
+        task.spawn(function()
+            while getgenv().killEvil do
+                local character = LocalPlayer.Character
+                local leftHand = character and character:FindFirstChild("LeftHand")
+                if not leftHand then
+                    task.wait(0.3)
+                    continue
+                end
+                local muscleEvent = LocalPlayer:FindFirstChild("muscleEvent")
+                if muscleEvent then
+                    muscleEvent:FireServer("punch", "rightHand")
+                    muscleEvent:FireServer("punch", "leftHand")
+                end
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer then
+                        local goodKarma = player:FindFirstChild("goodKarma")
+                        local evilKarma = player:FindFirstChild("evilKarma")
+                        if goodKarma and evilKarma and evilKarma.Value > goodKarma.Value then
+                            local targetChar = player.Character
+                            local head = targetChar and targetChar:FindFirstChild("Head")
+                            if head then
+                                head.CFrame = leftHand.CFrame
+                                for _, part in pairs(targetChar:GetDescendants()) do
+                                    if part:IsA("BasePart") and part.Name == "Handle" then
+                                        part.CFrame = leftHand.CFrame
+                                    end
+                                end
+                                local sweatPart = targetChar:FindFirstChild("sweatPart")
+                                if sweatPart then
+                                    sweatPart.CFrame = leftHand.CFrame
+                                end
+                            end
+                        end
+                    end
+                end
+                task.wait(.1)
+            end
+        end)
+    end
+end
+
+-- Good Karma Kill function (targets players with more Good Karma than Evil Karma)
+local function goodKarmaKill(toggleState)
+    getgenv().killGood = toggleState
+    if toggleState then
+        equipTool("Punch")
+        task.spawn(function()
+            while getgenv().killGood do
+                local character = LocalPlayer.Character
+                local leftHand = character and character:FindFirstChild("LeftHand")
+                if not leftHand then
+                    task.wait(0.3)
+                    continue
+                end
+                local muscleEvent = LocalPlayer:FindFirstChild("muscleEvent")
+                if muscleEvent then
+                    muscleEvent:FireServer("punch", "rightHand")
+                    muscleEvent:FireServer("punch", "leftHand")
+                end
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer then
+                        local goodKarma = player:FindFirstChild("goodKarma")
+                        local evilKarma = player:FindFirstChild("evilKarma")
+                        if goodKarma and evilKarma and goodKarma.Value > evilKarma.Value then
+                            local targetChar = player.Character
+                            local head = targetChar and targetChar:FindFirstChild("Head")
+                            if head then
+                                head.CFrame = leftHand.CFrame
+                                for _, part in pairs(targetChar:GetDescendants()) do
+                                    if part:IsA("BasePart") and part.Name == "Handle" then
+                                        part.CFrame = leftHand.CFrame
+                                    end
+                                end
+                                local sweatPart = targetChar:FindFirstChild("sweatPart")
+                                if sweatPart then
+                                    sweatPart.CFrame = leftHand.CFrame
+                                end
+                            end
+                        end
+                    end
+                end
+                task.wait(.1)
+            end
+        end)
+    end
+end
+
+Tabs.Killer:AddToggle("GoodKarmaKillToggle", {
+    Title = "Good Karma Kill",
+    Description = "Toggle to kill players with more Evil Karma",
+    Default = false,
+    Callback = function(state)
+        evilKarmaKill(state)
+        pcall(function()
+            Library:Notify("Good Karma Kill " .. (state and "Enabled" or "Disabled"), 2)
+        end)
+    end
+})
+
+-- Evil Karma Kill toggle
+Tabs.Killer:AddToggle("EvilKarmaKillToggle", {
+    Title = "Evil Karma Kill",
+    Description = "Toggle to kill players with more Good Karma",
+    Default = false,
+    Callback = function(state)
+        goodKarmaKill(state)
+        pcall(function()
+            Library:Notify("Evil Karma Kill " .. (state and "Enabled" or "Disabled"), 2)
+        end)
+    end
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Function to get list of player DisplayNames
+local function getPlayerList()
+    local playerList = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(playerList, player.DisplayName)
+        end
+    end
+    return playerList
+end
+
+local Dropdown = Tabs.Killer:CreateDropdown("SpectatePlayer", {
+    Title = "Spectate Player",
+    Description = "Piliin ang player na panoorin",
+    Options = getPlayerList(),
+    Default = "",
+    Callback = function(Value)
+        local targetPlayer = nil
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.DisplayName == Value then
+                targetPlayer = player
+                break
+            end
+        end
+        if targetPlayer and targetPlayer.Character then
+            local camera = workspace.CurrentCamera
+            camera.CameraSubject = targetPlayer.Character.Humanoid
+            print("Now spectating: " .. targetPlayer.DisplayName .. " (@" .. targetPlayer.Name .. ")")
+        else
+            print("Hindi mahanap ang player o walang character.")
+        end
+    end
+})
+
+-- Dynamically update dropdown
+local function updatePlayerList()
+    local newOptions = getPlayerList()
+    Dropdown.Options = newOptions
+    if Dropdown.SetValues then
+        Dropdown:SetValues(newOptions)
+    end
+    print("Na-update ang dropdown: " .. table.concat(newOptions, ", "))
+end
+
+task.spawn(function()
+    while true do
+        updatePlayerList()
+        task.wait(1)
+    end
+end)
+
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
+updatePlayerList()
+
+Tabs.Killer:CreateButton({
+    Title = "Stop Spying",
+    Description = "Bumalik ang camera sa iyong character",
+    Callback = function()
+        local camera = workspace.CurrentCamera
+        if LocalPlayer.Character then
+            camera.CameraSubject = LocalPlayer.Character.Humanoid
+            print("Bumalik ang camera sa iyong character.")
+        else
+            print("Walang character ang iyong player.")
+        end
+    end
+})
+
+
+local currentRadius = 75
+local RadiusInput = Tabs.Killer:CreateInput("RadiusInput", {
+    Title = "Kill Aura Radius",
+    Description = "Set the kill aura radius (1-150)",
+    Default = "75",
+    Placeholder = "Enter radius...",
+    Callback = function(Value)
+        currentRadius = math.clamp(tonumber(Value) or 75, 1, 150)
+        Library:Notify({
+            Title = "Radius Updated",
+            Content = "Kill aura radius set to: " .. currentRadius,
+            Duration = 2
+        })
+    end
+})
+
+local Toggle = Tabs.Killer:AddToggle("Kill Nearby", {
+    Title = "Matrix Kill Aura",
+    Default = false,
+    Callback = function(v)
+        getgenv().killNearby = v
+        local radiusVisual = Instance.new("Part")
+        radiusVisual.Anchored = true
+        radiusVisual.CanCollide = false
+        radiusVisual.Transparency = 0.8
+        radiusVisual.Material = Enum.Material.ForceField
+        radiusVisual.Color = Color3.fromRGB(0, 2, 255)
+        radiusVisual.Size = Vector3.new(1, 0.1, 1)
+        task.spawn(function()
+            while getgenv().killNearby do
+                pcall(function()
+                    local myCharacter = Players.LocalPlayer.Character
+                    local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+                    if myRoot then
+                        radiusVisual.Parent = workspace
+                        radiusVisual.Size = Vector3.new(currentRadius * 2, 0.1, currentRadius * 2)
+                        radiusVisual.CFrame = myRoot.CFrame * CFrame.new(0, -2, 0)
+                        for _, player in pairs(Players:GetPlayers()) do
+                            if player ~= Players.LocalPlayer and not whitelist[player.Name] then
+                                local char = player.Character
+                                local root = char and char:FindFirstChild("HumanoidRootPart")
+                                if root and myRoot then
+                                    local distance = (root.Position - myRoot.Position).Magnitude
+                                    if distance <= currentRadius then
+                                        firetouchinterest(root, myCharacter.LeftHand, 0)
+                                        task.wait()
+                                        firetouchinterest(root, myCharacter.LeftHand, 1)
+                                        gettool()
+                                    end
+                                end
+                            end
+                        end
+                        task.wait(0.1)
+                    end
+                end)
+                task.wait(0.1)
+            end
+            radiusVisual:Destroy()
+        end)
+    end
+})
+
+local PlayerDropdown = Tabs.Killer:CreateDropdown("PlayerList", {
+    Title = "Select Target",
+    Description = "Choose player to target",
+    Values = {},
+    Multi = false,
+    Default = nil,
+    Callback = function(Value)
+        local username = string.match(Value, "(.+) |")
+        targetPlayer = username
+        print("Target set to:", targetPlayer)
+    end
+})
+
+local function updatePlayerList()
+    local playerInfo = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            local displayText = player.Name .. " | " .. player.DisplayName
+            table.insert(playerInfo, displayText)
+        end
+    end
+    PlayerDropdown:SetValues(playerInfo)
+end
