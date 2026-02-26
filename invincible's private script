@@ -452,8 +452,11 @@ local function unequipAllPets()
                 end
             end
         end
-    end
-end)
+    end)
+end
+
+-- Call unequipAllPets() somewhere if you want to add a button for it, e.g.:
+-- miscTab:AddButton("Unequip All Pets", unequipAllPets)
 
 print("Invincibles Priv Script – fixed & safer (Feb 2026)")
 
