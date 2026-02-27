@@ -508,3 +508,283 @@ local function formatTime(seconds)
     return string.format("%dd %dh %dm %ds", days, hours, minutes, secs)
 end
 
+
+local Section = Tabs.AutoFarm:CreateSection("⏬Auto Farm Gym⏬")
+
+local function pressE()
+    local vim = game:GetService("VirtualInputManager")
+    vim:SendKeyEvent(true, "E", false, game)
+    task.wait(.1)
+    vim:SendKeyEvent(false, "E", false, game)
+end
+
+local function autoLift()
+    while getgenv().working and task.wait() do
+        game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
+    end
+end
+
+local function teleportAndStart(machineName, position)
+    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = position
+        task.wait(.1)
+        pressE()
+        autoLift()
+    end
+end
+
+local locations = {
+    ["Frost Gym"] = true,
+    ["Mythical Gym"] = true,
+    ["Eternal Gym"] = true,
+    ["Legend Gym"] = true,
+    ["Muscle King Gym"] = true,
+    ["Jungle Gym"] = true
+}
+
+local locationsList = {
+    "Frost Gym",
+    "Mythical Gym",
+    "Eternal Gym",
+    "Legend Gym",
+    "Muscle King Gym",
+    "Jungle Gym"
+}
+
+local workoutPositions = {
+    ["Bench Press"] = {
+        ["Frost Gym"] = CFrame.new(-3009, 38, -338),
+        ["Mythical Gym"] = CFrame.new(2369, 38, 1243),
+        ["Eternal Gym"] = CFrame.new(-7174, 45, -1106),
+        ["Legend Gym"] = CFrame.new(4109, 1020, -3803),
+        ["Muscle King Gym"] = CFrame.new(-8590.06152, 46.0167427, -6043.34717),
+        ["Jungle Gym"] = CFrame.new(-8629.88086, 64.8842468, 1855.03467)
+    },
+    ["Squat"] = {
+        ["Frost Gym"] = CFrame.new(-2721, 29, -592),
+        ["Mythical Gym"] = CFrame.new(2487, 30, 848),
+        ["Legend Gym"] = CFrame.new(4304, 1020, -4123),
+        ["Muscle King Gym"] = CFrame.new(-8759, 44, -6044),
+        ["Jungle Gym"] = CFrame.new(-8374.25586, 34.5933418, 2932.44995)
+    },
+    ["Deadlift"] = {
+        ["Frost Gym"] = CFrame.new(-2918, 40, -210),
+        ["Mythical Gym"] = CFrame.new(2489.21484, 3.67686629, 849.051025),
+        ["Legend Gym"] = CFrame.new(4532, 1023, -4003),
+        ["Muscle King Gym"] = CFrame.new(-8773, 50, -5664),
+        ["Jungle Gym"] = CFrame.new(-8678.05566, 14.5030098, 2089.25977) -- Fixed syntax
+    },
+    ["Boulder"] = {
+        ["Mythical Gym"] = CFrame.new(2667, 46, 1203),
+        ["Legend Gym"] = CFrame.new(4189, 1010, -3904),
+        ["Muscle King Gym"] = CFrame.new(-8940.12402, 13.1642084, -5699.13477),
+        ["Jungle Gym"] = CFrame.new(-8617, 37, 2677)
+    }
+}
+
+local workoutTypes = {
+    "Bench Press",
+    "Squat",
+    "Deadlift",
+    "Boulder"
+}
+
+for _, workoutType in ipairs(workoutTypes) do
+    local dropdown = Tabs.AutoFarm:CreateDropdown(workoutType .. " dropdown", {
+        Title = "Select " .. workoutType,
+        Description = "Choose Your Training Location",
+        Values = locationsList,
+        Multi = false,
+        Default = 1,
+        Callback = function(Value)
+            _G["select" .. string.lower(string.gsub(workoutType, " ", ""))] = Value
+        end
+    })
+    local toggle = Tabs.AutoFarm:CreateToggle(workoutType .. " Toggle", {
+        Title = "Farm " .. workoutType,
+        Description = "Auto Trains " .. workoutType,
+        Default = false,
+        Callback = function(Value)
+            getgenv().working = Value
+            if Value then
+                local selected = _G["select" .. string.lower(string.gsub(workoutType, " ", ""))]
+                if workoutPositions[workoutType][selected] then
+                    teleportAndStart(workoutType, workoutPositions[workoutType][selected])
+                end
+            end
+        end
+    })
+end
+
+local Section = Tabs.Rebirth:CreateSection("⏬AutoRebirth⏬")
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+-- RB Class
+local RB = {}
+RB.__index = RB
+
+function RB.new(tab)
+    local self = setmetatable({}, RB)
+    self.on = false
+    self.target = 1
+    self.tab = tab
+    self:ui()
+    return self
+end
+
+function RB:ui()
+    -- TextBox for Target Rebirths
+    self.input = self.tab:AddInput("TargetInput", {
+        Title = "Target Rebirths",
+        PlaceholderText = "Enter target rebirths",
+        Numeric = true, -- Restrict to numbers
+        Callback = function(value)
+            local n = tonumber(value)
+            if n and n >= 1 then
+                self.target = n
+            else
+                self.input:Update({ Value = "" }) -- Clear if invalid
+            end
+        end
+    })
+
+    -- Toggle for Auto Rebirth (Target)
+    self.tab:AddToggle("AutoRebirthTarget", {
+        Title = "Auto Rebirth (Target)",
+        Description = "Auto rebirths until target is reached",
+        Default = false,
+        Callback = function(state)
+            self.on = state
+            if state then
+                self:run()
+            end
+        end
+    })
+end
+
+function RB:run()
+    task.spawn(function()
+        local leaderstats = LocalPlayer:WaitForChild("leaderstats")
+        local rebirths = leaderstats and leaderstats:WaitForChild("Rebirths")
+        local events = ReplicatedStorage:WaitForChild("rEvents")
+        local remote = events and events:WaitForChild("rebirthRemote")
+
+        if not (rebirths and remote) then
+            self.on = false
+            return
+        end
+
+        while self.on do
+            if rebirths.Value >= self.target then
+                self.on = false
+                print("Target rebirths reached! Stopping auto rebirth.")
+                break
+            end
+
+            local success, errorMessage = pcall(function()
+                remote:InvokeServer("rebirthRequest")
+            end)
+
+            if not success then
+                warn("Failed to send rebirth request: " .. tostring(errorMessage))
+            end
+
+            task.wait(1)
+        end
+    end)
+end
+
+-- Instantiate RB
+local myRebirth = RB.new(Tabs.Rebirth)
+
+-- Auto Rebirth (Infinite) Toggle
+local autoRebirth = false
+Tabs.Rebirth:AddToggle("AutoRebirthInfinite", {
+    Title = "Auto Rebirth (Infinite)",
+    Description = "Auto rebirths indefinitely",
+    Default = false,
+    Callback = function(state)
+        autoRebirth = state
+        if state then
+            task.spawn(function()
+                while autoRebirth do
+                    local success, errorMessage = pcall(function()
+                        game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("rebirthRemote"):InvokeServer("rebirthRequest")
+                    end)
+                    if not success then
+                        warn("Failed to send rebirth request: " .. tostring(errorMessage))
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+-- Auto Size 2 Toggle
+local autoSizeLoop = nil
+Tabs.Reb:AddToggle("AutoSize2", {
+    Title = "Auto Size 2",
+    Description = "Sets size to 2 automatically",
+    Default = false,
+    Callback = function(state)
+        if state then
+            autoSizeLoop = task.spawn(function()
+                while task.wait(0) do
+                    local success, errorMessage = pcall(function()
+                        game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 2)
+                    end)
+                    if not success then
+                        warn("Failed to send size change request: " .. tostring(errorMessage))
+                    end
+                end
+            end)
+        else
+            if autoSizeLoop then
+                task.cancel(autoSizeLoop)
+                autoSizeLoop = nil
+            end
+        end
+    end
+})
+
+
+local teleportLoop = nil
+local kingTeleportToggle = Tabs.Reb:CreateToggle("KingTeleport", {
+    Title = "Auto Teleport to King",
+    Description = "Continuously teleport to Muscle King",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            teleportLoop = task.spawn(function()
+                while task.wait(0) do
+                    if game.Players.LocalPlayer.Character then
+                        game.Players.LocalPlayer.Character:MoveTo(Vector3.new(-8646, 17, -5738))
+                    end
+                end
+            end)
+        else
+            if teleportLoop then
+                task.cancel(teleportLoop)
+                teleportLoop = nil
+            end
+        end
+    end
+})
+
+local Toggle = Tabs.Rebirth:CreateToggle("FrameToggle", {
+    Title = "Hide All Frames",
+    Description = "Toggle ON to hide all game frames",
+    Default = false,
+    Callback = function(Value)
+        local rSto = game:GetService("ReplicatedStorage")
+        for _, obj in pairs(rSto:GetChildren()) do
+            if obj.Name:match("Frame$") then
+                obj.Visible = not Value
+            end
+        end
+    end
+})
