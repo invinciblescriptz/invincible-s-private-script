@@ -795,3 +795,34 @@ local intStats = {
     "goodKarma",
     "muscleKingTime"
 }
+
+local PlayerDropdown = Tabs.Killer:CreateDropdown("PlayerList", {
+    Title = "Select Target",
+    Description = "Choose player to target",
+    Values = {},
+    Multi = false,
+    Default = nil,
+    Callback = function(Value)
+        local username = string.match(Value, "(.+) |")
+        targetPlayer = username
+        print("Target set to:", targetPlayer)
+    end
+})
+
+local function updatePlayerList()
+    local playerInfo = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            local displayText = player.Name .. " | " .. player.DisplayName
+            table.insert(playerInfo, displayText)
+        end
+    end
+    PlayerDropdown:SetValues(playerInfo)
+end
+
+task.spawn(function()
+    while true do
+        updatePlayerList()
+        task.wait(1)  -- Update every second
+    end
+end)
