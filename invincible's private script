@@ -1,7 +1,10 @@
 -- Define the whitelist of Usernames
 local whitelistedUsers = {
-    "hebdjxhc", "Fischpro657",
-    "krxzy_214", "alexglover020", "LinusHL95321",
+    "hebdjxhc",
+    "Fischpro657",
+    "krxzy_214",
+    "alexglover020",
+    "LinusHL95321"
 }
 
 local player = game:GetService("Players").LocalPlayer
