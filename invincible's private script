@@ -20,7 +20,7 @@ if not table.find(whitelistedUsers, LocalPlayer.Name) then
 end
 
 -- Load UI library
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
 
 local window = library:AddWindow("Invincible Paid", {
     main_color = Color3.fromRGB(50, 50, 50),
