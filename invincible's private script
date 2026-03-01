@@ -1,7 +1,7 @@
 -- Define the whitelist of Usernames
 local whitelistedUsers = {
-    "hebdjxhc", "Fischpro657", "xntz_o",
-    "krxzy_214", "alexglover020", "LinusHL95321",
+    "hebdjxhc",
+    "krxzy_214", "alexglover020",
 }
 
 local player = game:GetService("Players").LocalPlayer
@@ -508,43 +508,61 @@ local function formatTime(seconds)
     return string.format("%dd %dh %dm %ds", days, hours, minutes, secs)
 end
 
-local TrackingParagraph = Tabs.Stats:CreateParagraph("TrackingStats", {
-	Title = "Player Tracking Stats",
-	Content = "No player selected",
-	TitleAlignment = "Left",
-	ContentAlignment = Enum.TextXAlignment.Left
-})
-
-local PlayerInput = Tabs.Stats:CreateInput("PlayerTracker", {
-	Title = "Track Player Stats",
-	Description = "Enter username or display name",
-	Default = "",
-	Placeholder = "Enter player name...",
-	Numeric = false,
-	Finished = true,
+-- Time Control Dropdown
+local Dropdown = Tabs.Main:CreateDropdown("Time Of Day", {
+	Title = "Time Changer",
+	Description = "Change time of day",
+	Values = {
+		"Morning",
+		"Day",
+		"Night"
+	},
+	Multi = false,
+	Default = "Day",
 	Callback = function(Value)
-		targetPlayer = Value
+		local times = {
+			["Morning"] = 7,
+			["Day"] = 14,
+			["Night"] = 0
+		}
+		game:GetService("Lighting").ClockTime = times[Value]
 	end
 })
 
-Tabs.Stats:CreateButton{
-	Title = "Track Player",
-	Description = "Start tracking selected player's stats",
-	Callback = function()
-		local foundPlayer = nil
-		for _, player in pairs(game.Players:GetPlayers()) do
-			local nameLower = player.Name:lower()
-			local displayLower = player.DisplayName:lower()
-			local searchLower = targetPlayer:lower()
-			if nameLower:find(searchLower) or displayLower:find(searchLower) then
-				foundPlayer = player
-				break
-			end
-		end
-		if foundPlayer then
-			local content = string.format("Strength: %s\nRebirths: %s\nKills: %s\nBrawls: %s\nGood Karma: %s\nEvil Karma: %s\nDurability: %s\nAgility: %s", formatNumber(foundPlayer.leaderstats.Strength.Value), formatNumber(foundPlayer.leaderstats.Rebirths.Value), formatNumber(foundPlayer.leaderstats.Kills.Value), formatNumber(foundPlayer.leaderstats.Brawls.Value), formatNumber(foundPlayer.goodKarma.Value), formatNumber(foundPlayer.evilKarma.Value), formatNumber(foundPlayer.Durability.Value), formatNumber(foundPlayer.Agility.Value))
-			TrackingParagraph:SetContent(content)
-			TrackingParagraph:SetTitle("Ã°Å¸â€œÅ  Tracking: " .. foundPlayer.Name)
-		end
-	end
-}
+-- Auto Rebirth Toggle Script for Muscle Legends
+local rebirthEnabled = false
+local rebirthButton = Instance.new("TextButton")
+rebirthButton.Size = UDim2.new(0, 150, 0, 50)
+rebirthButton.Position = UDim2.new(0, 10, 0, 10)
+rebirthButton.Text = "Toggle Rebirth"
+rebirthButton.Parent = game.CoreGui
+
+local runService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+
+rebirthButton.MouseButton1Click:Connect(function()
+    rebirthEnabled = not rebirthEnabled
+    if rebirthEnabled then
+        rebirthButton.Text = "Rebirth: ON"
+    else
+        rebirthButton.Text = "Rebirth: OFF"
+    end
+end)
+
+spawn(function()
+    while true do
+        if rebirthEnabled then
+            -- Replace with the actual rebirth function or event
+            -- For example, if there's a RemoteEvent to rebirth:
+            local args = {} -- if needed, add arguments
+            local success, err = pcall(function()
+                -- Example: game.ReplicatedStorage.RebirthEvent:FireServer()
+                -- You need to replace this with the actual rebirth trigger in the game
+            end)
+            wait(1) -- Adjust the wait time for speed
+        else
+            wait(0.5)
+        end
+    end
+end)
