@@ -1,73 +1,37 @@
--- Fixed, merged, and organized script for Muscle Legends (March 2026)
--- Assumes all referenced UI elements are properly created.
--- Replace URLs or library functions if needed.
--- Ensure all remote events and server-side support are in place.
-
--- Helper functions for formatting
-local function formatNumber(number)
-    local formatted = tostring(math.floor(number))
-    local k
-    while true do
-        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
-        if k == 0 then break end
-    end
-    return formatted
-end
-
-local function formatTime(seconds)
-    local days = math.floor(seconds / 86400)
-    local hours = math.floor((seconds % 86400) / 3600)
-    local minutes = math.floor((seconds % 3600) / 60)
-    local secs = seconds % 60
-    return string.format("%dd %dh %dm %ds", days, hours, minutes, secs)
-end
-
--- Whitelist setup
+-- Define the whitelist of Usernames
 local whitelistedUsers = {
     "hebdjxhc",
     "krxzy_214", "alexglover020",
 }
-local player = game:GetService("Players").LocalPlayer
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 local rs = game:GetService("ReplicatedStorage")
--- Instant kick if not whitelisted
-if not table.find(whitelistedUsers, player.Name) then
-    player:Kick("not whitelisted L bozo dont steal my shit")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local VirtualUser = game:GetService("VirtualUser")
+local Workspace = game:GetService("Workspace")
+
+-- Whitelist check with instant kick
+if not table.find(whitelistedUsers, LocalPlayer.Name) then
+    LocalPlayer:Kick("not whitelisted L bozo dont steal my shit")
     return
 end
 
+-- Load UI library
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
-local window = library:AddWindow("Invincible Genesis Hub | Hello " .. player.DisplayName, {
+
+local window = library:AddWindow("Invincible Paid", {
     main_color = Color3.fromRGB(50, 50, 50),
     min_size = Vector2.new(520, 520),
     can_resize = false,
     background_transparency = 1,
 })
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
-local Lighting = game:GetService("Lighting")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 10)
-
--- UI elements for displaying session time
-local TimerParagraph = nil
-local CustomTimerParagraph = nil
-local leaderstats
-local StatsTab = nil
-
--- Initialize UI labels for time display after creating stats tab
-local function initializeTimeLabels()
-    TimerParagraph = statsTab:AddLabel("Session Time")
-    CustomTimerParagraph = statsTab:AddLabel("Custom Timer")
-end
-
 -- Globals & states
 getgenv().NexusRunning = true
+
 local states = {
     AutoPushups = false,
     AutoWeight = false,
@@ -80,31 +44,26 @@ local states = {
     KillAura = false,
     AutoKillSelected = false,
     AntiAfk = false,
-    AutoGoodKarma = false,
-    AutoBadKarma = false,
-    FastHitActive = false,
-    AutoWhitelistFriends = false,
-    ViewPlayer = false,
 }
 
 local targetRebirths = 1
 local selectedTarget = nil
-local selectedPet = ""
-_G = _G or {}
-_G.whitelistedPlayers = {}
-_G.ViewTarget = ""
-
-local sessionStartTime = os.time()
-local startTime = os.time()
-local timerRunning = false -- For custom timer
+local targetPlayer = nil -- for targeting specific players
 
 -- Rock farm globals
 getgenv().rockFarmActive = false
 getgenv().selectedRockDurability = 0
-local BlacklistFileName = "GenesisBlacklist_" .. LocalPlayer.Name .. ".txt"
-if not isfile(BlacklistFileName) then
-    writefile(BlacklistFileName, "")
-end
+
+-- Placeholder for session start time
+local sessionStartTime = os.time()
+local timerRunning = false
+local startTime = os.time()
+
+-- UI placeholders for stats (replace with your actual UI elements)
+local TimerParagraph = { SetContent = function() end }
+local CustomTimerParagraph = { SetContent = function() end }
+local LeaderParagraph = { SetContent = function() end }
+local IntParagraph = { SetContent = function() end }
 
 -- Helper functions
 local function tpTo(pos)
@@ -131,7 +90,7 @@ local function startAutoRep(toolName, stateKey)
             end)
             task.wait(0.08)
         end
-        -- When loop ends, move tool back to backpack
+        -- On stop, unequip the tool
         pcall(function()
             local char = LocalPlayer.Character
             if char and char:FindFirstChild(toolName) then
@@ -208,80 +167,18 @@ local function killPlayer(target)
     end)
 end
 
-local function updatePlayerStats()
-    local player = game.Players.LocalPlayer
-    local leaderstats = player:FindFirstChild("leaderstats")
-    local goodKarma = player:FindFirstChild("goodKarma")
-    local evilKarma = player:FindFirstChild("evilKarma")
-    local Durability = player:FindFirstChild("Durability")
-    local Agility = player:FindFirstChild("Agility")
-    local muscleKingTime = player:FindFirstChild("muscleKingTime")
-    local sessionTime = os.time() - sessionStartTime
-    -- Update session time label
-    if TimerParagraph then
-        TimerParagraph:SetContent(formatTime(sessionTime))
-    end
-    if timerRunning and CustomTimerParagraph then
-        local elapsed = os.time() - startTime
-        CustomTimerParagraph:SetContent(formatTime(elapsed))
-    end
-    -- Stats calculations
-    local currentStrength = leaderstats and leaderstats:FindFirstChild("Strength") and leaderstats.Strength.Value or 0
-    local currentRebirths = leaderstats and leaderstats:FindFirstChild("Rebirths") and leaderstats.Rebirths.Value or 0
-    local currentKills = leaderstats and leaderstats:FindFirstChild("Kills") and leaderstats.Kills.Value or 0
-    local currentBrawls = leaderstats and leaderstats:FindFirstChild("Brawls") and leaderstats.Brawls.Value or 0
-    local currentGoodKarma = goodKarma and goodKarma.Value or 0
-    local currentEvilKarma = evilKarma and evilKarma.Value or 0
-    local currentDurability = Durability and Durability.Value or 0
-    local currentAgility = Agility and Agility.Value or 0
-    local currentMuscleKingTime = muscleKingTime and muscleKingTime.Value or 0
-    -- Update UI labels if they exist
-    -- Example:
-    -- if LeaderParagraph then
-    --     LeaderParagraph:SetContent(string.format("Strength: %s\nRebirths: %s\nKills: %s\nBrawls: %s", formatNumber(currentStrength), formatNumber(currentRebirths), formatNumber(currentKills), formatNumber(currentBrawls)))
-    -- end
-    -- if IntParagraph then
-    --     IntParagraph:SetContent(string.format("Good Karma: %s\nEvil Karma: %s\nDurability: %s\nAgility: %s\nMuscle King Time: %s", formatNumber(currentGoodKarma), formatNumber(currentEvilKarma), formatNumber(currentDurability), formatNumber(currentAgility), formatNumber(currentMuscleKingTime)))
-    -- end
-end
-RunService.RenderStepped:Connect(updatePlayerStats)
-
-local function updatePlayerList()
-    local playerInfo = {}
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            local displayText = plr.Name .. " | " .. (plr.DisplayName or plr.Name)
-            table.insert(playerInfo, displayText)
-        end
-    end
-    -- Update dropdown UI element if exists
-    -- PlayerDropdown:SetValues(playerInfo)
-end
-
-task.spawn(function()
-    while true do
-        updatePlayerList()
-        task.wait(1)
-    end
-end)
-
--- Initialize UI Tabs
+-- UI Tabs & folders
 local mainTab = window:AddTab("Main")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
-local statsTab = window:AddTab("Stats")
+local StatsTab = window:AddTab("Stats")
 local killTab = window:AddTab("Kill")
 local miscTab = window:AddTab("Misc")
-local creditsTab = window:AddTab("Credits")
-local musicTab = window:AddTab("Music") -- From second script
+local CreditsTab = window:AddTab("Credits")
 
--- Initialize labels for stats tab
-initializeTimeLabels()
-
--- Folders inside tabs
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
-local killFolder = killTab:AddFolder("Auto Kill")
+local killerFolder = killTab:AddFolder("Auto Kill")
 local brawlFarmingFolder = miscTab:AddFolder("Brawl Farming")
 
 -- Tool switches
@@ -297,6 +194,7 @@ toolsFolder:AddSwitch("Auto Handstands", function(s)
     states.AutoHandstands = s
     if s then startAutoRep("Handstands", "AutoHandstands") end
 end)
+
 toolsFolder:AddSwitch("Auto Punch (Fast)", function(s)
     states.FastPunch = s
     if s then
@@ -325,52 +223,9 @@ toolsFolder:AddSwitch("Auto Punch (Fast)", function(s)
         end)
     end
 end)
-toolsFolder:AddSwitch("Fast Strength", function(s)
-    toggleFastStrength(s)
-end)
-toolsFolder:AddSwitch("Infinite Jump", function(s)
-    toggleInfiniteJump(s)
-end)
-toolsFolder:AddSwitch("Anti AFK", function(s)
-    toggleAntiAfk(s)
-end)
-toolsFolder:AddSwitch("Auto Good Karma", function(BooleanValue)
-    states.AutoGoodKarma = BooleanValue
-    task.spawn(function()
-        while states.AutoGoodKarma do
-            pcall(function()
-                local Character = LocalPlayer.Character
-                if Character then
-                    local GoodKarmaTool = Character:FindFirstChild("GoodKarma") or LocalPlayer.Backpack:FindFirstChild("GoodKarma")
-                    if GoodKarmaTool then
-                        Character.Humanoid:EquipTool(GoodKarmaTool)
-                        GoodKarmaTool:Activate()
-                    end
-                end
-            end)
-            task.wait(0.1)
-        end
-    end)
-end)
-toolsFolder:AddSwitch("Auto Punch", function(BooleanValue)
-    states.FastHitActive = BooleanValue
-    task.spawn(function()
-        while states.FastHitActive do
-            pcall(function()
-                local Character = LocalPlayer.Character
-                if Character then
-                    local PunchTool = Character:FindFirstChild("Punch") or LocalPlayer.Backpack:FindFirstChild("Punch")
-                    if PunchTool then
-                        Character.Humanoid:EquipTool(PunchTool)
-                        PunchTool:Activate()
-                    end
-                end
-            end)
-            task.wait(0.1)
-        end
-    end)
-end)
+
 toolsFolder:AddButton("Anti Lag (Boost FPS)", function()
+    local Lighting = game:GetService("Lighting")
     Lighting.GlobalShadows = false
     Lighting.Brightness = 1
     Lighting.ClockTime = 12
@@ -384,9 +239,10 @@ toolsFolder:AddButton("Anti Lag (Boost FPS)", function()
     end
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 end)
+
 toolsFolder:AddButton("Free AutoLift Gamepass", function()
     pcall(function()
-        local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
+        local gpFolder = rs:FindFirstChild("gamepassIds")
         if gpFolder then
             local owned = LocalPlayer:FindFirstChild("ownedGamepasses") or Instance.new("Folder")
             owned.Name = "ownedGamepasses"
@@ -400,22 +256,12 @@ toolsFolder:AddButton("Free AutoLift Gamepass", function()
         end
     end)
 end)
-toolsFolder:AddButton("Remove Punch Anim", function()
-    local Character = LocalPlayer.Character
-    if Character and Character:FindFirstChild("Humanoid") then
-        local Animator = Character.Humanoid:FindFirstChild("Animator")
-        if Animator then
-            for Index, Track in pairs(Animator:GetPlayingAnimationTracks()) do
-                if Track.Animation.AnimationId == "rbxassetid://3638729053" or Track.Animation.AnimationId == "rbxassetid://3638767427" then
-                    Track:Stop()
-                    Track:Destroy()
-                end
-            end
-        end
-    end
-end)
 
 -- Teleport Buttons
+local function teleportTo(pos)
+    tpTo(pos)
+end
+
 teleportTab:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
 teleportTab:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
 teleportTab:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39, 6, 1886)) end)
@@ -429,7 +275,7 @@ teleportTab:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8
 teleportTab:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
 teleportTab:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- Rock farm loop
+-- Rock Farm Loop
 task.spawn(function()
     while getgenv().NexusRunning do
         if not getgenv().rockFarmActive or getgenv().selectedRockDurability <= 0 then
@@ -499,20 +345,14 @@ rockFarmFolder:AddSwitch("Farm Eternal Gym Rock (750k)", function(s) setRockFarm
 rockFarmFolder:AddSwitch("Farm Legend Gym Rock (1M)", function(s) setRockFarm(1000000, s) end)
 rockFarmFolder:AddSwitch("Farm Muscle King Gym Rock (5M)", function(s) setRockFarm(5000000, s) end)
 rockFarmFolder:AddSwitch("Farm Ancient Jungle Rock (10M)", function(s) setRockFarm(10000000, s) end)
+
 rockFarmFolder:AddButton("STOP All Rock Farming", function()
     getgenv().rockFarmActive = false
     getgenv().selectedRockDurability = 0
 end)
 
--- Kill features
-killTab:AddLabel("Select damage or durability pet")
-local PetSelector = killTab:AddDropdown("Select Pet", function(Value)
-    selectedPet = Value
-end)
-PetSelector:Add("Wild Wizard")
-PetSelector:Add("Mighty Monster")
-
-killTab:AddSwitch("Kill Aura (All)", function(s)
+-- Killer Auto Kill
+killerFolder:AddSwitch("Kill Aura (All)", function(s)
     states.KillAura = s
     if s then
         task.spawn(function()
@@ -526,11 +366,26 @@ killTab:AddSwitch("Kill Aura (All)", function(s)
     end
 end)
 
-local playerDropdown = killTab:AddDropdown("Select Target", function(val)
-    selectedTarget = val and val:match("^([^|]+)") or nil
+local function updatePlayerDropdown()
+    local playerInfo = {}
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(playerInfo, plr.Name .. " | " .. (plr.DisplayName or plr.Name))
+        end
+    end
+    -- Assuming dropdown supports SetOptions or similar method
+    if killerFolder:GetChildren()[1] and killerFolder:GetChildren()[1].SetOptions then
+        killerFolder:GetChildren()[1]:SetOptions(playerInfo)
+    end
+end
+
+local playerDropdown = killerFolder:AddDropdown("Select Target", function(val)
+    if val then
+        selectedTarget = val:match("^([^|]+)")
+    end
 end)
 
-killTab:AddSwitch("Auto Kill Selected", function(s)
+killerFolder:AddSwitch("Auto Kill Selected", function(s)
     states.AutoKillSelected = s
     if s and selectedTarget then
         task.spawn(function()
@@ -543,145 +398,107 @@ killTab:AddSwitch("Auto Kill Selected", function(s)
     end
 end)
 
-local ViewDropdown = killTab:AddDropdown("Select View Target", function(Value)
-    _G.ViewTarget = Value
+-- Stats update (add your actual UI code)
+local function updatePlayerStats()
+    local player = game.Players.LocalPlayer
+    local leaderstats = player:FindFirstChild("leaderstats")
+    local goodKarma = player:FindFirstChild("goodKarma")
+    local evilKarma = player:FindFirstChild("evilKarma")
+    local Durability = player:FindFirstChild("Durability")
+    local Agility = player:FindFirstChild("Agility")
+    local muscleKingTime = player:FindFirstChild("muscleKingTime")
+
+    -- Session time
+    local sessionTime = os.time() - sessionStartTime
+    -- Replace with your UI update code
+    -- TimerParagraph:SetContent(formatTime(sessionTime))
+    -- if timerRunning then
+    --     local elapsed = os.time() - startTime
+    --     CustomTimerParagraph:SetContent(formatTime(elapsed))
+    -- end
+
+    -- Stats display
+    local currentStrength = leaderstats and leaderstats:FindFirstChild("Strength") and leaderstats.Strength.Value or 0
+    local currentRebirths = leaderstats and leaderstats:FindFirstChild("Rebirths") and leaderstats.Rebirths.Value or 0
+    local currentKills = leaderstats and leaderstats:FindFirstChild("Kills") and leaderstats.Kills.Value or 0
+    local currentBrawls = leaderstats and leaderstats:FindFirstChild("Brawls") and leaderstats.Brawls.Value or 0
+    local currentGoodKarma = goodKarma and goodKarma.Value or 0
+    local currentEvilKarma = evilKarma and evilKarma.Value or 0
+    local currentDurability = Durability and Durability.Value or 0
+    local currentAgility = Agility and Agility.Value or 0
+    local currentMuscleKingTime = muscleKingTime and muscleKingTime.Value or 0
+
+    -- update your UI accordingly
+    -- Example:
+    -- LeaderParagraph:SetContent(string.format("Strength: %s\nRebirths: %s\nKills: %s\nBrawls: %s", formatNumber(currentStrength), formatNumber(currentRebirths), formatNumber(currentKills), formatNumber(currentBrawls)))
+    -- IntParagraph:SetContent(string.format("Good Karma: %s\nEvil Karma: %s\nDurability: %s\nAgility: %s\nMuscle King Time: %s", formatNumber(currentGoodKarma), formatNumber(currentEvilKarma), formatNumber(currentDurability), formatNumber(currentAgility), formatNumber(currentMuscleKingTime)))
+end
+
+RunService.RenderStepped:Connect(updatePlayerStats)
+
+-- Player list dropdown update
+local PlayerDropdown = killTab:AddDropdown("PlayerList", {
+    Title = "Select Target",
+    Description = "Choose player to target",
+    Values = {},
+    Multi = false,
+    Default = nil,
+    Callback = function(val)
+        if val then
+            local name = val:match("^([^|]+)")
+            targetPlayer = name
+        end
+    end
+})
+
+local function updatePlayerList()
+    local list = {}
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= Players.LocalPlayer then
+            table.insert(list, plr.Name .. " | " .. (plr.DisplayName or plr.Name))
+        end
+    end
+    -- Update dropdown options (replace with your UI library's method)
+    if PlayerDropdown and PlayerDropdown.SetOptions then
+        PlayerDropdown:SetOptions(list)
+    end
+end
+
+task.spawn(function()
+    while true do
+        updatePlayerList()
+        task.wait(1)
+    end
 end)
 
-local function updateCameraTarget()
-    pcall(function()
-        local Target = nil
-        for _, Player in pairs(Players:GetPlayers()) do
-            if Player.DisplayName == _G.ViewTarget then
-                Target = Player
-                break
-            end
-        end
-        if Target and Target.Character and Target.Character:FindFirstChild("Humanoid") then
-            workspace.CurrentCamera.CameraSubject = Target.Character.Humanoid
-        else
-            workspace.CurrentCamera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-        end
-    end)
-end
-
-local function toggleViewPlayer(s)
-    states.ViewPlayer = s
+-- Auto Rebirth (assuming your game has such remote)
+local function autoRebirth()
     task.spawn(function()
-        while states.ViewPlayer do
-            updateCameraTarget()
-            task.wait(0.1)
-        end
-        -- Reset camera to local player when turned off
-        workspace.CurrentCamera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-    end)
-end
-
-killTab:AddSwitch("View Player", toggleViewPlayer)
-
-killTab:AddSwitch("Auto Whitelist Friends", function(BooleanValue)
-    states.AutoWhitelistFriends = BooleanValue
-    task.spawn(function()
-        while states.AutoWhitelistFriends do
+        while states.AutoRebirth and getgenv().NexusRunning do
             pcall(function()
-                for _, Player in ipairs(Players:GetPlayers()) do
-                    if Player ~= LocalPlayer and LocalPlayer:IsFriendsWith(Player.UserId) then
-                        if not table.find(_G.whitelistedPlayers, Player.Name) then
-                            table.insert(_G.whitelistedPlayers, Player.Name)
-                        end
-                    end
+                local rEvents = rs:FindFirstChild("rEvents")
+                if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+                    rEvents.rebirthRemote:InvokeServer("rebirthRequest")
                 end
             end)
-            task.wait(5)
+            task.wait(0.1)
         end
     end)
-end)
-
-local WhitelistDropdown = killTab:AddDropdown("Add to Whitelist", function(DisplayName)
-    for _, Player in ipairs(Players:GetPlayers()) do
-        if Player.DisplayName == DisplayName then
-            if not table.find(_G.whitelistedPlayers, Player.Name) then
-                table.insert(_G.whitelistedPlayers, Player.Name)
-            end
-            break
-        end
-    end
-end)
-
-killTab:AddButton("Size 30", function()
-    local Arguments = { [1] = "changeSize", [2] = 30 }
-    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-    if rEvents and rEvents:FindFirstChild("changeSpeedSizeRemote") then
-        rEvents.changeSpeedSizeRemote:InvokeServer(unpack(Arguments))
-    end
-end)
-
-killTab:AddButton("Size 2", function()
-    local Arguments = { [1] = "changeSize", [2] = 2 }
-    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-    if rEvents and rEvents:FindFirstChild("changeSpeedSizeRemote") then
-        rEvents.changeSpeedSizeRemote:InvokeServer(unpack(Arguments))
-    end
-end)
-
-local function changeTime(Value)
-    Lighting.Brightness = 2
-    Lighting.FogEnd = 100000
-    Lighting.Ambient = Color3.fromRGB(127, 127, 127)
-    if Value == "Midnight" then
-        Lighting.ClockTime = 0
-    elseif Value == "Morning" then
-        Lighting.ClockTime = 8
-    elseif Value == "Noon" then
-        Lighting.ClockTime = 12
-    elseif Value == "Afternoon" then
-        Lighting.ClockTime = 14
-    elseif Value == "Sunset" then
-        Lighting.ClockTime = 18
-    elseif Value == "Night" then
-        Lighting.ClockTime = 20
-    elseif Value == "Dawn" then
-        Lighting.ClockTime = 6
-    elseif Value == "Early Morning" then
-        Lighting.ClockTime = 5
-    end
 end
 
-local TimeDropdown = killTab:AddDropdown("Change Time", changeTime)
-local Times = { "Morning", "Noon", "Afternoon", "Sunset", "Night", "Midnight", "Dawn", "Early Morning" }
-for _, v in ipairs(Times) do
-    TimeDropdown:Add(v)
-end
-
-killTab:AddLabel("Blacklist System")
-killTab:AddTextBox("Add to Blacklist", function(TextParameter)
-    local currentBlacklist = isfile(BlacklistFileName) and readfile(BlacklistFileName) or ""
-    appendfile(BlacklistFileName, "," .. TextParameter)
-end, { ["placeholder"] = "Ex: User1, User2" })
-
--- Rebirth features
-rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
+-- UI for Rebirth
+local RebirthFolder = rebirthTab:AddFolder("Rebirth")
+RebirthFolder:AddSwitch("Auto Rebirth (Infinite)", function(s)
     states.AutoRebirth = s
-    if s then
-        task.spawn(function()
-            while states.AutoRebirth and getgenv().NexusRunning do
-                pcall(function()
-                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
-                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                    end
-                end)
-                task.wait(0.1)
-            end
-        end)
-    end
+    if s then autoRebirth() end
 end)
 
-rebirthTab:AddInput("Target Rebirths", function(value)
+RebirthFolder:AddInput("Target Rebirths", function(value)
     local num = tonumber(value)
     targetRebirths = num and num > 0 and num or 1
 end)
 
-rebirthTab:AddSwitch("Auto Rebirth to Target", function(s)
+RebirthFolder:AddSwitch("Auto Rebirth to Target", function(s)
     states.AutoRebirthTarget = s
     if s then
         task.spawn(function()
@@ -692,7 +509,7 @@ rebirthTab:AddSwitch("Auto Rebirth to Target", function(s)
                         states.AutoRebirthTarget = false
                         return
                     end
-                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
+                    local rEvents = rs:FindFirstChild("rEvents")
                     if rEvents and rEvents:FindFirstChild("rebirthRemote") then
                         rEvents.rebirthRemote:InvokeServer("rebirthRequest")
                     end
@@ -703,10 +520,24 @@ rebirthTab:AddSwitch("Auto Rebirth to Target", function(s)
     end
 end)
 
--- Credits
-creditsTab:AddLabel("Script Made by: invincible")
-creditsTab:AddButton("Copy Discord Link", function()
-    setclipboard("https://discord.gg/xNdpkWWR")
-end)
+-- Utility functions
+local function formatNumber(number)
+    local formatted = tostring(math.floor(number))
+    while true do
+        local newFormatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", "%1,%2")
+        if k == 0 then break end
+        formatted = newFormatted
+    end
+    return formatted
+end
 
-print("Invincibles Priv Script – fixed & organized (March 2026)")
+local function formatTime(seconds)
+    local days = math.floor(seconds / 86400)
+    local hours = math.floor((seconds % 86400) / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local secs = seconds % 60
+    return string.format("%dd %dh %dm %ds", days, hours, minutes, secs)
+end
+
+-- Final notes
+print("Invincibles Priv Script – fixed & organized (Feb 2026)")
