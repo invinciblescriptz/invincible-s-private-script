@@ -1,9 +1,10 @@
 -- Invincibles Priv Script – cleaned & safer (March 2026 version)
 
-local window = library:AddWindow(string.format("invincible private || Hello %s", game.Players.LocalPlayer.DisplayName), {
-    main_color = Color3.fromRGB(0, 0, 0),
-    min_size = Vector2.new(660, 870),
-    can_resize = false,
+local ScriptLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/p4020854-hub/Lb/refs/heads/main/X", true))()
+local MainWindow = ScriptLibrary:AddWindow(string.format("invincible pirvate | Hello %s", LocalPlayer.DisplayName), {
+    ["min_size"] = Vector2.new(660, 870),
+    ["can_resize"] = true,
+    ["main_color"] = Color3.fromRGB(0, 0, 0)
 })
 
 -- Services
