@@ -1,8 +1,9 @@
 -- Invincibles Priv Script – cleaned & safer (March 2026 version)
+
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
 local window = library:AddWindow("Invincibles Priv Script", {
     main_color = Color3.fromRGB(0, 0, 0),
-    min_size = Vector2.new(520, 870),
+    min_size = Vector2.new(400, 870),
     can_resize = false,
 })
 
@@ -33,6 +34,7 @@ local states = {
     AutoRebirthTarget = false,
     KillAura          = false,
     AutoKillSelected  = false,
+    -- Rock farm uses separate control
 }
 
 local targetRebirths   = 1
@@ -108,6 +110,7 @@ local function toggleFastStrength(state)
                 muscleEvent:FireServer("rep")
                 muscleEvent:FireServer("punch", "rightHand")
                 muscleEvent:FireServer("punch", "leftHand")
+
                 local char = LocalPlayer.Character
                 if char then
                     local tool = char:FindFirstChildWhichIsA("Tool")
@@ -202,7 +205,7 @@ local toolsFolder   = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder     = killerTab:AddFolder("Auto Kill")
 
--- Tools (Main tab)
+-- Tools
 toolsFolder:AddSwitch("Auto Pushups",    function(s) states.AutoPushups = s   if s then startAutoRep("Pushups",    "AutoPushups")    end end)
 toolsFolder:AddSwitch("Auto Weight",     function(s) states.AutoWeight = s    if s then startAutoRep("Weight",     "AutoWeight")     end end)
 toolsFolder:AddSwitch("Auto Handstands", function(s) states.AutoHandstands = s if s then startAutoRep("Handstands", "AutoHandstands") end end)
@@ -274,17 +277,16 @@ toolsFolder:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- Teleports (adding all remaining buttons)
-teleportTab:AddButton("To Spawn / Safe Area",     function() tpTo(Vector3.new(-6, 5, -196)) end)
-teleportTab:AddButton("To Secret Area",           function() tpTo(Vector3.new(1947, 2, 6191)) end)
-teleportTab:AddButton("To Tiny Area",             function() tpTo(Vector3.new(-39, 6, 1886)) end)
-teleportTab:AddButton("To Frozen Area",           function() tpTo(Vector3.new(-2623, 6, -409)) end)
-teleportTab:AddButton("To Mythical Area",         function() tpTo(Vector3.new(2251, 6, 1073)) end)
-teleportTab:AddButton("To Muscle King Area",      function() tpTo(Vector3.new(-8626, 16, -5730)) end)
-teleportTab:AddButton("To Legend Gym",            function() tpTo(Vector3.new(0, 0, 0)) end) -- placeholder coords
-teleportTab:AddButton("To Eternal Jungle",       function() tpTo(Vector3.new(5000, 20, 5000)) end) -- placeholder coords
+-- Teleports (examples — add more if needed)
+teleportTab:AddButton("To Spawn / Safe Area",     function() tpTo(Vector3.new(-6,    5,   -196))   end)
+teleportTab:AddButton("To Secret Area",           function() tpTo(Vector3.new(1947,  2,   6191))   end)
+teleportTab:AddButton("To Tiny Area",             function() tpTo(Vector3.new(-39,   6,   1886))   end)
+teleportTab:AddButton("To Frozen Area",           function() tpTo(Vector3.new(-2623, 6,   -409))   end)
+teleportTab:AddButton("To Mythical Area",         function() tpTo(Vector3.new(2251,  6,   1073))   end)
+teleportTab:AddButton("To Muscle King Area",      function() tpTo(Vector3.new(-8626, 16,  -5730))  end)
+-- ... add others as needed
 
--- Rock Farm (exclusive — only one active)
+-- Rock Farm (exclusive — only one at a time)
 local function setRockFarm(dur, enable)
     if enable then
         getgenv().selectedRockDurability = dur
@@ -297,15 +299,15 @@ local function setRockFarm(dur, enable)
     end
 end
 
-rockFarmFolder:AddSwitch("Farm Tiny Island Rock (0)",        function(s) setRockFarm(0, s) end)
-rockFarmFolder:AddSwitch("Farm Starter Island Rock (100)",   function(s) setRockFarm(100, s) end)
-rockFarmFolder:AddSwitch("Farm Legend Beach Rock (5000)",    function(s) setRockFarm(5000, s) end)
-rockFarmFolder:AddSwitch("Farm Frost Gym Rock (150k)",       function(s) setRockFarm(150000, s) end)
-rockFarmFolder:AddSwitch("Farm Mythical Gym Rock (400k)",    function(s) setRockFarm(400000, s) end)
-rockFarmFolder:AddSwitch("Farm Eternal Gym Rock (750k)",     function(s) setRockFarm(750000, s) end)
-rockFarmFolder:AddSwitch("Farm Legend Gym Rock (1M)",        function(s) setRockFarm(1000000, s) end)
-rockFarmFolder:AddSwitch("Farm Muscle King Gym Rock (5M)",   function(s) setRockFarm(5000000, s) end)
-rockFarmFolder:AddSwitch("Farm Ancient Jungle Rock (10M)",  function(s) setRockFarm(10000000, s) end)
+rockFarmFolder:AddSwitch("Farm Tiny Island Rock (0)",        function(s) setRockFarm(0,         s) end)
+rockFarmFolder:AddSwitch("Farm Starter Island Rock (100)",   function(s) setRockFarm(100,      s) end)
+rockFarmFolder:AddSwitch("Farm Legend Beach Rock (5000)",    function(s) setRockFarm(5000,     s) end)
+rockFarmFolder:AddSwitch("Farm Frost Gym Rock (150k)",       function(s) setRockFarm(150000,   s) end)
+rockFarmFolder:AddSwitch("Farm Mythical Gym Rock (400k)",    function(s) setRockFarm(400000,   s) end)
+rockFarmFolder:AddSwitch("Farm Eternal Gym Rock (750k)",     function(s) setRockFarm(750000,   s) end)
+rockFarmFolder:AddSwitch("Farm Legend Gym Rock (1M)",        function(s) setRockFarm(1000000,  s) end)
+rockFarmFolder:AddSwitch("Farm Muscle King Gym Rock (5M)",   function(s) setRockFarm(5000000,  s) end)
+rockFarmFolder:AddSwitch("Farm Ancient Jungle Rock (10M)",   function(s) setRockFarm(10000000, s) end)
 
 rockFarmFolder:AddButton("STOP All Rock Farming", function()
     getgenv().rockFarmActive = false
@@ -365,7 +367,7 @@ killerTab:AddSwitch("Kill Aura (All)", function(s)
     if s then
         task.spawn(function()
             while states.KillAura and getgenv().NexusRunning do
-                for _, plr in pairs(Players:GetPlayers()) do
+                for _, plr in Players:GetPlayers() do
                     if plr ~= LocalPlayer and plr.Character then
                         killPlayer(plr)
                     end
@@ -399,7 +401,7 @@ end)
 task.spawn(function()
     while getgenv().NexusRunning do
         local opts = {}
-        for _, plr in pairs(Players:GetPlayers()) do
+        for _, plr in Players:GetPlayers() do
             if plr ~= LocalPlayer then
                 table.insert(opts, plr.Name .. " | " .. (plr.DisplayName or plr.Name))
             end
@@ -409,7 +411,9 @@ task.spawn(function()
     end
 end)
 
--- Better Farming Tab (moved Fast Rebirth here + added other features)
+-- Better Farming
+farmingTab:AddSwitch("Fast Grind / Strength", toggleFastStrength)
+
 farmingTab:AddSwitch("Fast Rebirth", function(s)
     states.FastRebirth = s
     if s then
@@ -421,13 +425,20 @@ farmingTab:AddSwitch("Fast Rebirth", function(s)
                         rEvents.rebirthRemote:InvokeServer("rebirthRequest")
                     end
                 end)
-                task.wait(0.07) -- faster rebirth
+                task.wait(0.07)  --  ≈14/sec — aggressive but not instant-kick level
             end
         end)
     end
 end)
 
-farmingTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
+warn("Fast Rebirth is aggressive — high rate may flag anti-cheat in future updates.")
+
+-- Misc
+miscTab:AddSwitch("Infinite Jump", toggleInfiniteJump)
+miscTab:AddSwitch("Anti-AFK",      toggleAntiAfk)
+
+-- Rebirth Tab
+rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
     states.AutoRebirth = s
     if s then
         task.spawn(function()
@@ -444,12 +455,12 @@ farmingTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
     end
 end)
 
-farmingTab:AddInput("Target Rebirths", function(value)
+rebirthTab:AddInput("Target Rebirths", function(value)
     local num = tonumber(value)
     targetRebirths = num and num > 0 and num or 1
 end)
 
-farmingTab:AddSwitch("Auto Rebirth to Target", function(s)
+rebirthTab:AddSwitch("Auto Rebirth to Target", function(s)
     states.AutoRebirthTarget = s
     if s then
         task.spawn(function()
@@ -471,7 +482,7 @@ farmingTab:AddSwitch("Auto Rebirth to Target", function(s)
     end
 end)
 
-farmingTab:AddSwitch("Auto Size 2", function(s)
+rebirthTab:AddSwitch("Auto Size 2", function(s)
     if s then
         getgenv().sizeLoop = task.spawn(function()
             while getgenv().NexusRunning do
@@ -492,7 +503,7 @@ farmingTab:AddSwitch("Auto Size 2", function(s)
     end
 end)
 
-farmingTab:AddSwitch("Auto TP Muscle King", function(s)
+rebirthTab:AddSwitch("Auto TP Muscle King", function(s)
     if s then
         getgenv().kingTpLoop = task.spawn(function()
             while getgenv().NexusRunning do
@@ -507,10 +518,5 @@ farmingTab:AddSwitch("Auto TP Muscle King", function(s)
         end
     end
 end)
-
--- You can add more features like Auto Size, Auto TP, etc., similarly.
-
--- **Additional: Add the Fast Rebirth toggle to Better Farming tab**
--- (Already added above with "Fast Rebirth" switch)
 
 print("Invincibles Priv Script – cleaned & safer (March 2026)")
