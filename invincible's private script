@@ -456,3 +456,57 @@ end
 -- miscTab:AddButton("Unequip All Pets", unequipAllPets)
 
 print("Invincibles Priv Script – fixed & safer (Feb 2026)")
+
+-- ... (keep everything above unchanged until farmingTab)
+
+-- Better Farming
+farmingTab:AddSwitch("Fast Grind / Strength", toggleFastStrength)
+
+-- NEW: Fast Rebirth (aggressive rebirth spam)
+farmingTab:AddSwitch("Fast Rebirth", function(state)
+    if state then
+        task.spawn(function()
+            while getgenv().NexusRunning do
+                pcall(function()
+                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
+                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                    end
+                end)
+                task.wait(0.07)  -- very fast — adjust to 0.05–0.12 depending on how aggressive you want it
+            end
+        end)
+    end
+    -- when turned off → loop naturally dies because of getgenv().NexusRunning check
+end)
+
+-- ... rest of your tabs (rebirthTab, etc.) remain unchanged
+
+-- At the very end:
+print("Invincibles Priv Script – fixed & safer (Feb 2026) | + Fast Rebirth in Better Farming")
+
+-- Add near the top with other states
+local states = {
+    -- ... your existing ones ...
+    FastRebirth = false,
+}
+
+-- Then in Better Farming tab:
+farmingTab:AddSwitch("Fast Rebirth", function(s)
+    states.FastRebirth = s
+    if s then
+        task.spawn(function()
+            while states.FastRebirth and getgenv().NexusRunning do
+                pcall(function()
+                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
+                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                    end
+                end)
+                task.wait(0.065)   -- tweak this value (0.05 = very aggressive, 0.1 = safer)
+            end
+        end)
+    end
+end)
+
+warn("Use Fast Rebirth responsibly — high rate may trigger anti-cheat in future updates")
