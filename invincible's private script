@@ -34,7 +34,6 @@ local states = {
     AutoRebirthTarget = false,
     KillAura          = false,
     AutoKillSelected  = false,
-    -- Rock farm uses separate control
 }
 
 local targetRebirths   = 1
@@ -205,7 +204,7 @@ local toolsFolder   = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder     = killerTab:AddFolder("Auto Kill")
 
--- Tools
+-- Tools (Main tab)
 toolsFolder:AddSwitch("Auto Pushups",    function(s) states.AutoPushups = s   if s then startAutoRep("Pushups",    "AutoPushups")    end end)
 toolsFolder:AddSwitch("Auto Weight",     function(s) states.AutoWeight = s    if s then startAutoRep("Weight",     "AutoWeight")     end end)
 toolsFolder:AddSwitch("Auto Handstands", function(s) states.AutoHandstands = s if s then startAutoRep("Handstands", "AutoHandstands") end end)
@@ -277,16 +276,15 @@ toolsFolder:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- Teleports (examples — add more if needed)
+-- Teleports
 teleportTab:AddButton("To Spawn / Safe Area",     function() tpTo(Vector3.new(-6,    5,   -196))   end)
 teleportTab:AddButton("To Secret Area",           function() tpTo(Vector3.new(1947,  2,   6191))   end)
 teleportTab:AddButton("To Tiny Area",             function() tpTo(Vector3.new(-39,   6,   1886))   end)
 teleportTab:AddButton("To Frozen Area",           function() tpTo(Vector3.new(-2623, 6,   -409))   end)
 teleportTab:AddButton("To Mythical Area",         function() tpTo(Vector3.new(2251,  6,   1073))   end)
 teleportTab:AddButton("To Muscle King Area",      function() tpTo(Vector3.new(-8626, 16,  -5730))  end)
--- ... add others as needed
 
--- Rock Farm (exclusive — only one at a time)
+-- Rock Farm (exclusive — only one active)
 local function setRockFarm(dur, enable)
     if enable then
         getgenv().selectedRockDurability = dur
@@ -411,7 +409,7 @@ task.spawn(function()
     end
 end)
 
--- Better Farming
+-- Better Farming Tab (moved Fast Rebirth here)
 farmingTab:AddSwitch("Fast Grind / Strength", toggleFastStrength)
 
 farmingTab:AddSwitch("Fast Rebirth", function(s)
@@ -425,19 +423,17 @@ farmingTab:AddSwitch("Fast Rebirth", function(s)
                         rEvents.rebirthRemote:InvokeServer("rebirthRequest")
                     end
                 end)
-                task.wait(0.07)  --  ≈14/sec — aggressive but not instant-kick level
+                task.wait(0.07)  -- ≈14/sec — very aggressive; lower to 0.12–0.15 if getting kicked
             end
         end)
     end
 end)
 
-warn("Fast Rebirth is aggressive — high rate may flag anti-cheat in future updates.")
-
 -- Misc
 miscTab:AddSwitch("Infinite Jump", toggleInfiniteJump)
 miscTab:AddSwitch("Anti-AFK",      toggleAntiAfk)
 
--- Rebirth Tab
+-- Rebirth Tab (slower / target-based rebirths remain here)
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
     states.AutoRebirth = s
     if s then
@@ -449,7 +445,7 @@ rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
                         rEvents.rebirthRemote:InvokeServer("rebirthRequest")
                     end
                 end)
-                task.wait(0.11)
+                task.wait(0.11)  -- safer speed
             end
         end)
     end
