@@ -525,4 +525,4 @@ rebirthTab:AddSwitch("Auto TP Muscle King", function(s)
     end
 end)
 
-print("Invincibles Priv Script – cleaned & safer (March 2026
+print("Invincibles Priv Script – cleaned & safer (March 2026)")
