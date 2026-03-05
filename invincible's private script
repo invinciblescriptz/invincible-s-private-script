@@ -307,7 +307,187 @@ end)
 
 -- Killer Tab
 
+local function safeTp(pos)
+    pcall(function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.CFrame = CFrame.new(pos) end
+    end)
+end
 
+local function safeEquip(name)
+    pcall(function()
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("Humanoid") then return end
+        local tool = LocalPlayer.Backpack:FindFirstChild(name) or char:FindFirstChild(name)
+        if tool and tool.Parent ~= char then
+            char.Humanoid:EquipTool(tool)
+        end
+    end)
+end
+
+local function getPlayerFromName(name)
+    name = name:lower()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p.Name:lower():sub(1, #name) == name or p.DisplayName:lower():sub(1, #name) == name then
+            return p
+        end
+    end
+    return nil
+end
+
+-- =============================================================
+-- Kill Aura Logic (most common 2026 method: under-teleport spam)
+-- =============================================================
+
+local function startKillAura()
+    if killAuraConn then killAuraConn:Disconnect() end
+
+    killAuraConn = RunService.Heartbeat:Connect(function()
+        if not states.KillAura then return end
+
+        pcall(function()
+            local myChar = LocalPlayer.Character
+            local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+            if not myHRP then return end
+
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player == LocalPlayer or player.Character == nil then continue end
+
+                local targetChar = player.Character
+                local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+                local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
+
+                if targetHRP and targetHum and targetHum.Health > 0 then
+                    local distance = (myHRP.Position - targetHRP.Position).Magnitude
+                    if distance <= killAuraRange then
+                        -- Classic under-teleport kill (works very well in Muscle Legends)
+                        myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, -24, 0)
+                        task.wait(0.04)  -- small delay to avoid rate-limit / kick
+                    end
+                end
+            end
+        end)
+    end)
+end
+
+local function stopKillAura()
+    if killAuraConn then
+        killAuraConn:Disconnect()
+        killAuraConn = nil
+    end
+end
+
+local function startAutoKillSelected()
+    if autoKillConn then autoKillConn:Disconnect() end
+
+    autoKillConn = RunService.Heartbeat:Connect(function()
+        if not states.AutoKillSelected or not selectedKillTarget then return end
+
+        pcall(function()
+            local target = getPlayerFromName(selectedKillTarget)
+            if not target or not target.Character then return end
+
+            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local tHRP = target.Character:FindFirstChild("HumanoidRootPart")
+
+            if myHRP and tHRP then
+                myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -24, 0)
+            end
+        end)
+        task.wait(0.06)
+    end)
+end
+
+local function stopAutoKillSelected()
+    if autoKillConn then
+        autoKillConn:Disconnect()
+        autoKillConn = nil
+    end
+end
+
+-- =============================================================
+-- Tabs (added Killer tab usage)
+-- =============================================================
+
+-- ... (keep your existing tabs: mainTab, farmTab, rebirthTab, tpTab, miscTab)
+
+local killerTab = window:AddTab("Killer")
+local killFolder = killerTab:AddFolder("Kill Options")
+
+-- Kill Aura Toggle + Range Slider
+killFolder:AddSwitch("Kill Aura (Nearby)", function(s)
+    states.KillAura = s
+    if s then
+        startKillAura()
+    else
+        stopKillAura()
+    end
+end)
+
+killFolder:AddSlider("Kill Aura Range", {
+    Min = 10,
+    Max = 60,
+    Increment = 5,
+    Default = 25,
+    Callback = function(value)
+        killAuraRange = value
+    end
+})
+
+-- Auto Kill Selected Player
+local playerList = {}
+for _, p in ipairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then
+        table.insert(playerList, p.Name)
+    end
+end
+
+-- Simple dropdown (refresh manually if needed)
+killFolder:AddDropdown("Select Target", {
+    List = playerList,
+    Default = playerList[1] or "No players",
+    Callback = function(selected)
+        selectedKillTarget = selected
+    end
+})
+
+killFolder:AddSwitch("Auto Kill Selected", function(s)
+    states.AutoKillSelected = s
+    if s then
+        startAutoKillSelected()
+    else
+        stopAutoKillSelected()
+    end
+end)
+
+-- Optional: Instant Kill All button (one-shot style)
+killFolder:AddButton("Kill All (One Time)", function()
+    pcall(function()
+        local myHRP = LocalPlayer.Character and LocalPlayer.Character.HumanoidRootPart
+        if not myHRP then return end
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player == LocalPlayer or not player.Character then continue end
+            local tHRP = player.Character:FindFirstChild("HumanoidRootPart")
+            if tHRP then
+                myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -24, 0)
+                task.wait(0.08)
+            end
+        end
+    end)
+end)
+
+-- =============================================================
+-- Cleanup on script end / toggle off
+-- =============================================================
+
+Players.PlayerRemoving:Connect(function(player)
+    if player == LocalPlayer then
+        getgenv().NexusRunning = false
+        stopKillAura()
+        stopAutoKillSelected()
+    end
+end)
 
 -- Better Farming
 farmingTab:AddSwitch("Fast Grind / Strength", toggleFastStrength)
