@@ -159,6 +159,7 @@ local miscTab     = window:AddTab("Misc")
 local toolsFolder    = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder     = killerTab:AddFolder("Auto Kill")
+local machineFolder  = mainTab:AddFolder("Machine")
 
 -- Tools switches (unchanged except safer delay)
 toolsFolder:AddSwitch("Auto Pushups",    function(s) states.AutoPushups = s    if s then startAutoRep("Pushups",    "AutoPushups")    end end)
@@ -565,7 +566,7 @@ local Toggle = Tabs.Misc:CreateToggle("Lock Position", {
     end
 })
 
-local Section = Tabs.Main:CreateSection("⏬Auto Farm Gym⏬")
+local Section = Folder.machineFolder:CreateSection("⏬Auto Farm Gym⏬")
 
 local function pressE()
     local vim = game:GetService("VirtualInputManager")
@@ -656,7 +657,7 @@ for _, workoutType in ipairs(workoutTypes) do
             _G["select" .. string.lower(string.gsub(workoutType, " ", ""))] = Value
         end
     })
-    local toggle = Tabs.Main:CreateToggle(workoutType .. " Toggle", {
+    local toggle = Folder.machineFolder:CreateToggle(workoutType .. " Toggle", {
         Title = "Farm " .. workoutType,
         Description = "Auto Trains " .. workoutType,
         Default = false,
