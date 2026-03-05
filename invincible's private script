@@ -162,6 +162,7 @@ local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local Killing OptionsFolder = killerTab:AddFolder("Auto Kill Options")
 local killFolder     = killerTab:AddFolder("Auto Kill")
 local machineFolder  = mainTab:AddFolder("Machine")
+local Brawl FarmingFolder = miscTab:AddFolder("Brawl Farming")
 
 -- Tools switches (unchanged except safer delay)
 toolsFolder:AddSwitch("Auto Pushups",    function(s) states.AutoPushups = s    if s then startAutoRep("Pushups",    "AutoPushups")    end end)
