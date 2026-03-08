@@ -706,3 +706,12 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
     wait(2)
     char:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(-778, 104, -148)  -- King's Gym approx coords
 end)
+
+AutoKillFolder:AddSwitch("Nan + Egg", function(s)
+    if s then
+        -- Assuming 'Nan' is a variable you want to pass or an intended value
+        -- If 'Nan' is undefined, replace it with a number or variable as needed
+        local sizeValue = 1 -- or any other value you want
+        game:GetService("ReplicatedStorage").rEvents.ChangeSpeedSizeRemote:InvokeServer("changeSize", sizeValue)
+    end
+end)
