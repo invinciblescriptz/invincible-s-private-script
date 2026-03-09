@@ -706,3 +706,5 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
     wait(2)
     char:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(-778, 104, -148)  -- King's Gym approx coords
 end)
+
+Credits:AddLabel("made by invincible")
