@@ -1,7 +1,7 @@
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
 local window = library:AddWindow("Invincibles Priv Script", {
     main_color = Color3.fromRGB(0, 0, 0),
-    min_size   = Vector2.new(660, 870),
+    min_size = Vector2.new(660, 870),
     can_resize = false,
 })
 
@@ -145,7 +145,7 @@ local function killPlayer(target)
     end)
 end
 
--- Tabs & Folders
+-- Tabs & Folders setup (unchanged)
 local mainTab = window:AddTab("Main")
 local farmingTab = window:AddTab("Better Farming")
 local rebirthTab = window:AddTab("Rebirth")
@@ -161,7 +161,7 @@ local killFolder = killerTab:AddFolder("Auto Kill")
 local machineFolder = mainTab:AddFolder("Machine")
 local brawlFarmingFolder = miscTab:AddFolder("Brawl Farming")
 
--- Tools switches
+-- Tools switches (unchanged)
 toolsFolder:AddSwitch("Auto Pushups", function(s) states.AutoPushups = s if s then startAutoRep("Pushups", "AutoPushups") end end)
 toolsFolder:AddSwitch("Auto Weight", function(s) states.AutoWeight = s if s then startAutoRep("Weight", "AutoWeight") end end)
 toolsFolder:AddSwitch("Auto Handstands", function(s) states.AutoHandstands = s if s then startAutoRep("Handstands", "AutoHandstands") end end)
@@ -228,7 +228,7 @@ toolsFolder:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- Teleport buttons
+-- Teleport buttons (unchanged)
 teleportTab:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
 teleportTab:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
 teleportTab:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39, 6, 1886)) end)
@@ -242,7 +242,7 @@ teleportTab:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8
 teleportTab:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
 teleportTab:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
 
--- Rock Farm Loop
+-- Rock Farm Loop (unchanged)
 task.spawn(function()
     while getgenv().NexusRunning do
         if not getgenv().rockFarmActive or getgenv().selectedRockDurability <= 0 then
@@ -318,7 +318,7 @@ rockFarmFolder:AddButton("STOP All Rock Farming", function()
     getgenv().selectedRockDurability = 0
 end)
 
--- Rebirth Tab
+-- Rebirth Tab (unchanged)
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
     states.AutoRebirth = s
     if s then
@@ -413,8 +413,8 @@ local function unequipAllPets()
     end)
 end
 
--- Call this function manually if needed
--- Example: miscTab:AddButton("Unequip All Pets", unequipAllPets)
+-- Example button to run unequipPets if needed
+-- miscTab:AddButton("Unequip All Pets", unequipAllPets)
 
 -- Fast Strength Automation with Pet
 local isRunning = false
@@ -527,7 +527,6 @@ local eggToggle = Tabs["Better Farming"]:CreateToggle("AutoEgg", {
 })
 
 -- Lock Position
-local posLock
 local function toggleLockPosition(state)
     if state then
         local currentPos = LocalPlayer.Character.HumanoidRootPart.CFrame
@@ -550,7 +549,7 @@ local lockPosToggle = Folder:CreateToggle("Lock Position", {
     Callback = toggleLockPosition
 })
 
--- Auto Farm Gym
+-- Auto Gym Lift
 local function pressE()
     local vim = game:GetService("VirtualInputManager")
     vim:SendKeyEvent(true, "E", false, game)
@@ -617,7 +616,7 @@ local workoutPositions = {
     ["Boulder"] = {
         ["Mythical Gym"] = CFrame.new(2667, 46, 1203),
         ["Legend Gym"] = CFrame.new(4189, 1010, -3904),
-        ["Muscle King Gym"] = CFrame.new(-8940.12402, 13.1642084, -5699.13477),
+        ["Muscle King Gym"] = CFrame.new(-8940, 13, -5699),
         ["Jungle Gym"] = CFrame.new(-8617, 37, 2677)
     }
 }
@@ -668,7 +667,7 @@ end
 spawn(function()
     while wait(1) do
         if shouldRebirth() then
-            -- Teleport to safe spot first (example position - update coords)
+            -- Teleport to safe spot first (example position)
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                 LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 1000, 0)
             end
@@ -692,3 +691,19 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 print("Invincibles Priv Script – fixed & safer (Feb 2026)")
+
+-- Jungle Lift Button
+BetterFarmingTab:AddButton("Jungle Lift", function()
+    local player = game.Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(-8652.86719, 39.5912476, 2089.26172, -1.19209318e-07, 0, 1.00000036, 0, 1, 0, -1.00000036, 0, -1.19209318e-07)
+    end
+end)
+
+-- Corrected pressE function
+local function pressE()
+    local vim = game:GetService("VirtualInputManager")
+    vim:SendKeyEvent(true, "E", false, game)
+    task.wait(0.1)
+    vim:SendKeyEvent(false, "E", false, game)
+end
