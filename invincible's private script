@@ -707,29 +707,91 @@ local vim = game:GetService("VirtualInputManager")
     vim:SendKeyEvent(false, "E", false, game)
 end
 
-AutoKillFolder:AddSwitch("Kill All Players (Aura)", function(state)
-    getgenv().killAura = state
-    if state then
-        task.spawn(function()
-            while getgenv().killAura do
-                pcall(function()
-                    for _, plr in Players:GetPlayers() do
-                        if plr ~= LocalPlayer and plr.Character then killPlayer(plr) end
+-- Assuming the rest of your script is intact above
+
+-- Auto Kill Aura
+local killAuraEnabled = false
+local killAuraCoroutine
+
+local function startKillAura()
+    killAuraEnabled = true
+    killAuraCoroutine = task.spawn(function()
+        while killAuraEnabled do
+            pcall(function()
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character then
+                        killPlayer(plr)
                     end
-                end)
-                task.wait(0.08)
-            end
-        end)
+                end
+            end)
+            task.wait(0.08)
+        end
+    end)
+end
+
+local function stopKillAura()
+    killAuraEnabled = false
+    if killAuraCoroutine then
+        task.cancel(killAuraCoroutine)
+        killAuraCoroutine = nil
+    end
+end
+
+local killAuraSwitch = killerTab:AddSwitch("Kill All Players (Aura)", function(state)
+    if state then
+        startKillAura()
+    else
+        stopKillAura()
     end
 end)
 
+-- Dropdown for Single Target Kill
 local targetKillPlayer = nil
-local playerDropdown = KillFolder:AddDropdown("Select Target Player", {
+local playerDropdown = killerTab:AddDropdown("Select Target Player", {
     Title = "Single Target Kill",
-    Values = {},
+    Values = {}, -- This will be filled dynamically
     Callback = function(selected)
-        local name = selected:match("^([^|]+)") or selected
-        targetKillPlayer = name
-        print("Target set: " .. name)
+        -- Extract the player's name from the selected string
+        -- Assuming the dropdown options are in format: "PlayerName"
+        targetKillPlayer = selected
+        print("Target set: " .. selected)
     end
 })
+
+-- Function to update the dropdown options dynamically (call periodically or on player join/leave)
+local function updatePlayerDropdown()
+    local playerNames = {}
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(playerNames, plr.Name)
+        end
+    end
+    -- Update dropdown values
+    playerDropdown:SetValues(playerNames)
+end
+
+-- Call update periodically or on player join/leave
+Players.PlayerAdded:Connect(updatePlayerDropdown)
+Players.PlayerRemoving:Connect(updatePlayerDropdown)
+-- Initial population
+updatePlayerDropdown()
+
+-- Button to kill the selected player
+killerTab:AddButton("Kill Target Player", function()
+    if targetKillPlayer then
+        local targetPlayer = nil
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr.Name == targetKillPlayer then
+                targetPlayer = plr
+                break
+            end
+        end
+        if targetPlayer and targetPlayer.Character then
+            killPlayer(targetPlayer)
+        else
+            print("Target player not found or not available.")
+        end
+    else
+        print("No target selected.")
+    end
+end)
