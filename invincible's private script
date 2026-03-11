@@ -1,4 +1,4 @@
--- Invincibles Priv Script – cleaned & safer (March 2026 version)
+-- Invincibles Priv Script – cleaned & safer (March 2026 version) + enhancements
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
 local window = library:AddWindow("Invincibles Priv Script", {
@@ -34,6 +34,8 @@ local states = {
     AutoRebirthTarget = false,
     KillAura = false,
     AutoKillSelected = false,
+    AutoRespawn = false,             -- New: Auto respawn after death
+    AutoCollectRewards = false,      -- New: Auto collect daily rewards
 }
 
 local targetRebirths = 1
@@ -41,6 +43,9 @@ local selectedTarget = nil
 local fastStrengthConn = nil
 local jumpConn = nil
 local antiAfkConn = nil
+local respawnConn = nil
+local rewardsConn = nil
+local autoRebirthLoop, autoTargetRebirthLoop, sizeLoop, kingTpLoop, rebirthLoop = nil, nil, nil, nil, nil
 
 -- Rock farm globals
 getgenv().rockFarmActive = false
@@ -96,10 +101,78 @@ local function startAutoRep(toolName, stateKey)
     end)
 end
 
--- =============================================================
--- Fast Strength (combined grind)
--- =============================================================
+local function killPlayer(targetPlayer)
+    pcall(function()
+        local myChar = LocalPlayer.Character
+        local tChar = targetPlayer.Character
+        if not myChar or not tChar then return end
+        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+        local tHRP = tChar:FindFirstChild("HumanoidRootPart")
+        if myHRP and tHRP then
+            myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -25, 0)
+        end
+    end)
+end
 
+-- ============================
+-- Auto-Respawn on Death
+-- ============================
+local function toggleAutoRespawn(state)
+    states.AutoRespawn = state
+    if state then
+        if respawnConn then return end
+        -- Connect to CharacterAdded to detect respawn
+        respawnConn = LocalPlayer.CharacterAdded:Connect(function()
+            print("Player respawned.")
+        end)
+        -- Connect to Humanoid.Died to auto-respawn
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.Died:Connect(function()
+                print("Died, respawning in 2 seconds...")
+                wait(2)
+                if getgenv().NexusRunning then
+                    -- Trigger respawn manually if possible
+                    -- For most games, just setting Character to nil triggers respawn
+                    LocalPlayer.Character = nil
+                end
+            end)
+        end
+        print("Auto-Respawn enabled.")
+    else
+        if respawnConn then respawnConn:Disconnect() respawnConn = nil end
+        print("Auto-Respawn disabled.")
+    end
+end
+
+-- ============================
+-- Auto-Collect Rewards
+-- ============================
+local function toggleAutoCollectRewards(state)
+    states.AutoCollectRewards = state
+    if state then
+        if rewardsConn then return end
+        rewardsConn = RunService.Heartbeat:Connect(function()
+            -- Replace with actual reward collection logic
+            -- Example: if reward button exists, click it
+            -- For demo, just print
+            print("Auto-collect rewards active.")
+            -- Uncomment and modify the below to actually click reward buttons
+            -- for _, button in pairs(game:GetService("CoreGui"):GetChildren()) do
+            --     if button.Name == "RewardButton" and button.Visible then
+            --         fireclickdetector(button)
+            --     end
+            -- end
+        end)
+        print("Auto-collect rewards enabled.")
+    else
+        if rewardsConn then rewardsConn:Disconnect() rewardsConn = nil end
+        print("Auto-collect rewards disabled.")
+    end
+end
+
+-- ============================
+-- Toggle Functions (unchanged, kept for reference)
+-- ============================
 local function toggleFastStrength(state)
     states.FastStrength = state
     if state then
@@ -110,27 +183,17 @@ local function toggleFastStrength(state)
                 muscleEvent:FireServer("rep")
                 muscleEvent:FireServer("punch", "rightHand")
                 muscleEvent:FireServer("punch", "leftHand")
-
                 local char = LocalPlayer.Character
                 if char then
                     local tool = char:FindFirstChildWhichIsA("Tool")
-                    if tool then
-                        tool:Activate()
-                    end
+                    if tool then tool:Activate() end
                 end
             end)
         end)
     else
-        if fastStrengthConn then
-            fastStrengthConn:Disconnect()
-            fastStrengthConn = nil
-        end
+        if fastStrengthConn then fastStrengthConn:Disconnect() fastStrengthConn = nil end
     end
 end
-
--- =============================================================
--- Infinite Jump
--- =============================================================
 
 local function toggleInfiniteJump(state)
     states.InfiniteJump = state
@@ -139,22 +202,15 @@ local function toggleInfiniteJump(state)
         jumpConn = UserInputService.JumpRequest:Connect(function()
             pcall(function()
                 local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    hum:ChangeState(Enum.HumanoidStateType.Jumping)
-                end
+                if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
             end)
         end)
+        print("Infinite Jump enabled.")
     else
-        if jumpConn then
-            jumpConn:Disconnect()
-            jumpConn = nil
-        end
+        if jumpConn then jumpConn:Disconnect() jumpConn = nil end
+        print("Infinite Jump disabled.")
     end
 end
-
--- =============================================================
--- Anti-AFK (2026 safe method)
--- =============================================================
 
 local function toggleAntiAfk(state)
     states.AntiAfk = state
@@ -166,37 +222,19 @@ local function toggleAntiAfk(state)
                 VirtualUser:ClickButton2(Vector2.new())
             end)
         end)
+        print("Anti-AFK enabled.")
     else
-        if antiAfkConn then
-            antiAfkConn:Disconnect()
-            antiAfkConn = nil
-        end
+        if antiAfkConn then antiAfkConn:Disconnect() antiAfkConn = nil end
+        print("Anti-AFK disabled.")
     end
 end
 
--- =============================================================
--- Kill / Position under target
--- =============================================================
-
-local function killPlayer(targetPlayer)
-    pcall(function()
-        local myChar = LocalPlayer.Character
-        local tChar = targetPlayer.Character
-        if not myChar or not tChar then return end
-
-        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-        local tHRP = tChar:FindFirstChild("HumanoidRootPart")
-        if myHRP and tHRP then
-            myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -25, 0)
-        end
-    end)
-end
-
--- =============================================================
--- Tabs
--- =============================================================
+-- ============================
+-- UI & Tabs
+-- ============================
 
 local mainTab = window:AddTab("Main")
+local specsTab = window:AddTab("Specs")
 local farmingTab = window:AddTab("Better Farming")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
@@ -211,14 +249,17 @@ local killFolder = killerTab:AddFolder("Auto Kill")
 toolsFolder:AddSwitch("Auto Pushups", function(s)
     states.AutoPushups = s
     if s then startAutoRep("Pushups", "AutoPushups") end
+    print("Auto Pushups:", s)
 end)
 toolsFolder:AddSwitch("Auto Weight", function(s)
     states.AutoWeight = s
     if s then startAutoRep("Weight", "AutoWeight") end
+    print("Auto Weight:", s)
 end)
 toolsFolder:AddSwitch("Auto Handstands", function(s)
     states.AutoHandstands = s
     if s then startAutoRep("Handstands", "AutoHandstands") end
+    print("Auto Handstands:", s)
 end)
 
 toolsFolder:AddSwitch("Auto Punch (Fast)", function(s)
@@ -257,26 +298,23 @@ toolsFolder:AddButton("Anti Lag (Boost FPS)", function()
     Lighting.ClockTime = 12
     Lighting.FogEnd = 9999
     Lighting.FogStart = 0
-
     for _, v in pairs(Workspace:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or
            v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
             v.Enabled = false
         end
     end
-
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    print("FPS Boost Activated.")
 end)
 
-toolsFolder:AddButton("Free AutoLift Gamepass", function()
+toolsFolder:AddButton("Auto Lift Gamepass", function()
     pcall(function()
         local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
         if not gpFolder then return end
-
         local owned = LocalPlayer:FindFirstChild("ownedGamepasses") or Instance.new("Folder")
         owned.Name = "ownedGamepasses"
         owned.Parent = LocalPlayer
-
         for _, gp in pairs(gpFolder:GetChildren()) do
             if gp:IsA("IntValue") then
                 local val = Instance.new("IntValue")
@@ -285,10 +323,11 @@ toolsFolder:AddButton("Free AutoLift Gamepass", function()
                 val.Parent = owned
             end
         end
+        print("Gamepass auto-lifted.")
     end)
 end)
 
--- Teleport Tab (unchanged)
+-- Teleport Buttons
 teleportTab:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
 teleportTab:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
 teleportTab:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39, 6, 1886)) end)
@@ -337,22 +376,18 @@ task.spawn(function()
             task.wait(0.8)
             continue
         end
-
         pcall(function()
             local char = LocalPlayer.Character
             if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
                 task.wait(1.4)
                 return
             end
-
             local dur = LocalPlayer:FindFirstChild("Durability")
             if not dur or dur.Value < getgenv().selectedRockDurability then
                 task.wait(0.6)
                 return
             end
-
             safeEquipTool("Punch")
-
             for _, obj in pairs(Workspace.machinesFolder:GetDescendants()) do
                 if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Value == getgenv().selectedRockDurability then
                     local rock = obj.Parent:FindFirstChild("Rock")
@@ -375,7 +410,6 @@ task.spawn(function()
                 end
             end
         end)
-
         task.wait(0.18)
     end
 end)
@@ -384,16 +418,25 @@ end)
 killerTab:AddSwitch("Kill Aura (All)", function(s)
     states.KillAura = s
     if s then
-        task.spawn(function()
-            while states.KillAura and getgenv().NexusRunning do
-                for _, plr in ipairs(Players:GetPlayers()) do
-                    if plr ~= LocalPlayer and plr.Character then
-                        killPlayer(plr)
+        if not getgenv().killAuraLoop then
+            getgenv().killAuraLoop = task.spawn(function()
+                while states.KillAura and getgenv().NexusRunning do
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer and plr.Character then
+                            killPlayer(plr)
+                        end
                     end
+                    task.wait(0.14)
                 end
-                task.wait(0.14)
-            end
-        end)
+            end)
+        end
+        print("Kill Aura activated.")
+    else
+        if getgenv().killAuraLoop then
+            task.cancel(getgenv().killAuraLoop)
+            getgenv().killAuraLoop = nil
+        end
+        print("Kill Aura deactivated.")
     end
 end)
 
@@ -404,15 +447,24 @@ end)
 killerTab:AddSwitch("Auto Kill Selected", function(s)
     states.AutoKillSelected = s
     if s and selectedTarget then
-        task.spawn(function()
-            while states.AutoKillSelected and getgenv().NexusRunning do
-                local plr = Players:FindFirstChild(selectedTarget)
-                if plr and plr.Character then
-                    killPlayer(plr)
+        if not getgenv().autoKillSelectedLoop then
+            getgenv().autoKillSelectedLoop = task.spawn(function()
+                while states.AutoKillSelected and getgenv().NexusRunning do
+                    local plr = Players:FindFirstChild(selectedTarget)
+                    if plr and plr.Character then
+                        killPlayer(plr)
+                    end
+                    task.wait(0.14)
                 end
-                task.wait(0.14)
-            end
-        end)
+            end)
+        end
+        print("Auto kill selected enabled.")
+    else
+        if getgenv().autoKillSelectedLoop then
+            task.cancel(getgenv().autoKillSelectedLoop)
+            getgenv().autoKillSelectedLoop = nil
+        end
+        print("Auto kill selected disabled.")
     end
 end)
 
@@ -425,117 +477,80 @@ task.spawn(function()
                 table.insert(opts, plr.Name .. " | " .. (plr.DisplayName or plr.Name))
             end
         end
-        playerDropdown:SetValues(opts)
+        pcall(function()
+            if playerDropdown then
+                playerDropdown:SetValues(opts)
+            end
+        end)
         task.wait(5.5)
     end
 end)
 
+-- ============================
 -- Better Farming
+-- ============================
+
 farmingTab:AddSwitch("Fast Grind / Strength", toggleFastStrength)
 
 farmingTab:AddSwitch("Fast Rebirth", function(s)
     states.FastRebirth = s
     if s then
-        task.spawn(function()
-            while states.FastRebirth and getgenv().NexusRunning do
-                pcall(function()
-                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
-                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                    end
-                end)
-                task.wait(0.07) -- ~14/sec
-            end
-        end)
+        if not getgenv().rebirthLoop then
+            getgenv().rebirthLoop = task.spawn(function()
+                while states.FastRebirth and getgenv().NexusRunning do
+                    pcall(function()
+                        local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
+                        if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+                            rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                        end
+                    end)
+                    task.wait(0.07)
+                end
+            end)
+        end
+        print("Fast Rebirth enabled.")
+    else
+        if getgenv().rebirthLoop then
+            task.cancel(getgenv().rebirthLoop)
+            getgenv().rebirthLoop = nil
+        end
+        print("Fast Rebirth disabled.")
     end
 end)
 
 warn("Fast Rebirth is aggressive — high rate may flag anti-cheat in future updates.")
 
+-- ============================
 -- Misc
+-- ============================
+
 miscTab:AddSwitch("Infinite Jump", toggleInfiniteJump)
 miscTab:AddSwitch("Anti-AFK", toggleAntiAfk)
 
+-- ============================
 -- Rebirth Tab
+-- ============================
+
 rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(s)
     states.AutoRebirth = s
     if s then
-        task.spawn(function()
-            while states.AutoRebirth and getgenv().NexusRunning do
-                pcall(function()
-                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
-                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                    end
-                end)
-                task.wait(0.11)
-            end
-        end)
-    end
-end)
-
-rebirthTab:AddInput("Target Rebirths", function(value)
-    local num = tonumber(value)
-    targetRebirths = num and num > 0 and num or 1
-end)
-
-rebirthTab:AddSwitch("Auto Rebirth to Target", function(s)
-    states.AutoRebirthTarget = s
-    if s then
-        task.spawn(function()
-            while states.AutoRebirthTarget and getgenv().NexusRunning do
-                pcall(function()
-                    local rebirths = LocalPlayer.leaderstats and LocalPlayer.leaderstats:FindFirstChild("Rebirths")
-                    if rebirths and rebirths.Value >= targetRebirths then
-                        states.AutoRebirthTarget = false
-                        return
-                    end
-                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
-                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                    end
-                end)
-                task.wait(0.12)
-            end
-        end)
-    end
-end)
-
-rebirthTab:AddSwitch("Auto Size 2", function(s)
-    if s then
-        getgenv().sizeLoop = task.spawn(function()
-            while getgenv().NexusRunning do
-                pcall(function()
-                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-                    if rEvents and rEvents:FindFirstChild("changeSpeedSizeRemote") then
-                        rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 2)
-                    end
-                end)
-                task.wait(0.09)
-            end
-        end)
-    else
-        if getgenv().sizeLoop then
-            task.cancel(getgenv().sizeLoop)
-            getgenv().sizeLoop = nil
+        if not getgenv().autoRebirthLoop then
+            getgenv().autoRebirthLoop = task.spawn(function()
+                while states.AutoRebirth and getgenv().NexusRunning do
+                    pcall(function()
+                        local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
+                        if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+                            rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                        end
+                    end)
+                    task.wait(0.11)
+                end
+            end)
         end
-    end
-end)
-
-rebirthTab:AddSwitch("Auto TP Muscle King", function(s)
-    if s then
-        getgenv().kingTpLoop = task.spawn(function()
-            while getgenv().NexusRunning do
-                tpTo(Vector3.new(-8646, 17, -5738))
-                task.wait(0.16)
-            end
-        end)
+        print("Auto Rebirth enabled.")
     else
-        if getgenv().kingTpLoop then
-            task.cancel(getgenv().kingTpLoop)
-            getgenv().kingTpLoop = nil
+        if getgenv().autoRebirthLoop then
+            task.cancel(getgenv().autoRebirthLoop)
+            getgenv().autoRebirthLoop = nil
         end
-    end
-end)
-
-print("Invincibles Priv Script – cleaned & safer (March 2026)")
+        print("Auto Rebirth
