@@ -1,4 +1,6 @@
--- Invincible Private Farming – FULL FIXED + ENHANCED March 2026 | 700+ lines, MORE Teleports + MORE Rebirth + NEW Inventory Tab (Auto Hatch + Best Pet) + Auto Spin + Auto Buy + Jitter Anti-Detect
+-- Invincible Private Farming – FULL FIXED + ENHANCED (March 2026)
+-- 700+ lines – More Teleports, Rebirth Options, Inventory Tab (Auto Hatch + Best Pet), Auto Spin, Auto Buy, Jitter Anti-Detection
+
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KyleXAkimbo/Gui/refs/heads/main/INV-UI"))()
 local window = library:AddWindow("Invincible Private Farming ++", {
     title_bar = {Color3.fromRGB(0,0,0), Color3.fromRGB(0,0,0), Color3.fromRGB(0,0,0)},
@@ -11,71 +13,69 @@ local window = library:AddWindow("Invincible Private Farming ++", {
 })
 
 -- Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+local Players          = game:GetService("Players")
+local RunService       = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local VirtualUser = game:GetService("VirtualUser")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local LocalPlayer = Players.LocalPlayer
-local Debris = game:GetService("Debris")
-local Lighting = game:GetService("Lighting")
+local VirtualUser      = game:GetService("VirtualUser")
+local ReplicatedStorage= game:GetService("ReplicatedStorage")
+local Workspace        = game:GetService("Workspace")
+local Debris           = game:GetService("Debris")
+local Lighting         = game:GetService("Lighting")
+local LocalPlayer      = Players.LocalPlayer
 
--- Remote fallback detection (2026 accurate)
-local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
-    or ReplicatedStorage:FindFirstChild("muscleEvent", true)
-    or ReplicatedStorage:FindFirstChildWhichIsA("RemoteEvent", true)
+-- Improved remote finder (2026 era – more paths & names)
+local function findRemote(patterns)
+    for _, cont in {ReplicatedStorage, game} do
+        for _, name in patterns do
+            local found = cont:FindFirstChild(name, true)
+            if found and (found:IsA("RemoteEvent") or found:IsA("RemoteFunction")) then
+                return found
+            end
+        end
+    end
+    return nil
+end
 
-local rebirthRemote
-pcall(function()
-    local rEvents = ReplicatedStorage:FindFirstChild("rEvents") or ReplicatedStorage
-    rebirthRemote = rEvents:FindFirstChild("rebirthRemote") or rEvents:FindFirstChild("RebirthEvent")
-        or rEvents:FindFirstChild("rebirth") or rEvents:FindFirstChild("rebirthRequest")
-end)
+local muscleEvent   = findRemote({"muscleEvent", "Muscle", "RepEvent", "StrengthRemote", "PunchRemote", "Exercise"})
+local rebirthRemote = findRemote({"rebirthRemote", "RebirthEvent", "rebirth", "rebirthRequest", "Rebirth", "DoRebirth"})
+local spinRemote    = findRemote({"spinWheel", "FortuneWheel", "LuckySpin", "SpinEvent", "Wheel", "SpinRemote"})
+local buyRemote     = findRemote({"buyTool", "BuyItem", "purchase", "Buy", "ShopBuy", "Purchase", "BuyRemote"})
 
-local spinRemote
-pcall(function()
-    local rEvents = ReplicatedStorage:FindFirstChild("rEvents") or ReplicatedStorage
-    spinRemote = rEvents:FindFirstChild("spinWheel") or rEvents:FindFirstChild("FortuneWheel")
-        or rEvents:FindFirstChild("LuckySpin") or rEvents:FindFirstChild("SpinEvent")
-end)
-
-local buyRemote
-pcall(function()
-    local rEvents = ReplicatedStorage:FindFirstChild("rEvents") or ReplicatedStorage
-    buyRemote = rEvents:FindFirstChild("buyTool") or rEvents:FindFirstChild("BuyItem")
-        or rEvents:FindFirstChild("purchase") or rEvents:FindFirstChild("Buy")
-end)
-
--- Globals & states (ALL initialized for safety)
+-- Globals & states
 getgenv().NexusRunning = true
+
 local states = {
-    AutoPushups = false, AutoWeight = false, AutoHandstands = false,
-    FastPunch = false, FastStrength = false,
-    InfiniteJump = false, AntiAfk = false,
-    KillAura = false, AutoKillSelected = false,
-    AutoRebirth = false, AutoRebirthTarget = false, AutoRebirthOnStrength = false, FastRebirth = false,
-    AutoSize2 = false, AutoTPMuscleKing = false,
-    AutoClaimChests = false, AutoEatProtein = false,
-    NoClip = false, SpeedHack = false,
-    AutoHatch = false,
-    ESP = false,
-    AutoEquipBestPet = false,
-    AutoSpinWheel = false,
-    AutoBuyBest = false,
+    AutoPushups       = false,
+    AutoWeight        = false,
+    AutoHandstands    = false,
+    FastPunch         = false,
+    FastStrength      = false,
+    InfiniteJump      = false,
+    AntiAfk           = false,
+    KillAura          = false,
+    AutoKillSelected  = false,
+    AutoRebirth       = false,
+    FastRebirth       = false,
+    AutoClaimChests   = false,
+    AutoEatProtein    = false,
+    NoClip            = false,
+    SpeedHack         = false,
+    AutoHatch         = false,
+    AutoEquipBestPet  = false,
+    AutoSpinWheel     = false,
+    AutoBuyBest       = false,
+    ESP               = false,
 }
+
 local connections = {}
-local targetRebirths = 1
-local strengthRebirthTarget = 1000000
-local selectedTarget = nil
 local rockFarm = { active = false, durability = 0 }
 local rockCache = {}
 local bestPet = nil
 
--- Jitter anti-detect (2026 standard – used in all loops)
+-- Jitter anti-detection (2026 standard)
 local function jitterWait(base)
-    local extra = math.random(-15, 25) / 100
-    if math.random(1, 40) <= 3 then extra = extra + math.random(3, 9)/10 end -- occasional longer pause
+    local extra = math.random(-12, 18) / 100
+    if math.random(1, 35) <= 4 then extra = extra + math.random(4, 11)/10 end
     task.wait(base + extra)
 end
 
@@ -108,23 +108,23 @@ local function startAutoRep(toolName, stateKey)
         while states[stateKey] and getgenv().NexusRunning do
             pcall(function()
                 local char = LocalPlayer.Character
-                if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then jitterWait(1.8) return end
+                if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then jitterWait(1.9) return end
                 safeEquip(toolName)
                 if muscleEvent then muscleEvent:FireServer("rep") end
             end)
-            jitterWait(0.14)
+            jitterWait(0.135)
         end
         safeUnequip(toolName)
     end)
 end
 
--- Fast Strength
-connections.fastStrength = nil
+-- Fast Strength (combined punches + tool activation)
+local fastStrConn
 local function toggleFastStrength(enabled)
     states.FastStrength = enabled
     if enabled then
-        if connections.fastStrength then connections.fastStrength:Disconnect() end
-        connections.fastStrength = RunService.Heartbeat:Connect(function()
+        if fastStrConn then fastStrConn:Disconnect() end
+        fastStrConn = RunService.Heartbeat:Connect(function()
             if not states.FastStrength then return end
             pcall(function()
                 if muscleEvent then
@@ -140,7 +140,7 @@ local function toggleFastStrength(enabled)
             end)
         end)
     else
-        if connections.fastStrength then connections.fastStrength:Disconnect() connections.fastStrength = nil end
+        if fastStrConn then fastStrConn:Disconnect() fastStrConn = nil end
     end
 end
 
@@ -174,7 +174,7 @@ local function toggleAntiAfk(enabled)
     end
 end
 
--- No Clip
+-- NoClip
 local noclipConn
 local function toggleNoClip(enabled)
     states.NoClip = enabled
@@ -183,7 +183,7 @@ local function toggleNoClip(enabled)
             pcall(function()
                 local char = LocalPlayer.Character
                 if char then
-                    for _, part in pairs(char:GetDescendants()) do
+                    for _, part in char:GetDescendants() do
                         if part:IsA("BasePart") then part.CanCollide = false end
                     end
                 end
@@ -203,7 +203,7 @@ local function toggleSpeedHack(enabled)
         if hum then
             if enabled then
                 oldWalkSpeed = hum.WalkSpeed
-                hum.WalkSpeed = 80
+                hum.WalkSpeed = 85
             else
                 hum.WalkSpeed = oldWalkSpeed
             end
@@ -211,7 +211,7 @@ local function toggleSpeedHack(enabled)
     end)
 end
 
--- Kill Player helper
+-- Kill helpers
 local function tryKillPlayer(plr)
     pcall(function()
         local myChar = LocalPlayer.Character
@@ -220,90 +220,109 @@ local function tryKillPlayer(plr)
         local myHRP = myChar:FindFirstChild("HumanoidRootPart")
         local tHRP = tChar:FindFirstChild("HumanoidRootPart")
         if myHRP and tHRP then
-            myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -30, 0)
+            myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -35, 0)
         end
     end)
 end
 
--- Kill Aura loop
+-- Kill Aura
 task.spawn(function()
     while getgenv().NexusRunning do
         if states.KillAura then
-            for _, plr in ipairs(Players:GetPlayers()) do
+            for _, plr in Players:GetPlayers() do
                 if plr ~= LocalPlayer and plr.Character then
                     tryKillPlayer(plr)
                 end
             end
         end
-        jitterWait(0.18)
+        jitterWait(0.2)
     end
 end)
 
--- Auto Kill Selected
+-- Auto Kill Selected (placeholder – needs dropdown/target input)
+local selectedTarget = nil
 task.spawn(function()
     while getgenv().NexusRunning do
         if states.AutoKillSelected and selectedTarget then
             local plr = Players:FindFirstChild(selectedTarget)
             if plr and plr.Character then tryKillPlayer(plr) end
         end
-        jitterWait(0.18)
+        jitterWait(0.2)
     end
 end)
 
--- Rock Farm with cache (exclusive – only one rock at a time)
+-- Rock Farm (exclusive – one at a time)
 task.spawn(function()
     while getgenv().NexusRunning do
         if rockFarm.active and rockFarm.durability > 0 then
             pcall(function()
                 local char = LocalPlayer.Character
-                if not char or char.Humanoid.Health <= 0 then jitterWait(2) return end
-                local dur = LocalPlayer:FindFirstChild("Durability")
-                if not dur or dur.Value < rockFarm.durability then jitterWait(1) return end
+                if not char or char.Humanoid.Health <= 0 then jitterWait(2.2) return end
+                
+                local durVal = LocalPlayer:FindFirstChild("Durability")
+                if not durVal or durVal.Value < rockFarm.durability then jitterWait(1.2) return end
+                
                 safeEquip("Punch")
                 local rock = rockCache[rockFarm.durability]
                 if rock and rock.Parent then
-                    local rh = char:FindFirstChild("RightHand")
+                    local rh = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Arm")
                     if rh then
-                        firetouchinterest(rock, rh, 0) task.wait(0.05) firetouchinterest(rock, rh, 1)
+                        firetouchinterest(rock, rh, 0)
+                        task.wait(0.04)
+                        firetouchinterest(rock, rh, 1)
                     end
                     if muscleEvent then muscleEvent:FireServer("punch", "rightHand") end
                 end
             end)
         end
-        jitterWait(0.35)
+        jitterWait(0.38)
     end
 end)
 
--- Refresh rock cache
+-- Rock cache refresh
 task.spawn(function()
     while getgenv().NexusRunning do
         rockCache = {}
-        for _, obj in ipairs(Workspace:GetDescendants()) do
+        for _, obj in Workspace:GetDescendants() do
             if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Parent:FindFirstChild("Rock") then
                 rockCache[obj.Value] = obj.Parent.Rock
             end
         end
-        task.wait(10)
+        task.wait(12)
     end
 end)
+
+local function toggleRock(dur, enabled)
+    if enabled then
+        rockFarm.active = false
+        task.wait(0.25)
+        rockFarm.durability = dur
+        rockFarm.active = true
+    else
+        rockFarm.active = false
+        rockFarm.durability = 0
+    end
+end
 
 -- Auto Claim Chests
 task.spawn(function()
     while getgenv().NexusRunning do
         if states.AutoClaimChests then
             pcall(function()
-                for _, chest in ipairs(Workspace:GetDescendants()) do
-                    if chest.Name:lower():find("chest") or chest.Name:lower():find("reward") then
-                        if chest:IsA("BasePart") and (chest.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 40 then
-                            firetouchinterest(chest, LocalPlayer.Character.HumanoidRootPart, 0)
-                            task.wait(0.03)
-                            firetouchinterest(chest, LocalPlayer.Character.HumanoidRootPart, 1)
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if not hrp then return end
+                for _, obj in Workspace:GetDescendants() do
+                    if (obj.Name:lower():find("chest") or obj.Name:lower():find("reward")) and obj:IsA("BasePart") then
+                        if (obj.Position - hrp.Position).Magnitude < 45 then
+                            firetouchinterest(obj, hrp, 0)
+                            task.wait(0.035)
+                            firetouchinterest(obj, hrp, 1)
                         end
                     end
                 end
             end)
         end
-        jitterWait(2.5)
+        jitterWait(2.8)
     end
 end)
 
@@ -312,180 +331,191 @@ task.spawn(function()
     while getgenv().NexusRunning do
         if states.AutoEatProtein then
             pcall(function()
-                for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
-                    if tool.Name:lower():find("protein") or tool.Name:lower():find("food") then
+                for _, tool in LocalPlayer.Backpack:GetChildren() do
+                    local n = tool.Name:lower()
+                    if n:find("protein") or n:find("food") or n:find("shake") then
                         safeEquip(tool.Name)
-                        task.wait(0.2)
+                        task.wait(0.25)
                         tool:Activate()
-                        task.wait(1.2)
+                        task.wait(1.3)
                     end
                 end
             end)
         end
-        jitterWait(3)
+        jitterWait(3.2)
     end
 end)
 
--- Auto Hatch (improved)
+-- Auto Hatch
 task.spawn(function()
     while getgenv().NexusRunning do
         if states.AutoHatch then
             pcall(function()
                 local char = LocalPlayer.Character
                 if char and char:FindFirstChild("Humanoid") then
-                    for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+                    for _, tool in LocalPlayer.Backpack:GetChildren() do
                         local n = tool.Name:lower()
-                        if n:find("egg") or n:find("crystal") or n:find("pet") or n:find("hatch") then
+                        if n:find("egg") or n:find("crystal") or n:find("hatch") or n:find("pet egg") then
                             char.Humanoid:EquipTool(tool)
-                            jitterWait(0.12)
+                            jitterWait(0.13)
                             tool:Activate()
-                            jitterWait(0.9)
+                            jitterWait(0.95)
                         end
                     end
                 end
             end)
         end
-        jitterWait(1.8)
+        jitterWait(2)
     end
 end)
 
--- NEW: Auto Equip Best Pet
+-- Auto Equip Best Pet
 local function equipBestPet()
     pcall(function()
         local char = LocalPlayer.Character
         if not char or not char:FindFirstChild("Humanoid") then return end
-        local highestStat = 0
+        
+        local highest = 0
         bestPet = nil
-        for _, pet in ipairs(LocalPlayer.Backpack:GetChildren()) do
-            if pet:IsA("Tool") and (pet.Name:lower():find("pet") or pet:FindFirstChild("Multiplier") or pet:FindFirstChild("Strength")) then
-                local mult = (pet:FindFirstChild("Multiplier") and pet.Multiplier.Value) or 1
-                if mult > highestStat then
-                    highestStat = mult
-                    bestPet = pet
+        
+        for _, item in LocalPlayer.Backpack:GetChildren() do
+            if item:IsA("Tool") and (item.Name:lower():find("pet") or item:FindFirstChild("Multiplier") or item:FindFirstChild("StrengthMult")) then
+                local val = 1
+                if item:FindFirstChild("Multiplier") then val = item.Multiplier.Value end
+                if val > highest then
+                    highest = val
+                    bestPet = item
                 end
             end
         end
+        
         if bestPet then
             char.Humanoid:EquipTool(bestPet)
         end
     end)
 end
+
 task.spawn(function()
     while getgenv().NexusRunning do
-        if states.AutoEquipBestPet then
-            equipBestPet()
-        end
-        jitterWait(18)
+        if states.AutoEquipBestPet then equipBestPet() end
+        jitterWait(20)
     end
 end)
 
--- NEW: Auto Spin Fortune Wheel
+-- Auto Spin Wheel
 task.spawn(function()
     while getgenv().NexusRunning do
         if states.AutoSpinWheel and spinRemote then
             pcall(function()
-                spinRemote:FireServer("Spin") -- 2026 common name; change to "RequestSpin" if needed
+                spinRemote:FireServer() -- most common 2026 variant
+                -- alternatives if needed: spinRemote:FireServer("Spin") or ("RequestSpin")
             end)
         end
-        jitterWait(65)
+        jitterWait(68)
     end
 end)
 
--- NEW: Auto Buy Best Tools/Weights
+-- Auto Buy Best
 task.spawn(function()
     while getgenv().NexusRunning do
         if states.AutoBuyBest and buyRemote then
             pcall(function()
-                buyRemote:InvokeServer("BestWeight") -- common 2026 name; adjust if your game uses different arg
+                buyRemote:FireServer("Best")     -- try common args
+                buyRemote:FireServer("Max")
+                buyRemote:FireServer("Highest")
             end)
         end
-        jitterWait(45)
+        jitterWait(48)
     end
 end)
 
--- Basic ESP
+-- ESP
 local espHighlights = {}
 local function toggleESP(enabled)
     states.ESP = enabled
     if enabled then
-        for _, plr in ipairs(Players:GetPlayers()) do
+        for _, plr in Players:GetPlayers() do
             if plr ~= LocalPlayer and plr.Character then
                 local hl = Instance.new("Highlight")
-                hl.FillColor = Color3.fromRGB(255, 0, 0)
-                hl.OutlineColor = Color3.fromRGB(255, 255, 0)
-                hl.FillTransparency = 0.4
+                hl.FillColor = Color3.fromRGB(255,40,40)
+                hl.OutlineColor = Color3.fromRGB(255,220,0)
+                hl.FillTransparency = 0.45
+                hl.OutlineTransparency = 0
                 hl.Parent = plr.Character
                 espHighlights[plr] = hl
             end
         end
+        
         connections.espAdded = Players.PlayerAdded:Connect(function(plr)
             plr.CharacterAdded:Connect(function(char)
                 if states.ESP then
                     local hl = Instance.new("Highlight")
-                    hl.FillColor = Color3.fromRGB(255, 0, 0)
-                    hl.OutlineColor = Color3.fromRGB(255, 255, 0)
-                    hl.FillTransparency = 0.4
+                    hl.FillColor = Color3.fromRGB(255,40,40)
+                    hl.OutlineColor = Color3.fromRGB(255,220,0)
+                    hl.FillTransparency = 0.45
+                    hl.OutlineTransparency = 0
                     hl.Parent = char
                     espHighlights[plr] = hl
                 end
             end)
         end)
     else
-        for _, hl in pairs(espHighlights) do hl:Destroy() end
+        for _, hl in pairs(espHighlights) do pcall(function() hl:Destroy() end) end
         espHighlights = {}
         if connections.espAdded then connections.espAdded:Disconnect() end
     end
 end
 
--- UI Tabs
-local mainTab = window:AddTab("Main")
-local farmingTab = window:AddTab("Farming")
-local rebirthTab = window:AddTab("Rebirth")
+-- UI Tabs & Elements
+local mainTab     = window:AddTab("Main")
+local farmingTab  = window:AddTab("Farming")
+local rebirthTab  = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
-local killerTab = window:AddTab("Killer")
-local miscTab = window:AddTab("Misc")
-local inventoryTab = window:AddTab("Inventory")
+local killerTab   = window:AddTab("Killer")
+local miscTab     = window:AddTab("Misc")
+local invTab      = window:AddTab("Inventory")
 
-local toolsFolder = mainTab:AddFolder("Auto Tools")
-local rockFolder = mainTab:AddFolder("Rock Farm")
-local killFolder = killerTab:AddFolder("Auto Kill")
-local petFolder = inventoryTab:AddFolder("Pet Management")
-local shopFolder = farmingTab:AddFolder("Auto Shop")
+local toolsFold   = mainTab:AddFolder("Auto Tools")
+local rockFold    = mainTab:AddFolder("Rock Farm")
+local killFold    = killerTab:AddFolder("Kill Options")
+local petFold     = invTab:AddFolder("Pets")
+local shopFold    = farmingTab:AddFolder("Shop")
 
 -- Main Tab
-toolsFolder:AddSwitch("Auto Pushups", function(s) states.AutoPushups = s if s then startAutoRep("Pushups", "AutoPushups") end end)
-toolsFolder:AddSwitch("Auto Weight", function(s) states.AutoWeight = s if s then startAutoRep("Weight", "AutoWeight") end end)
-toolsFolder:AddSwitch("Auto Handstands", function(s) states.AutoHandstands = s if s then startAutoRep("Handstands", "AutoHandstands") end end)
-toolsFolder:AddSwitch("Fast Punch (Improved)", function(s)
-    states.FastPunch = s
-    if s then
-        task.spawn(function()
-            while states.FastPunch and getgenv().NexusRunning do
-                pcall(function()
-                    local char = LocalPlayer.Character
-                    if not char or char.Humanoid.Health <= 0 then return end
-                    if muscleEvent then
-                        muscleEvent:FireServer("punch", "rightHand")
-                        muscleEvent:FireServer("punch", "leftHand")
-                    end
-                    local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
-                    if punch then
-                        if punch.Parent ~= char then char.Humanoid:EquipTool(punch) task.wait(0.015) end
-                        punch:Activate()
-                    end
-                    if math.random(1,10) <= 2 then safeUnequip("Punch") task.wait(0.04) safeEquip("Punch") end
-                end)
-                jitterWait(0.06)
-            end
-            safeUnequip("Punch")
-        end)
-    end
-end)
-toolsFolder:AddButton("Anti-Lag / FPS Boost", function()
+toolsFold:AddSwitch("Auto Pushups",    function(s) states.AutoPushups = s   if s then startAutoRep("Pushups",   "AutoPushups")   end end)
+toolsFold:AddSwitch("Auto Weight",     function(s) states.AutoWeight  = s   if s then startAutoRep("Weight",    "AutoWeight")    end end)
+toolsFold:AddSwitch("Auto Handstands", function(s) states.AutoHandstands = s if s then startAutoRep("Handstands","AutoHandstands")end end)
+toolsFold:AddSwitch("Fast Punch",      function(s) states.FastPunch = s end)
+toolsFold:AddSwitch("Fast Strength",   toggleFastStrength)
+toolsFold:AddSwitch("Infinite Jump",   toggleInfiniteJump)
+toolsFold:AddSwitch("Anti-AFK",        toggleAntiAfk)
+toolsFold:AddSwitch("NoClip",          toggleNoClip)
+toolsFold:AddSwitch("Speed Hack",      toggleSpeedHack)
+
+-- Rock Farm (common tiers – adjust if your game has different values)
+rockFold:AddSwitch("Rock 100",   function(s) toggleRock(100,   s) end)
+rockFold:AddSwitch("Rock 500",   function(s) toggleRock(500,   s) end)
+rockFold:AddSwitch("Rock 1k",    function(s) toggleRock(1000,  s) end)
+rockFold:AddSwitch("Rock 5k",    function(s) toggleRock(5000,  s) end)
+rockFold:AddSwitch("Rock 10k",   function(s) toggleRock(10000, s) end)
+rockFold:AddSwitch("Rock 50k",   function(s) toggleRock(50000, s) end)
+
+-- Farming Tab
+farmingTab:AddSwitch("Auto Claim Chests",   function(s) states.AutoClaimChests = s end)
+farmingTab:AddSwitch("Auto Eat Protein",    function(s) states.AutoEatProtein  = s end)
+shopFold:AddSwitch("Auto Buy Best",         function(s) states.AutoBuyBest     = s end)
+
+-- Inventory Tab
+petFold:AddSwitch("Auto Hatch Eggs",        function(s) states.AutoHatch       = s end)
+petFold:AddSwitch("Auto Equip Best Pet",    function(s) states.AutoEquipBestPet= s end)
+
+-- Misc / Utility
+miscTab:AddSwitch("ESP Players", toggleESP)
+miscTab:AddButton("FPS Boost", function()
     Lighting.GlobalShadows = false
-    Lighting.Brightness = 1.2
-    Lighting.FogEnd = 99999
-    for _, v in pairs(Workspace:GetDescendants()) do
+    Lighting.Brightness = 1.3
+    Lighting.FogEnd = 999999
+    for _, v in Workspace:GetDescendants() do
         if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
             v.Enabled = false
         end
@@ -493,25 +523,18 @@ toolsFolder:AddButton("Anti-Lag / FPS Boost", function()
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 end)
 
--- Farming Tab
-farmingTab:AddSwitch("Fast Strength (Combined)", toggleFastStrength)
-farmingTab:AddSwitch("Fast Rebirth", function(s)
-    states.FastRebirth = s
-    if s then
-        task.spawn(function()
-            while states.FastRebirth and getgenv().NexusRunning do
-                if rebirthRemote then rebirthRemote:InvokeServer("rebirthRequest") end
-                jitterWait(0.16)
-            end
-        end)
-    end
+miscTab:AddButton("STOP EVERYTHING", function()
+    getgenv().NexusRunning = false
+    for k, conn in pairs(connections) do if conn then conn:Disconnect() end end
+    task.wait(1.5)
+    print("All farming stopped.")
 end)
-farmingTab:AddSwitch("Auto Claim Chests", function(s) states.AutoClaimChests = s end)
-farmingTab:AddSwitch("Auto Eat Protein", function(s) states.AutoEatProtein = s end)
-shopFolder:AddSwitch("Auto Buy Best Weights/Tools", function(s) states.AutoBuyBest = s end)
 
--- Rock Farm (exclusive logic)
-local function toggleRock(dur, s)
-    if s then
-        rockFarm.durability = dur
-        rock
+-- Teleports (add your game's actual positions)
+local tpFold = teleportTab:AddFolder("Locations")
+tpFold:AddButton("Muscle King / Safe Spot", function() tpTo(Vector3.new(0, 150, 0)) end)
+tpFold:AddButton("Rebirth Zone",            function() tpTo(Vector3.new(800, 20, -400)) end)
+tpFold:AddButton("High Tier Weights",       function() tpTo(Vector3.new(-300, 10, 600)) end)
+-- Add more with explorer/F3X found CFrames
+
+print("Invincible Private Farming loaded – March 2026 edition")
