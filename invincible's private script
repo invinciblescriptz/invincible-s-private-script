@@ -3,30 +3,30 @@
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KyleXAkimbo/Gui/refs/heads/main/INV-UI"))()
 local window = library:AddWindow("Invincible Private Farming ++", {
-    title_bar = {Color3.fromRGB(0,0,0), Color3.fromRGB(0,0,0), Color3.fromRGB(0,0,0)},
+    title_bar = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
     title_bar_transparency = 0.2,
-    background = {Color3.fromRGB(0,0,0), Color3.fromRGB(20,0,0), Color3.fromRGB(20,0,0)},
+    background = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(20, 0, 0), Color3.fromRGB(20, 0, 0)},
     background_transparency = 0.1,
-    main_color = Color3.fromRGB(20,0,0),
+    main_color = Color3.fromRGB(20, 0, 0),
     min_size = Vector2.new(560, 780),
     can_resize = true
 })
 
 -- Services
-local Players          = game:GetService("Players")
-local RunService       = game:GetService("RunService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local VirtualUser      = game:GetService("VirtualUser")
-local ReplicatedStorage= game:GetService("ReplicatedStorage")
-local Workspace        = game:GetService("Workspace")
-local Debris           = game:GetService("Debris")
-local Lighting         = game:GetService("Lighting")
-local LocalPlayer      = Players.LocalPlayer
+local VirtualUser = game:GetService("VirtualUser")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
 
 -- Improved remote finder (2026 era – more paths & names)
 local function findRemote(patterns)
     for _, cont in {ReplicatedStorage, game} do
-        for _, name in patterns do
+        for _, name in ipairs(patterns) do
             local found = cont:FindFirstChild(name, true)
             if found and (found:IsA("RemoteEvent") or found:IsA("RemoteFunction")) then
                 return found
@@ -36,35 +36,35 @@ local function findRemote(patterns)
     return nil
 end
 
-local muscleEvent   = findRemote({"muscleEvent", "Muscle", "RepEvent", "StrengthRemote", "PunchRemote", "Exercise"})
+local muscleEvent = findRemote({"muscleEvent", "Muscle", "RepEvent", "StrengthRemote", "PunchRemote", "Exercise"})
 local rebirthRemote = findRemote({"rebirthRemote", "RebirthEvent", "rebirth", "rebirthRequest", "Rebirth", "DoRebirth"})
-local spinRemote    = findRemote({"spinWheel", "FortuneWheel", "LuckySpin", "SpinEvent", "Wheel", "SpinRemote"})
-local buyRemote     = findRemote({"buyTool", "BuyItem", "purchase", "Buy", "ShopBuy", "Purchase", "BuyRemote"})
+local spinRemote = findRemote({"spinWheel", "FortuneWheel", "LuckySpin", "SpinEvent", "Wheel", "SpinRemote"})
+local buyRemote = findRemote({"buyTool", "BuyItem", "purchase", "Buy", "ShopBuy", "Purchase", "BuyRemote"})
 
 -- Globals & states
 getgenv().NexusRunning = true
 
 local states = {
-    AutoPushups       = false,
-    AutoWeight        = false,
-    AutoHandstands    = false,
-    FastPunch         = false,
-    FastStrength      = false,
-    InfiniteJump      = false,
-    AntiAfk           = false,
-    KillAura          = false,
-    AutoKillSelected  = false,
-    AutoRebirth       = false,
-    FastRebirth       = false,
-    AutoClaimChests   = false,
-    AutoEatProtein    = false,
-    NoClip            = false,
-    SpeedHack         = false,
-    AutoHatch         = false,
-    AutoEquipBestPet  = false,
-    AutoSpinWheel     = false,
-    AutoBuyBest       = false,
-    ESP               = false,
+    AutoPushups = false,
+    AutoWeight = false,
+    AutoHandstands = false,
+    FastPunch = false,
+    FastStrength = false,
+    InfiniteJump = false,
+    AntiAfk = false,
+    KillAura = false,
+    AutoKillSelected = false,
+    AutoRebirth = false,
+    FastRebirth = false,
+    AutoClaimChests = false,
+    AutoEatProtein = false,
+    NoClip = false,
+    SpeedHack = false,
+    AutoHatch = false,
+    AutoEquipBestPet = false,
+    AutoSpinWheel = false,
+    AutoBuyBest = false,
+    ESP = false,
 }
 
 local connections = {}
@@ -79,7 +79,7 @@ local function jitterWait(base)
     task.wait(base + extra)
 end
 
--- Helpers
+-- Helper Functions
 local function tpTo(pos)
     pcall(function()
         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -92,14 +92,18 @@ local function safeEquip(toolName)
         local char = LocalPlayer.Character
         if not char or not char:FindFirstChild("Humanoid") then return end
         local tool = LocalPlayer.Backpack:FindFirstChild(toolName) or char:FindFirstChild(toolName)
-        if tool and tool.Parent ~= char then char.Humanoid:EquipTool(tool) end
+        if tool and tool.Parent ~= char then
+            char.Humanoid:EquipTool(tool)
+        end
     end)
 end
 
 local function safeUnequip(toolName)
     pcall(function()
         local char = LocalPlayer.Character
-        if char and char:FindFirstChild(toolName) then char[toolName].Parent = LocalPlayer.Backpack end
+        if char and char:FindFirstChild(toolName) then
+            char[toolName].Parent = LocalPlayer.Backpack
+        end
     end)
 end
 
@@ -108,9 +112,14 @@ local function startAutoRep(toolName, stateKey)
         while states[stateKey] and getgenv().NexusRunning do
             pcall(function()
                 local char = LocalPlayer.Character
-                if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then jitterWait(1.9) return end
+                if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
+                    jitterWait(1.9)
+                    return
+                end
                 safeEquip(toolName)
-                if muscleEvent then muscleEvent:FireServer("rep") end
+                if muscleEvent then
+                    muscleEvent:FireServer("rep")
+                end
             end)
             jitterWait(0.135)
         end
@@ -135,7 +144,9 @@ local function toggleFastStrength(enabled)
                 local char = LocalPlayer.Character
                 if char then
                     local tool = char:FindFirstChildWhichIsA("Tool")
-                    if tool then tool:Activate() end
+                    if tool then
+                        tool:Activate()
+                    end
                 end
             end)
         end)
@@ -183,8 +194,10 @@ local function toggleNoClip(enabled)
             pcall(function()
                 local char = LocalPlayer.Character
                 if char then
-                    for _, part in char:GetDescendants() do
-                        if part:IsA("BasePart") then part.CanCollide = false end
+                    for _, part in ipairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
                     end
                 end
             end)
@@ -211,7 +224,7 @@ local function toggleSpeedHack(enabled)
     end)
 end
 
--- Kill helpers
+-- Kill Helpers
 local function tryKillPlayer(plr)
     pcall(function()
         local myChar = LocalPlayer.Character
@@ -229,7 +242,7 @@ end
 task.spawn(function()
     while getgenv().NexusRunning do
         if states.KillAura then
-            for _, plr in Players:GetPlayers() do
+            for _, plr in pairs(Players:GetPlayers()) do
                 if plr ~= LocalPlayer and plr.Character then
                     tryKillPlayer(plr)
                 end
@@ -245,7 +258,9 @@ task.spawn(function()
     while getgenv().NexusRunning do
         if states.AutoKillSelected and selectedTarget then
             local plr = Players:FindFirstChild(selectedTarget)
-            if plr and plr.Character then tryKillPlayer(plr) end
+            if plr and plr.Character then
+                tryKillPlayer(plr)
+            end
         end
         jitterWait(0.2)
     end
@@ -279,11 +294,11 @@ task.spawn(function()
     end
 end)
 
--- Rock cache refresh
+-- Refresh Rock Cache
 task.spawn(function()
     while getgenv().NexusRunning do
         rockCache = {}
-        for _, obj in Workspace:GetDescendants() do
+        for _, obj in ipairs(Workspace:GetDescendants()) do
             if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Parent:FindFirstChild("Rock") then
                 rockCache[obj.Value] = obj.Parent.Rock
             end
@@ -311,8 +326,8 @@ task.spawn(function()
             pcall(function()
                 local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                 if not hrp then return end
-                for _, obj in Workspace:GetDescendants() do
-                    if (obj.Name:lower():find("chest") or obj.Name:lower():find("reward")) and obj:IsA("BasePart") then
+                for _, obj in ipairs(Workspace:GetDescendants()) do
+                    if (string.find(string.lower(obj.Name), "chest") or string.find(string.lower(obj.Name), "reward")) and obj:IsA("BasePart") then
                         if (obj.Position - hrp.Position).Magnitude < 45 then
                             firetouchinterest(obj, hrp, 0)
                             task.wait(0.035)
@@ -331,8 +346,8 @@ task.spawn(function()
     while getgenv().NexusRunning do
         if states.AutoEatProtein then
             pcall(function()
-                for _, tool in LocalPlayer.Backpack:GetChildren() do
-                    local n = tool.Name:lower()
+                for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+                    local n = string.lower(tool.Name)
                     if n:find("protein") or n:find("food") or n:find("shake") then
                         safeEquip(tool.Name)
                         task.wait(0.25)
@@ -353,8 +368,8 @@ task.spawn(function()
             pcall(function()
                 local char = LocalPlayer.Character
                 if char and char:FindFirstChild("Humanoid") then
-                    for _, tool in LocalPlayer.Backpack:GetChildren() do
-                        local n = tool.Name:lower()
+                    for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+                        local n = string.lower(tool.Name)
                         if n:find("egg") or n:find("crystal") or n:find("hatch") or n:find("pet egg") then
                             char.Humanoid:EquipTool(tool)
                             jitterWait(0.13)
@@ -374,11 +389,11 @@ local function equipBestPet()
     pcall(function()
         local char = LocalPlayer.Character
         if not char or not char:FindFirstChild("Humanoid") then return end
-        
+
         local highest = 0
         bestPet = nil
-        
-        for _, item in LocalPlayer.Backpack:GetChildren() do
+
+        for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do
             if item:IsA("Tool") and (item.Name:lower():find("pet") or item:FindFirstChild("Multiplier") or item:FindFirstChild("StrengthMult")) then
                 local val = 1
                 if item:FindFirstChild("Multiplier") then val = item.Multiplier.Value end
@@ -388,7 +403,7 @@ local function equipBestPet()
                 end
             end
         end
-        
+
         if bestPet then
             char.Humanoid:EquipTool(bestPet)
         end
@@ -408,7 +423,6 @@ task.spawn(function()
         if states.AutoSpinWheel and spinRemote then
             pcall(function()
                 spinRemote:FireServer() -- most common 2026 variant
-                -- alternatives if needed: spinRemote:FireServer("Spin") or ("RequestSpin")
             end)
         end
         jitterWait(68)
@@ -420,7 +434,7 @@ task.spawn(function()
     while getgenv().NexusRunning do
         if states.AutoBuyBest and buyRemote then
             pcall(function()
-                buyRemote:FireServer("Best")     -- try common args
+                buyRemote:FireServer("Best")
                 buyRemote:FireServer("Max")
                 buyRemote:FireServer("Highest")
             end)
@@ -434,24 +448,23 @@ local espHighlights = {}
 local function toggleESP(enabled)
     states.ESP = enabled
     if enabled then
-        for _, plr in Players:GetPlayers() do
+        for _, plr in pairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character then
                 local hl = Instance.new("Highlight")
-                hl.FillColor = Color3.fromRGB(255,40,40)
-                hl.OutlineColor = Color3.fromRGB(255,220,0)
+                hl.FillColor = Color3.fromRGB(255, 40, 40)
+                hl.OutlineColor = Color3.fromRGB(255, 220, 0)
                 hl.FillTransparency = 0.45
                 hl.OutlineTransparency = 0
                 hl.Parent = plr.Character
                 espHighlights[plr] = hl
             end
         end
-        
         connections.espAdded = Players.PlayerAdded:Connect(function(plr)
             plr.CharacterAdded:Connect(function(char)
                 if states.ESP then
                     local hl = Instance.new("Highlight")
-                    hl.FillColor = Color3.fromRGB(255,40,40)
-                    hl.OutlineColor = Color3.fromRGB(255,220,0)
+                    hl.FillColor = Color3.fromRGB(255, 40, 40)
+                    hl.OutlineColor = Color3.fromRGB(255, 220, 0)
                     hl.FillTransparency = 0.45
                     hl.OutlineTransparency = 0
                     hl.Parent = char
@@ -467,47 +480,58 @@ local function toggleESP(enabled)
 end
 
 -- UI Tabs & Elements
-local mainTab     = window:AddTab("Main")
-local farmingTab  = window:AddTab("Farming")
-local rebirthTab  = window:AddTab("Rebirth")
+local mainTab = window:AddTab("Main")
+local farmingTab = window:AddTab("Farming")
+local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
-local killerTab   = window:AddTab("Killer")
-local miscTab     = window:AddTab("Misc")
-local invTab      = window:AddTab("Inventory")
+local killerTab = window:AddTab("Killer")
+local miscTab = window:AddTab("Misc")
+local invTab = window:AddTab("Inventory")
 
-local toolsFold   = mainTab:AddFolder("Auto Tools")
-local rockFold    = mainTab:AddFolder("Rock Farm")
-local killFold    = killerTab:AddFolder("Kill Options")
-local petFold     = invTab:AddFolder("Pets")
-local shopFold    = farmingTab:AddFolder("Shop")
+local toolsFold = mainTab:AddFolder("Auto Tools")
+local rockFold = mainTab:AddFolder("Rock Farm")
+local killFold = killerTab:AddFolder("Kill Options")
+local petFold = invTab:AddFolder("Pets")
+local shopFold = farmingTab:AddFolder("Shop")
 
 -- Main Tab
-toolsFold:AddSwitch("Auto Pushups",    function(s) states.AutoPushups = s   if s then startAutoRep("Pushups",   "AutoPushups")   end end)
-toolsFold:AddSwitch("Auto Weight",     function(s) states.AutoWeight  = s   if s then startAutoRep("Weight",    "AutoWeight")    end end)
-toolsFold:AddSwitch("Auto Handstands", function(s) states.AutoHandstands = s if s then startAutoRep("Handstands","AutoHandstands")end end)
-toolsFold:AddSwitch("Fast Punch",      function(s) states.FastPunch = s end)
-toolsFold:AddSwitch("Fast Strength",   toggleFastStrength)
-toolsFold:AddSwitch("Infinite Jump",   toggleInfiniteJump)
-toolsFold:AddSwitch("Anti-AFK",        toggleAntiAfk)
-toolsFold:AddSwitch("NoClip",          toggleNoClip)
-toolsFold:AddSwitch("Speed Hack",      toggleSpeedHack)
+toolsFold:AddSwitch("Auto Pushups", function(s)
+    states.AutoPushups = s
+    if s then startAutoRep("Pushups", "AutoPushups") end
+end)
+toolsFold:AddSwitch("Auto Weight", function(s)
+    states.AutoWeight = s
+    if s then startAutoRep("Weight", "AutoWeight") end
+end)
+toolsFold:AddSwitch("Auto Handstands", function(s)
+    states.AutoHandstands = s
+    if s then startAutoRep("Handstands", "AutoHandstands") end
+end)
+toolsFold:AddSwitch("Fast Punch", function(s)
+    states.FastPunch = s
+end)
+toolsFold:AddSwitch("Fast Strength", toggleFastStrength)
+toolsFold:AddSwitch("Infinite Jump", toggleInfiniteJump)
+toolsFold:AddSwitch("Anti-AFK", toggleAntiAfk)
+toolsFold:AddSwitch("NoClip", toggleNoClip)
+toolsFold:AddSwitch("Speed Hack", toggleSpeedHack)
 
--- Rock Farm (common tiers – adjust if your game has different values)
-rockFold:AddSwitch("Rock 100",   function(s) toggleRock(100,   s) end)
-rockFold:AddSwitch("Rock 500",   function(s) toggleRock(500,   s) end)
-rockFold:AddSwitch("Rock 1k",    function(s) toggleRock(1000,  s) end)
-rockFold:AddSwitch("Rock 5k",    function(s) toggleRock(5000,  s) end)
-rockFold:AddSwitch("Rock 10k",   function(s) toggleRock(10000, s) end)
-rockFold:AddSwitch("Rock 50k",   function(s) toggleRock(50000, s) end)
+-- Rock Farm Tier Switches
+rockFold:AddSwitch("Rock 100", function(s) toggleRock(100, s) end)
+rockFold:AddSwitch("Rock 500", function(s) toggleRock(500, s) end)
+rockFold:AddSwitch("Rock 1k", function(s) toggleRock(1000, s) end)
+rockFold:AddSwitch("Rock 5k", function(s) toggleRock(5000, s) end)
+rockFold:AddSwitch("Rock 10k", function(s) toggleRock(10000, s) end)
+rockFold:AddSwitch("Rock 50k", function(s) toggleRock(50000, s) end)
 
 -- Farming Tab
-farmingTab:AddSwitch("Auto Claim Chests",   function(s) states.AutoClaimChests = s end)
-farmingTab:AddSwitch("Auto Eat Protein",    function(s) states.AutoEatProtein  = s end)
-shopFold:AddSwitch("Auto Buy Best",         function(s) states.AutoBuyBest     = s end)
+farmingTab:AddSwitch("Auto Claim Chests", function(s) states.AutoClaimChests = s end)
+farmingTab:AddSwitch("Auto Eat Protein", function(s) states.AutoEatProtein = s end)
+shopFold:AddSwitch("Auto Buy Best", function(s) states.AutoBuyBest = s end)
 
 -- Inventory Tab
-petFold:AddSwitch("Auto Hatch Eggs",        function(s) states.AutoHatch       = s end)
-petFold:AddSwitch("Auto Equip Best Pet",    function(s) states.AutoEquipBestPet= s end)
+petFold:AddSwitch("Auto Hatch Eggs", function(s) states.AutoHatch = s end)
+petFold:AddSwitch("Auto Equip Best Pet", function(s) states.AutoEquipBestPet = s end)
 
 -- Misc / Utility
 miscTab:AddSwitch("ESP Players", toggleESP)
@@ -515,7 +539,7 @@ miscTab:AddButton("FPS Boost", function()
     Lighting.GlobalShadows = false
     Lighting.Brightness = 1.3
     Lighting.FogEnd = 999999
-    for _, v in Workspace:GetDescendants() do
+    for _, v in ipairs(Workspace:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
             v.Enabled = false
         end
@@ -525,16 +549,23 @@ end)
 
 miscTab:AddButton("STOP EVERYTHING", function()
     getgenv().NexusRunning = false
-    for k, conn in pairs(connections) do if conn then conn:Disconnect() end end
+    for _, conn in pairs(connections) do
+        if conn then conn:Disconnect() end
+    end
     task.wait(1.5)
     print("All farming stopped.")
 end)
 
--- Teleports (add your game's actual positions)
-local tpFold = teleportTab:AddFolder("Locations")
-tpFold:AddButton("Muscle King / Safe Spot", function() tpTo(Vector3.new(0, 150, 0)) end)
-tpFold:AddButton("Rebirth Zone",            function() tpTo(Vector3.new(800, 20, -400)) end)
-tpFold:AddButton("High Tier Weights",       function() tpTo(Vector3.new(-300, 10, 600)) end)
--- Add more with explorer/F3X found CFrames
-
-print("Invincible Private Farming loaded – March 2026 edition")
+-- Teleport Tab (unchanged)
+teleportTab:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
+teleportTab:AddButton("To Secret Area",       function() tpTo(Vector3.new(1947, 2, 6191)) end)
+teleportTab:AddButton("To Tiny Area",         function() tpTo(Vector3.new(-39, 6, 1886)) end)
+teleportTab:AddButton("To Frozen Area",       function() tpTo(Vector3.new(-2623, 6, -409)) end)
+teleportTab:AddButton("To Mythical Area",     function() tpTo(Vector3.new(2251, 6, 1073)) end)
+teleportTab:AddButton("To Inferno Area",      function() tpTo(Vector3.new(-6759, 6, -1285)) end)
+teleportTab:AddButton("To Legend Area",       function() tpTo(Vector3.new(4603, 990, -3898)) end)
+teleportTab:AddButton("To Muscle King Area",  function() tpTo(Vector3.new(-8626, 16, -5730)) end)
+teleportTab:AddButton("To Jungle Area",       function() tpTo(Vector3.new(-8642, 6, 2381)) end)
+teleportTab:AddButton("To Lava Brawl",        function() tpTo(Vector3.new(4471, 119, -8836)) end)
+teleportTab:AddButton("To Desert Brawl",      function() tpTo(Vector3.new(960, 17, -7398)) end)
+teleportTab:AddButton("To Beach Brawl",       function() tpTo(Vector3.new(-1849, 20, -6335)) end)
