@@ -1,3 +1,4 @@
+-- Load UI Library
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KyleXAkimbo/Gui/refs/heads/main/INV-UI"))()
 
 local window = library:AddWindow("Invincible private farming", {
@@ -22,9 +23,10 @@ local Lighting = game:GetService("Lighting") -- Corrected
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
 
--- Globals & states
+-- Global Flags
 getgenv().NexusRunning = true
 
+-- States
 local states = {
     AutoPushups = false,
     AutoWeight = false,
@@ -42,10 +44,10 @@ local states = {
 
 local targetRebirths = 1
 local selectedTarget = nil
-local jumpConn = nil
-local antiAfkConn = nil
+local jumpConnection = nil
+local antiAfkConnection = nil
 
--- Rock farm globals
+-- Rock Farm Globals
 getgenv().rockFarmActive = false
 getgenv().selectedRockDurability = 0
 
@@ -84,7 +86,7 @@ local function startAutoRep(toolName, stateKey)
             end)
             task.wait(0.09)
         end
-        -- Unequip when disabled
+        -- Unequip tool
         pcall(function()
             local char = LocalPlayer.Character
             if char and char:FindFirstChild(toolName) then
@@ -98,8 +100,8 @@ end
 local function toggleInfiniteJump(state)
     states.InfiniteJump = state
     if state then
-        if jumpConn then return end
-        jumpConn = UserInputService.JumpRequest:Connect(function()
+        if jumpConnection then return end
+        jumpConnection = UserInputService.JumpRequest:Connect(function()
             pcall(function()
                 local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
                 if hum then
@@ -108,9 +110,9 @@ local function toggleInfiniteJump(state)
             end)
         end)
     else
-        if jumpConn then
-            jumpConn:Disconnect()
-            jumpConn = nil
+        if jumpConnection then
+            jumpConnection:Disconnect()
+            jumpConnection = nil
         end
     end
 end
@@ -119,22 +121,22 @@ end
 local function toggleAntiAfk(state)
     states.AntiAfk = state
     if state then
-        if antiAfkConn then return end
-        antiAfkConn = LocalPlayer.Idled:Connect(function()
+        if antiAfkConnection then return end
+        antiAfkConnection = LocalPlayer.Idled:Connect(function()
             pcall(function()
                 VirtualUser:CaptureController()
                 VirtualUser:ClickButton2(Vector2.new())
             end)
         end)
     else
-        if antiAfkConn then
-            antiAfkConn:Disconnect()
-            antiAfkConn = nil
+        if antiAfkConnection then
+            antiAfkConnection:Disconnect()
+            antiAfkConnection = nil
         end
     end
 end
 
--- Kill / Position under target
+-- Kill Player
 local function killPlayer(targetPlayer)
     pcall(function()
         local myChar = LocalPlayer.Character
@@ -148,10 +150,10 @@ local function killPlayer(targetPlayer)
     end)
 end
 
--- Initialize tabs
+-- UI Tabs
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
-local farmingTab = window:AddTab("Farm++")
+local farmTab = window:AddTab("Farm++")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local killTab = window:AddTab("Killer")
@@ -162,7 +164,7 @@ local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder = killTab:AddFolder("Auto Kill")
 
--- Tools functions
+-- Tool Buttons
 toolsFolder:AddSwitch("Auto Pushups", function(s)
     states.AutoPushups = s
     if s then startAutoRep("Pushups", "AutoPushups") end
@@ -260,7 +262,7 @@ addTeleportButton("To Lava Brawl", Vector3.new(4471, 119, -8836))
 addTeleportButton("To Desert Brawl", Vector3.new(960, 17, -7398))
 addTeleportButton("To Beach Brawl", Vector3.new(-1849, 20, -6335))
 
--- Rock farm control
+-- Rock Farm Control
 local function setRockFarm(dur, enable)
     if enable then
         getgenv().selectedRockDurability = dur
@@ -288,7 +290,7 @@ rockFarmFolder:AddButton("STOP All Rock Farming", function()
     getgenv().selectedRockDurability = 0
 end)
 
--- Rock farm loop
+-- Rock Farming Loop
 task.spawn(function()
     while getgenv().NexusRunning do
         if not getgenv().rockFarmActive or getgenv().selectedRockDurability <= 0 then
@@ -310,7 +312,6 @@ task.spawn(function()
             end
 
             safeEquipTool("Punch")
-
             local machinesFolder = Workspace:FindFirstChild("machinesFolder")
             if not machinesFolder then return end
 
@@ -343,7 +344,7 @@ task.spawn(function()
     end
 end)
 
--- Killer auto kill
+-- Killer Auto Kill
 local killerTab = window:AddTab("Killer")
 local killerFolder = killerTab:AddFolder("Auto Kill")
 killerFolder:AddSwitch("Kill Aura (All)", function(s)
@@ -363,7 +364,9 @@ killerFolder:AddSwitch("Kill Aura (All)", function(s)
 end)
 
 local playerDropdown = killerFolder:AddDropdown("Select Target", function(val)
-    selectedTarget = val and val:match("^([^|]+)") or nil
+    if val then
+        selectedTarget = val:match("^([^|]+)")
+    end
 end)
 
 killerFolder:AddSwitch("Auto Kill Selected", function(s)
@@ -381,7 +384,7 @@ killerFolder:AddSwitch("Auto Kill Selected", function(s)
     end
 end)
 
--- Auto-update player list
+-- Auto update player list
 task.spawn(function()
     while getgenv().NexusRunning do
         local opts = {}
@@ -397,29 +400,29 @@ task.spawn(function()
     end
 end)
 
--- Additional switches and buttons can be added similarly...
+-- Additional features like Rebirth, Fast Rebirth, AutoEatEgg, etc., can be added similarly with toggles and loops.
 
--- Example for toggling Infinite Jump
-local function toggleInfiniteJump(s)
+-- Example: Rebirth
+local rebirthFolder = rebirthTab:AddFolder("Rebirth")
+rebirthFolder:AddButton("Set Rebirths", function()
+    -- Implement rebirth logic here
+end)
+
+-- Example: Toggle Infinite Jump
+local function toggleInfJump(s)
     toggleInfiniteJump(s)
 end
 
--- Example for toggling Anti AFK
+-- Example: Toggle Anti AFK
 local function toggleAntiAfk(s)
     toggleAntiAfk(s)
 end
 
--- Example for changing Rebirths
+-- Example: Set target rebirth amount
 local function setTargetRebirths(amount)
     targetRebirths = amount
 end
 
--- Example for setting Auto Rebirth
-local function toggleAutoRebirth(s)
-    states.AutoRebirth = s
-    -- Implement your auto rebirth logic here
-end
-
--- For UI toggles, you can connect switches to these functions
+-- Additional features like auto-eat, auto-spin, hide frames, etc., can be similarly added.
 
 -- END OF SCRIPT
