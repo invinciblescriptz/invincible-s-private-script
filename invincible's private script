@@ -633,6 +633,190 @@ killFolder:AddButton("Mass Kill Everyone (once)", function()
     end
 end)
 
+-- ... (keep all your existing code up to the killerTab section) ...
+
+-- Globals (add these near your other globals)
+getgenv().KillingEnabled = true
+getgenv().KillAuraRange = 30
+getgenv().OrbitKillStyle = false   -- default off
+
+-- Master toggle at the top of killer tab
+killerTab:AddSwitch("ENABLE ALL KILL FEATURES", function(s)
+    getgenv().KillingEnabled = s
+end, true)
+
+-- Existing Kill Aura switch + new orbit toggle
+killerTab:AddSwitch("Kill Aura (All)", function(s)
+    states.KillAura = s
+    if s then
+        task.spawn(function()
+            while states.KillAura and getgenv().NexusRunning and getgenv().KillingEnabled do
+                pcall(function()
+                    local myChar = LocalPlayer.Character
+                    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                    if not myHRP then return end
+
+                    for _, plr in pairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer and plr.Character then
+                            local tChar = plr.Character
+                            local tHRP = tChar:FindFirstChild("HumanoidRootPart")
+                            if tHRP and (tHRP.Position - myHRP.Position).Magnitude <= getgenv().KillAuraRange then
+                                if getgenv().OrbitKillStyle then
+                                    -- Orbit style (circles under target)
+                                    local time = tick()
+                                    local angle = time * 6
+                                    local offset = CFrame.Angles(0, angle, 0) * CFrame.new(8, -20, 0)
+                                    myHRP.CFrame = tHRP.CFrame * offset
+                                else
+                                    -- Classic under-feet
+                                    myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -25, 0)
+                                end
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.12 + math.random(-30, 30)/1000)  -- tiny random delay
+            end
+        end)
+    end
+end)
+
+killerTab:AddSwitch("Use Orbit Style (instead of under)", function(s)
+    getgenv().OrbitKillStyle = s
+end)
+
+-- Existing range slider (unchanged)
+killerTab:AddSlider("Kill Aura Range", 10, 100, 30, function(val)
+    getgenv().KillAuraRange = val
+end)
+
+-- New: Void folder
+local voidKillFolder = killerTab:AddFolder("Void / Drop Kills")
+
+voidKillFolder:AddSwitch("Auto Void All (under map)", function(s)
+    states.AutoVoidAll = s
+    if s then
+        task.spawn(function()
+            while states.AutoVoidAll and getgenv().NexusRunning and getgenv().KillingEnabled do
+                pcall(function()
+                    for _, plr in pairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer and plr.Character then
+                            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+                            if hrp then
+                                hrp.CFrame = CFrame.new(hrp.Position.X, -5000 - math.random(0, 2000), hrp.Position.Z)
+                                hrp.AssemblyLinearVelocity = Vector3.new(0, -180 - math.random(0, 60), 0)
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.4 + math.random(0, 20)/100)  -- slower & jitter
+            end
+        end)
+    end
+end)
+
+voidKillFolder:AddButton("Void Everyone Once", function()
+    if not getgenv().KillingEnabled then return end
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.CFrame = CFrame.new(hrp.Position.X, -9000, hrp.Position.Z)
+            end
+        end
+    end
+end)
+
+-- Target-specific enhancements
+local playerDropdown = killerTab:AddDropdown("Select Target", function(val)
+    selectedTarget = val and val:match("^([^|]+)") or nil
+end)
+
+killerTab:AddSwitch("Auto Kill Selected", function(s)
+    states.AutoKillSelected = s
+    if s and selectedTarget then
+        task.spawn(function()
+            while states.AutoKillSelected and getgenv().NexusRunning and getgenv().KillingEnabled do
+                local plr = Players:FindFirstChild(selectedTarget)
+                if plr and plr.Character then
+                    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        if states.VoidSelected then
+                            hrp.CFrame = CFrame.new(0, -8000 - math.random(0, 1500), 0)
+                        else
+                            -- normal under or orbit depending on global style
+                            if getgenv().OrbitKillStyle then
+                                local time = tick()
+                                local offset = CFrame.Angles(0, time * 6, 0) * CFrame.new(8, -20, 0)
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame * offset
+                            else
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0, -25, 0)
+                            end
+                        end
+                    end
+                end
+                task.wait(0.14 + math.random(-25, 25)/1000)
+            end
+        end)
+    end
+end)
+
+killerTab:AddSwitch("Void Selected Instead of Under", function(s)
+    states.VoidSelected = s
+end)
+
+-- Aggressive / risky features
+local riskyFolder = killerTab:AddFolder("Risky / Aggressive")
+
+riskyFolder:AddSwitch("Attempt God Spam (very detectable)", function(s)
+    states.GodSpam = s
+    if s then
+        task.spawn(function()
+            while states.GodSpam and getgenv().NexusRunning and getgenv().KillingEnabled do
+                pcall(function()
+                    if muscleEvent then
+                        for i = 1, 10 do
+                            muscleEvent:FireServer("punch", "rightHand")
+                            muscleEvent:FireServer("punch", "leftHand")
+                        end
+                    end
+                end)
+                task.wait(0.07 + math.random(0, 40)/1000)
+            end
+        end)
+    end
+end)
+
+riskyFolder:AddButton("Mass Network Spam (attempt crash nearby)", function()
+    if not getgenv().KillingEnabled then return end
+    for i = 1, 100 do
+        pcall(function()
+            if muscleEvent then
+                muscleEvent:FireServer("punch", "rightHand")
+                muscleEvent:FireServer("punch", "leftHand")
+            end
+        end)
+    end
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Spam Sent",
+        Text = "Network spam x100 — use carefully!",
+        Duration = 4
+    })
+end)
+
+-- Existing mass kill button (enhanced)
+killFolder:AddButton("Mass Kill Everyone (once)", function()
+    if not getgenv().KillingEnabled then return end
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            killPlayer(plr)  -- your original under method
+        end
+    end
+end)
+
+-- Keep your existing player list auto-update task...
+-- (the one that refreshes the dropdown every ~5.5s)
+
 -- We'll store label references so we can update them
 local statLabels = {}
 
@@ -646,7 +830,7 @@ local statLabels = {}
 local function addOrUpdateStatLabel(name, initialValue)
     local labelName = name .. ":"
     if not statLabels[name] then
-        local lbl = statsSpyFolder:AddLabel(labelName .. " " .. tostring(initialValue or 0))
+        local lbl = statsFolder:AddLabel(labelName .. " " .. tostring(initialValue or 0))
         lbl.TextSize = 16
         lbl.TextXAlignment = Enum.TextXAlignment.Left
         statLabels[name] = lbl
@@ -707,4 +891,4 @@ task.spawn(function()
 end)
 
 -- Optional: initial "Loading..." state
-statsSpyFolder:AddLabel("Loading stats...").TextColor3 = Color3.fromRGB(180, 180, 120)
+statsFolder:AddLabel("Loading stats...").TextColor3 = Color3.fromRGB(180, 180, 120)
