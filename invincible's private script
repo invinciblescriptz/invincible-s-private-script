@@ -151,15 +151,15 @@ end
 -- Initialize tabs
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
-local farmingTab = window:AddTab("Farm++")
+local FarmTab = window:AddTab("Farm Op")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
-local killTab = window:AddTab("Killer")
+local killerTab = window:AddTab("Killer")
 local miscTab = window:AddTab("Misc")
 
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
-local killFolder = killTab:AddFolder("Auto Kill")
+local killFolder = killerTab:AddFolder("Auto Kill")
 
 -- Tools
 toolsFolder:AddSwitch("Auto Pushups", function(s)
@@ -306,10 +306,7 @@ task.spawn(function()
 
             safeEquipTool("Punch")
 
-            local machinesFolder = Workspace:FindFirstChild("machinesFolder")
-            if not machinesFolder then return end
-
-            for _, obj in pairs(machinesFolder:GetDescendants()) do
+            for _, obj in pairs(Workspace:FindFirstChild("machinesFolder"):GetDescendants()) do
                 if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Value == getgenv().selectedRockDurability then
                     local rock = obj.Parent:FindFirstChild("Rock")
                     if rock and rock:IsA("BasePart") then
@@ -339,7 +336,7 @@ task.spawn(function()
 end)
 
 -- Killer Auto Kill
-killTab:AddSwitch("Kill Aura (All)", function(s)
+killerTab:AddSwitch("Kill Aura (All)", function(s)
     states.KillAura = s
     if s then
         task.spawn(function()
@@ -355,11 +352,11 @@ killTab:AddSwitch("Kill Aura (All)", function(s)
     end
 end)
 
-local playerDropdown = killTab:AddDropdown("Select Target", function(val)
+local playerDropdown = killerTab:AddDropdown("Select Target", function(val)
     selectedTarget = val and val:match("^([^|]+)") or nil
 end)
 
-killTab:AddSwitch("Auto Kill Selected", function(s)
+killerTab:AddSwitch("Auto Kill Selected", function(s)
     states.AutoKillSelected = s
     if s and selectedTarget then
         task.spawn(function()
@@ -390,6 +387,9 @@ task.spawn(function()
     end
 end)
 
+-- Farming controls
+local farmingTab = window:AddTab("Farming") -- Added missing tab
+
 -- Example switches (define toggleFastStrength if needed)
 local function toggleFastStrength(s)
     -- Implement your logic here
@@ -411,25 +411,39 @@ local function toggleHideFrames(s)
     -- Implement your logic here
 end
 
--- Additional example switches (assuming these are part of your UI)
-local FarmTab = window:AddTab("Farm") -- Assuming you want a Farm tab
-local FarmTab = window:AddTab("Farm") -- Create the Farm tab if not existing
+farmingTab:AddSwitch("Fast Grind / Strength", toggleFastStrength)
 
-local StrengthSwitch = FarmTab:AddSwitch("Strength Op", function(SwitchState)
-    _G.AutoRepFarmEnabled = SwitchState
-    warn("[Auto Rep Farm] Estado cambiado a:", SwitchState and "ON" or "OFF")
+farmingTab:AddSwitch("Fast Rebirth", function(s)
+    states.FastRebirth = s
+    if s then
+        task.spawn(function()
+            while states.FastRebirth and getgenv().NexusRunning do
+                pcall(function()
+                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
+                    if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+                        rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                    end
+                end)
+                task.wait(0.07)
+            end
+        end)
+    end
 end)
-StrengthSwitch:Set(false)
 
-local AutoEatSwitch = FarmTab:AddSwitch("Auto Eat Egg 30 Minuts", function(SwitchState)
-    AutoEgg = SwitchState
+warn("Fast Rebirth is aggressive — high rate may flag anti-cheat in future updates.")
+
+local AutoEatEgg = false
+local AutoSpinWheel = false
+
+local AutoEatSwitch = farmingTab:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
+    AutoEatEgg = s
     task.spawn(function()
-        while AutoEgg do
+        while AutoEatEgg do
             local Backpack = LocalPlayer:FindFirstChild("Backpack")
             if Backpack then
                 local EggItem = Backpack:FindFirstChild("Protein Egg")
                 if EggItem then
-                    -- You can add code to use the egg if needed
+                    -- Auto eat logic here if needed
                 end
             end
             task.wait(1800)
@@ -438,9 +452,9 @@ local AutoEatSwitch = FarmTab:AddSwitch("Auto Eat Egg 30 Minuts", function(Switc
 end)
 AutoEatSwitch:Set(false)
 
-local SpinWheelSwitch = FarmTab:AddSwitch("Spin Fortune Wheel", function(SwitchState)
-    _G.AutoSpinWheel = SwitchState
-    if SwitchState then
+local SpinWheelSwitch = farmingTab:AddSwitch("Spin Fortune Wheel", function(s)
+    _G.AutoSpinWheel = s
+    if s then
         task.spawn(function()
             while _G.AutoSpinWheel do
                 task.wait(0.1)
@@ -450,12 +464,11 @@ local SpinWheelSwitch = FarmTab:AddSwitch("Spin Fortune Wheel", function(SwitchS
 end)
 SpinWheelSwitch:Set(false)
 
-FarmTab:AddSwitch("Hide All Frames", function(SwitchState)
-    -- Implement hide frames logic if needed
+farmingTab:AddSwitch("Hide All Frames", function(s)
+    -- Your implementation
 end)
 
--- Anti Lag Button
-FarmTab:AddButton("Anti Lag", function()
+farmingTab:AddButton("Anti Lag", function()
     for _, DescendantObject in pairs(workspace:GetDescendants()) do
         if DescendantObject:IsA("ParticleEmitter") then
             DescendantObject.Enabled = false
@@ -464,7 +477,7 @@ FarmTab:AddButton("Anti Lag", function()
     Lighting.GlobalShadows = false
     Lighting.FogEnd = 9e9
     Lighting.Brightness = 0
-    settings().Rendering.QualityLevel = 1
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     for _, DecalObject in pairs(workspace:GetDescendants()) do
         if DecalObject:IsA("Decal") then
             DecalObject.Transparency = 1
@@ -482,8 +495,7 @@ FarmTab:AddButton("Anti Lag", function()
     })
 end)
 
--- Full Optimization Button
-FarmTab:AddButton("Full Optimization", function()
+farmingTab:AddButton("Full Optimization", function()
     for _, GuiObject in pairs(LocalPlayer:WaitForChild("PlayerGui"):GetChildren()) do
         if GuiObject:IsA("ScreenGui") then
             GuiObject:Destroy()
@@ -494,6 +506,7 @@ FarmTab:AddButton("Full Optimization", function()
             ObjectInstance:Destroy()
         end
     end
+    -- Reset skybox
     for _, Skybox in pairs(Lighting:GetChildren()) do
         if Skybox:IsA("Sky") then
             Skybox:Destroy()
@@ -510,43 +523,40 @@ FarmTab:AddButton("Full Optimization", function()
     DarkSkybox.Parent = Lighting
     Lighting.Brightness = 0
     Lighting.ClockTime = 0
-    Lighting.OutdoorAmbient = Color3.new(0,0,0)
-    Lighting.Ambient = Color3.new(0,0,0)
-    Lighting.FogColor = Color3.new(0,0,0)
+    Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+    Lighting.Ambient = Color3.new(0, 0, 0)
+    Lighting.FogColor = Color3.new(0, 0, 0)
     Lighting.FogEnd = 100
 end)
 
--- Equip Swift Samurai Button
-FarmTab:AddButton("Equip Swift Samurai", function()
+farmingTab:AddButton("Equip Swift Samurai", function()
     print("Botón presionado: equipando 8 Swift Samurai")
     local PetsContainer = LocalPlayer:FindFirstChild("petsFolder")
     if PetsContainer then
-        -- Add logic to equip pets if applicable
+        -- Your logic here
     end
 end)
 
--- Jungle Buttons
-FarmTab:AddButton("Jungle Squat", function()
+farmingTab:AddButton("Jungle Squat", function()
     local CharacterModel = LocalPlayer.Character
     if CharacterModel and CharacterModel:FindFirstChild("HumanoidRootPart") then
         CharacterModel.HumanoidRootPart.CFrame = CFrame.new(-8371.4336, 6.7981, 2858.8853)
     end
 end)
 
-FarmTab:AddButton("Jungle lift", function()
+farmingTab:AddButton("Jungle lift", function()
     local CharacterModel = LocalPlayer.Character
     if CharacterModel and CharacterModel:FindFirstChild("HumanoidRootPart") then
         CharacterModel.HumanoidRootPart.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
     end
 end)
 
--- Rebirth info labels
-local RebirthsFolder = farmTab:AddFolder("Rebirths Info")
+-- Rebirths UI
+local RebirthsFolder = farmingTab:AddFolder("Rebirths Gained")
 RebirthsFolder:AddLabel("0d 0h 0m 0s").TextSize = 18
 RebirthsFolder:AddLabel("Rebirths: 0").TextSize = 18
 RebirthsFolder:AddLabel("Rebirths Gained: 0").TextSize = 18
 
--- Rebirth counter update
 task.spawn(function()
     while true do
         pcall(function()
@@ -554,7 +564,7 @@ task.spawn(function()
             if LeaderboardStats then
                 local RebirthCount = LeaderboardStats:FindFirstChild("Rebirths")
                 if RebirthCount then
-                    -- Update labels here
+                    -- Update UI here
                 end
             end
         end)
@@ -562,7 +572,7 @@ task.spawn(function()
     end
 end)
 
--- Floor parts creation (example)
+-- Example for creating base parts (Floor)
 task.spawn(function()
     local BasePosition = Vector3.new(-2, -9.5, -2)
     local BlockSize = Vector3.new(2048, 1, 2048)
@@ -579,64 +589,4 @@ task.spawn(function()
             BasePart.Parent = workspace
         end
     end
-end)
-
--- Remove Punch Anim Button
-KillTab:AddButton("Remove Punch Anim", function()
-    local Character = LocalPlayer.Character
-    if Character and Character:FindFirstChild("Humanoid") then
-        local Animator = Character.Humanoid:FindFirstChild("Animator")
-        if Animator then
-            for _, Track in pairs(Animator:GetPlayingAnimationTracks()) do
-                if Track.Animation.AnimationId == "rbxassetid://3638729053" or Track.Animation.AnimationId == "rbxassetid://3638767427" then
-                    Track:Stop()
-                    Track:Destroy()
-                end
-            end
-        end
-    end
-end)
-
--- View Target Dropdown
-local ViewDropdown = KillTab:AddDropdown("Select View Target", function(Value)
-    _G.ViewTarget = Value
-end)
-
--- View Player Switch
-local ViewPlayerSwitch = KillTab:AddSwitch("View Player", function(BooleanValue)
-    _G.viewPlayer = BooleanValue
-    task.spawn(function()
-        while _G.viewPlayer do
-            pcall(function()
-                local Target = nil
-                for _, Player in pairs(Players:GetPlayers()) do
-                    if Player.DisplayName == _G.ViewTarget then
-                        Target = Player
-                        break
-                    end
-                end
-
-                if Target and Target.Character and Target.Character:FindFirstChild("Humanoid") then
-                    workspace.CurrentCamera.CameraSubject = Target.Character.Humanoid
-                else
-                    workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChild("Humanoid")
-                end
-            end)
-            task.wait(0.1)
-        end
-        workspace.CurrentCamera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-    end)
-end)
-ViewPlayerSwitch:Set(false)
-
--- Change Size Buttons
-local ReplicatedStorageService = game:GetService("ReplicatedStorage")
-KillTab:AddButton("Size 30", function()
-    local Arguments = { [1] = "changeSize", [2] = 30 }
-    ReplicatedStorageService:WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(Arguments))
-end)
-
-KillTab:AddButton("Size 2", function()
-    local Arguments = { [1] = "changeSize", [2] = 2 }
-    ReplicatedStorageService:WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(Arguments))
 end)
