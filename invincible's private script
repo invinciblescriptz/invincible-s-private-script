@@ -636,6 +636,12 @@ end)
 -- We'll store label references so we can update them
 local statLabels = {}
 
+-- Stats Spy Folder / Section
+local statsFolder = specsTab:AddFolder("my stats")
+
+-- We'll store label references so we can update them
+local statLabels = {}
+
 -- Helper to create/update a label
 local function addOrUpdateStatLabel(name, initialValue)
     local labelName = name .. ":"
@@ -649,30 +655,14 @@ local function addOrUpdateStatLabel(name, initialValue)
     end
 end
 
--- Create a folder in the UI for stats display, renamed to "Your Stats"
-local statsFolder = mainTab:AddFolder("Your Stats")
-local statLabels = {} -- Store references for updating
-
--- Helper function to create or update labels
-local function addOrUpdateStatLabel(name, initialValue)
-    local labelName = name .. ":"
-    if not statLabels[name] then
-        local lbl = statsFolder:AddLabel(labelName .. " " .. tostring(initialValue or 0))
-        lbl.TextSize = 16
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        statLabels[name] = lbl
-    else
-        statLabels[name].Text = labelName .. " " .. tostring(initialValue or 0)
-    end
-end
-
 -- Main stats updating loop
 task.spawn(function()
     while getgenv().NexusRunning do
+        
         pcall(function()
             local lp = game.Players.LocalPlayer
             
-            -- Leaderstats
+            -- Leaderstats (most important)
             local leaderstats = lp:FindFirstChild("leaderstats")
             if leaderstats then
                 for _, stat in ipairs(leaderstats:GetChildren()) do
@@ -682,38 +672,39 @@ task.spawn(function()
                 end
             end
             
-            -- Durability
+            -- Durability (very common in this game genre)
             local durability = lp:FindFirstChild("Durability")
             if durability and durability:IsA("IntValue") then
                 addOrUpdateStatLabel("Durability", durability.Value)
             end
             
-            -- Strength / Muscle
+            -- Strength / Muscle (sometimes stored separately)
             local strength = lp:FindFirstChild("Strength") or (leaderstats and leaderstats:FindFirstChild("Strength"))
             if strength and (strength:IsA("IntValue") or strength:IsA("NumberValue")) then
                 addOrUpdateStatLabel("Strength", strength.Value)
             end
             
-            -- Gamepasses Owned (optional)
+            -- Gamepasses / extras (optional – comment out if not needed)
             local owned = lp:FindFirstChild("ownedGamepasses")
             if owned then
                 addOrUpdateStatLabel("Gamepasses Owned", #owned:GetChildren())
             end
             
-            -- Current Area / Zone (optional)
+            -- Current area / zone (if the game has it)
             local currentArea = lp:FindFirstChild("CurrentArea") or lp:FindFirstChild("Zone")
             if currentArea and currentArea:IsA("StringValue") then
                 addOrUpdateStatLabel("Area", currentArea.Value)
             end
         end)
-        task.wait(1.4)
+        
+        task.wait(1.4)   -- update every ~1.4 seconds — feels smooth but not performance heavy
     end
     
-    -- Cleanup: destroy labels when stop
+    -- Cleanup (optional)
     for _, lbl in pairs(statLabels) do
         pcall(function() lbl:Destroy() end)
     end
 end)
 
--- Add initial loading label
-specsTab:AddLabel("Loading stats...").TextColor3 = Color3.fromRGB(180, 180, 120)0)
+-- Optional: initial "Loading..." state
+statsSpyFolder:AddLabel("Loading stats...").TextColor3 = Color3.fromRGB(180, 180, 120)
