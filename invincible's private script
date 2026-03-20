@@ -109,7 +109,6 @@ local function toggleFastStrength(state)
                 muscleEvent:FireServer("rep")
                 muscleEvent:FireServer("punch", "rightHand")
                 muscleEvent:FireServer("punch", "leftHand")
-
                 local char = LocalPlayer.Character
                 if char then
                     local tool = char:FindFirstChildWhichIsA("Tool")
@@ -194,10 +193,14 @@ local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local killerTab = window:AddTab("Killer")
 local miscTab = window:AddTab("Misc")
+local killTab = window:AddTab("Auto Kill") -- New tab for auto kill
 
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder = killerTab:AddFolder("Auto Kill")
+local RebirthFolder = rebirthTab:AddFolder("Rebirth Options")
+local FastRebirthFolder = rebirthTab:AddFolder("Fast Rebirths")
+local farmingTab = FarmTab
 
 -- =================== Tools ===================
 
@@ -419,7 +422,6 @@ task.spawn(function()
             end
         end
         pcall(function()
-            -- Safely set dropdown options
             if playerDropdown then
                 playerDropdown:SetValues(opts)
             end
@@ -537,232 +539,59 @@ rebirthTab:AddSwitch("Auto TP Muscle King", function(s)
     end
 end)
 
-print("Invincibles Priv Script – cleaned & safer (March 2026)")
+-- =================== Auto Kill / Kill Aura ===================
 
-local StrengthSwitch = FarmTab:AddSwitch("Strength Op", function(s)
-    _G.AutoRepFarmEnabled = s
-    warn("[Auto Rep Farm] Estado cambiado a:", s and "ON" or "OFF")
-end)
-StrengthSwitch:Set(false)
-
-local AutoEatSwitch = FarmTab:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
-    AutoEatEgg = s
-    task.spawn(function()
-        while AutoEatEgg do
-            local Backpack = LocalPlayer:FindFirstChild("Backpack")
-            if Backpack then
-                local EggItem = Backpack:FindFirstChild("Protein Egg")
-                -- Add your auto-eat logic here if needed
-            end
-            task.wait(1800)
-        end
-    end)
-end)
-AutoEatSwitch:Set(false)
-
-local SpinWheelSwitch = FarmTab:AddSwitch("Spin Fortune Wheel", function(s)
-    _G.AutoSpinWheel = s
-    if s then
-        task.spawn(function()
-            while _G.AutoSpinWheel do
-                task.wait(0.1)
-            end
-        end)
-    end
-end)
-SpinWheelSwitch:Set(false)
-
-FarmTab:AddSwitch("Hide All Frames", function(s)
-    -- Implement hide frames if needed
-end)
-
-FarmTab:AddButton("Anti Lag", function()
-    for _, DescendantObject in pairs(workspace:GetDescendants()) do
-        if DescendantObject:IsA("ParticleEmitter") then
-            DescendantObject.Enabled = false
-        end
-    end
-    local Lighting = game:GetService("Lighting")
-    Lighting.GlobalShadows = false
-    Lighting.FogEnd = 9e9
-    Lighting.Brightness = 0
-    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    for _, DecalObject in pairs(workspace:GetDescendants()) do
-        if DecalObject:IsA("Decal") then
-            DecalObject.Transparency = 1
-        end
-    end
-    for _, EffectObject in pairs(Lighting:GetChildren()) do
-        if EffectObject:IsA("BlurEffect") then
-            EffectObject.Enabled = false
-        end
-    end
-    game.StarterGui:SetCore("SendNotification", {
-        Text = "Full optimization applied!",
-        Title = "Anti Lag activado",
-        Duration = 5
-    })
-end)
-
-FarmTab:AddButton("Full Optimization", function()
-    for _, GuiObject in pairs(LocalPlayer:WaitForChild("PlayerGui"):GetChildren()) do
-        if GuiObject:IsA("ScreenGui") then
-            GuiObject:Destroy()
-        end
-    end
-    for _, ObjectInstance in pairs(workspace:GetDescendants()) do
-        if ObjectInstance:IsA("ParticleEmitter") or ObjectInstance:IsA("PointLight") then
-            ObjectInstance:Destroy()
-        end
-    end
-    local Lighting = game:GetService("Lighting")
-    for _, Skybox in pairs(Lighting:GetChildren()) do
-        if Skybox:IsA("Sky") then
-            Skybox:Destroy()
-        end
-    end
-    local DarkSkybox = Instance.new("Sky", Lighting)
-    DarkSkybox.Name = "DarkSky"
-    DarkSkybox.SkyboxBk = "rbxassetid://0"
-    DarkSkybox.SkyboxDn = "rbxassetid://0"
-    DarkSkybox.SkyboxFt = "rbxassetid://0"
-    DarkSkybox.SkyboxLf = "rbxassetid://0"
-    DarkSkybox.SkyboxRt = "rbxassetid://0"
-    DarkSkybox.SkyboxUp = "rbxassetid://0"
-    Lighting.Brightness = 0
-    Lighting.ClockTime = 0
-    Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
-    Lighting.Ambient = Color3.new(0, 0, 0)
-    Lighting.FogColor = Color3.new(0, 0, 0)
-    Lighting.FogEnd = 100
-end)
-
-FarmTab:AddButton("Equip Swift Samurai", function()
-    print("Button pressed: equipando 8 Swift Samurai")
-    local PetsContainer = LocalPlayer:FindFirstChild("petsFolder")
-    if PetsContainer then
-        -- Add your logic here if needed
-    end
-end)
-
-FarmTab:AddButton("Jungle Squat", function()
-    local CharacterModel = LocalPlayer.Character
-    if CharacterModel and CharacterModel:FindFirstChild("HumanoidRootPart") then
-        CharacterModel.HumanoidRootPart.CFrame = CFrame.new(-8371.4336, 6.7981, 2858.8853)
-    end
-end)
-
-FarmTab:AddButton("Jungle lift", function()
-    local CharacterModel = LocalPlayer.Character
-    if CharacterModel and CharacterModel:FindFirstChild("HumanoidRootPart") then
-        CharacterModel.HumanoidRootPart.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
-    end
-end)
-
--- Rebirth Info Labels
-local RebirthsLabel = FarmTab:AddLabel("Rebirths Gained")
-RebirthsLabel.TextSize = 23
-local RebirthsFolder = FarmTab:AddFolder("Fast Rebirths Functions")
-RebirthsFolder:AddLabel("0d 0h 0m 0s").TextSize = 18
-RebirthsFolder:AddLabel("Rebirths: 0").TextSize = 18
-RebirthsFolder:AddLabel("Rebirths Gained: 0").TextSize = 18
-
--- Rebirth Info Update Loop
-task.spawn(function()
-    while true do
-        pcall(function()
-            local LeaderboardStats = LocalPlayer:FindFirstChild("leaderstats")
-            if LeaderboardStats then
-                local RebirthCount = LeaderboardStats:FindFirstChild("Rebirths")
-                if RebirthCount then
-                    -- You can update labels here if needed
-                end
-            end
-        end)
-        task.wait(1)
-    end
-end)
-
--- Create grid of base parts
-task.spawn(function()
-    local BasePosition = Vector3.new(-2, -9.5, -2)
-    local BlockSize = Vector3.new(2048, 1, 2048)
-    for XCoordinate = -5, 5 do
-        for ZCoordinate = -5, 5 do
-            local CalculatedPosition = BasePosition + Vector3.new(XCoordinate * 2048, 0, ZCoordinate * 2048)
-            local BasePart = Instance.new("Part")
-            BasePart.Size = BlockSize
-            BasePart.CFrame = CFrame.new(CalculatedPosition)
-            BasePart.Anchored = true
-            BasePart.Transparency = 1
-            BasePart.CanCollide = true
-            BasePart.Name = string.format("FloorPart_%d_%d", XCoordinate, ZCoordinate)
-            BasePart.Parent = workspace
-        end
-    end
-end)
-
-Here's a basic auto-kill (kill aura style) addition you can put into your existing script setup for Muscle Legends.
-
-Muscle Legends uses a fairly simple damage system — most "auto kill" scripts work by repeatedly firing the game's punch/attack remote with very high damage values or by teleporting + instant-damage looping. Anti-cheat exists but is quite weak in 2026, so basic loops still function on many executors.
-
-Add something like this after creating your window:
-
--- // Auto Kill / Kill Aura Tab
-local killTab = window:AddTab("Auto Kill")
+local killTab = window:AddTab("Auto Kill") -- new tab
 
 local enabled = false
-local distance = 25     -- max range to target players
-local killDelay = 0.1   -- lower = faster/more aggressive (riskier)
+local distance = 25 -- max range
+local killDelay = 0.1 -- attack delay
 
 local toggle = killTab:AddSwitch("Auto Kill Players", function(bool)
     enabled = bool
 end)
 
-killFolder:AddSlider("Kill Range", 10, 100, distance, function(val)
+local killRangeSlider = killTab:AddSlider("Kill Range", 10, 100, distance, function(val)
     distance = val
 end)
 
-killFolder:AddSlider("Attack Delay", 0.05, 1, killDelay, function(val)
+local attackDelaySlider = killTab:AddSlider("Attack Delay", 0.05, 1, killDelay, function(val)
     killDelay = val
 end)
 
--- Simple loop (runs in background)
-spawn(function()
+-- Loop for auto kill
+task.spawn(function()
     while true do
         wait(killDelay)
         if not enabled then continue end
-        
+
         local lp = game.Players.LocalPlayer
         if not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") then continue end
-        
+
         local root = lp.Character.HumanoidRootPart
-        
-        for _, plr in pairs(game.Players:GetPlayers()) do
+
+        for _, plr in pairs(Players:GetPlayers()) do
             if plr == lp or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") then continue end
-            
+
             local targetRoot = plr.Character.HumanoidRootPart
             local mag = (root.Position - targetRoot.Position).Magnitude
-            
+
             if mag <= distance then
-                -- Method 1: Spam the game's punch remote (most common working method in 2026)
+                -- Method: Fire remote to simulate attack
                 pcall(function()
-                    game:GetService("ReplicatedStorage").Events.Punch:FireServer(plr.Character.Head)  -- head usually gives best hitreg
+                    game:GetService("ReplicatedStorage").Events.Punch:FireServer(plr.Character.Head)
                 end)
-                
-                -- Method 2: Some scripts use body velocity / teleport nudge + punch
-                -- root.CFrame = targetRoot.CFrame * CFrame.new(0, 0, -1.5)  -- optional tiny tp behind
             end
         end
     end
 end)
 
--- Optional: Kill All button (one-shot style if remote allows)
-killFolder:AddButton("Kill Everyone (once)", function()
-    for _, plr in pairs(game.Players:GetPlayers()) do
-        if plr ~= game.Players.LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
+-- Button to kill everyone once
+killTab:AddButton("Kill Everyone (once)", function()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
             pcall(function()
-                for i = 1, 15 do  -- spam for reliability
+                for i = 1, 15 do
                     game:GetService("ReplicatedStorage").Events.Punch:FireServer(plr.Character.Head)
                 end
             end)
@@ -770,4 +599,5 @@ killFolder:AddButton("Kill Everyone (once)", function()
     end
 end)
 
-Import
+-- =================== End of Script ===================
+print("Invincibles Priv Script – cleaned & safer (March 2026)")
