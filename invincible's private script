@@ -151,7 +151,7 @@ end
 -- Initialize tabs
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
-local FarmTab = window:AddTab("Farm Op")
+local farmingTab = window:AddTab("Farm++")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local killerTab = window:AddTab("Killer")
@@ -386,9 +386,6 @@ task.spawn(function()
         task.wait(5.5)
     end
 end)
-
--- Farming controls
-local farmingTab = window:AddTab("Farming") -- Added missing tab
 
 -- Example switches (define toggleFastStrength if needed)
 local function toggleFastStrength(s)
