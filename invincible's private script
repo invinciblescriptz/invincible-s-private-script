@@ -18,7 +18,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
-local Lighting = game:GetService("Lighting") -- Corrected
+local Lighting = game:GetService("Lighting") -- Fixed
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
 
@@ -38,12 +38,17 @@ local states = {
     AutoRebirthTarget = false,
     KillAura = false,
     AutoKillSelected = false,
+    AutoVoidAll = false,
+    GodSpam = false,
 }
 
 local targetRebirths = 1
 local selectedTarget = nil
 local jumpConn = nil
 local antiAfkConn = nil
+local killAuraConn = nil
+local killAuraRange = 30 -- default
+local orbitKillStyle = false
 
 -- Rock farm globals
 getgenv().rockFarmActive = false
@@ -156,7 +161,7 @@ local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local killerTab = window:AddTab("Killer")
 local miscTab = window:AddTab("Misc")
-local farmingTab = window:AddTab("Farming") -- Added missing Farming tab
+local farmingTab = window:AddTab("Farming")
 
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
@@ -361,7 +366,8 @@ end)
 killerTab:AddSwitch("Kill Aura (All)", function(s)
     states.KillAura = s
     if s then
-        task.spawn(function()
+        if killAuraConn then killAuraConn:Disconnect() end
+        killAuraConn = task.spawn(function()
             while states.KillAura and getgenv().NexusRunning do
                 for _, plr in pairs(Players:GetPlayers()) do
                     if plr ~= LocalPlayer and plr.Character then
@@ -371,6 +377,8 @@ killerTab:AddSwitch("Kill Aura (All)", function(s)
                 task.wait(0.14)
             end
         end)
+    else
+        if killAuraConn then killAuraConn:Disconnect() end
     end
 end)
 
@@ -381,7 +389,8 @@ end)
 killerTab:AddSwitch("Auto Kill Selected", function(s)
     states.AutoKillSelected = s
     if s and selectedTarget then
-        task.spawn(function()
+        if killAuraConn then killAuraConn:Disconnect() end
+        killAuraConn = task.spawn(function()
             while states.AutoKillSelected and getgenv().NexusRunning do
                 local plr = Players:FindFirstChild(selectedTarget)
                 if plr and plr.Character then
@@ -390,6 +399,8 @@ killerTab:AddSwitch("Auto Kill Selected", function(s)
                 task.wait(0.14)
             end
         end)
+    else
+        if killAuraConn then killAuraConn:Disconnect() end
     end
 end)
 
@@ -409,10 +420,9 @@ task.spawn(function()
     end
 end)
 
--- Farming tab (already added above)
--- Additional controls
+-- Farming tab controls
 farmingTab:AddSwitch("Fast Grind / Strength", function(s)
-    -- Implement your logic if needed
+    -- Implement if needed
 end)
 
 farmingTab:AddSwitch("Fast Rebirth", function(s)
@@ -445,7 +455,7 @@ local AutoEatSwitch = farmingTab:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
             if Backpack then
                 local EggItem = Backpack:FindFirstChild("Protein Egg")
                 if EggItem then
-                    -- Auto eat logic if needed
+                    -- Add Auto eat logic if needed
                 end
             end
             task.wait(1800)
@@ -467,7 +477,7 @@ end)
 SpinWheelSwitch:Set(false)
 
 farmingTab:AddSwitch("Hide All Frames", function(s)
-    -- Your implementation if needed
+    -- Implement if needed
 end)
 
 farmingTab:AddButton("Anti Lag", function()
@@ -535,7 +545,7 @@ farmingTab:AddButton("Equip Swift Samurai", function()
     print("Botón presionado: equipando 8 Swift Samurai")
     local PetsContainer = LocalPlayer:FindFirstChild("petsFolder")
     if PetsContainer then
-        -- Your logic here
+        -- Your code for equipping pets
     end
 end)
 
@@ -566,7 +576,7 @@ task.spawn(function()
             if LeaderboardStats then
                 local RebirthCount = LeaderboardStats:FindFirstChild("Rebirths")
                 if RebirthCount then
-                    -- Update UI here, example:
+                    -- Update UI here
                     RebirthsFolder:GetChildren()[2].Text = "Rebirths: " .. RebirthCount.Value
                 end
             end
@@ -594,109 +604,71 @@ task.spawn(function()
     end
 end)
 
--- Globals
+-- Kill Aura with adjustable range
 getgenv().KillAuraRange = 30
 
--- Kill Aura with adjustable range
-killerTab:AddSlider("Kill Aura Range", 10, 100, 30, function(val)
+killerTab:AddSlider("Kill Aura Range", 10, 100, getgenv().KillAuraRange, function(val)
     getgenv().KillAuraRange = val
 end)
 
--- Replace the existing Kill Aura loop with this improved version
+-- Kill Aura loop with range and style
 if states.KillAura then
     task.spawn(function()
         while states.KillAura and getgenv().NexusRunning do
             pcall(function()
                 local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                 if not myHRP then return end
-                
                 for _, plr in pairs(Players:GetPlayers()) do
                     if plr ~= LocalPlayer and plr.Character then
                         local tHRP = plr.Character:FindFirstChild("HumanoidRootPart")
                         if tHRP and (tHRP.Position - myHRP.Position).Magnitude <= getgenv().KillAuraRange then
-                            killPlayer(plr)
+                            if orbitKillStyle then
+                                local t = tick()
+                                local angle = t * 6
+                                local offset = CFrame.Angles(0, math.rad(angle), 0) * CFrame.new(8, -20, 0)
+                                myHRP.CFrame = tHRP.CFrame * offset
+                            else
+                                myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -25, 0)
+                            end
                         end
                     end
                 end
             end)
-            task.wait(0.12)
+            task.wait(0.12 + math.random(-30,30)/1000)
         end
     end)
 end
 
--- Mass Kill button
-killFolder:AddButton("Mass Kill Everyone (once)", function()
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-            killPlayer(plr)
-        end
-    end
+killerTab:AddSwitch("Use Orbit Style (instead of under)", function(s)
+    orbitKillStyle = s
 end)
 
--- ... (keep all your existing code up to the killerTab section) ...
-
--- Globals (add these near your other globals)
-getgenv().KillingEnabled = true
-getgenv().KillAuraRange = 30
-getgenv().OrbitKillStyle = false   -- default off
-
--- Master toggle at the top of killer tab
-killerTab:AddSwitch("ENABLE ALL KILL FEATURES", function(s)
-    getgenv().KillingEnabled = s
-end, true)
-
--- Existing Kill Aura switch + new orbit toggle
 killerTab:AddSwitch("Kill Aura (All)", function(s)
     states.KillAura = s
     if s then
-        task.spawn(function()
-            while states.KillAura and getgenv().NexusRunning and getgenv().KillingEnabled do
-                pcall(function()
-                    local myChar = LocalPlayer.Character
-                    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
-                    if not myHRP then return end
-
-                    for _, plr in pairs(Players:GetPlayers()) do
-                        if plr ~= LocalPlayer and plr.Character then
-                            local tChar = plr.Character
-                            local tHRP = tChar:FindFirstChild("HumanoidRootPart")
-                            if tHRP and (tHRP.Position - myHRP.Position).Magnitude <= getgenv().KillAuraRange then
-                                if getgenv().OrbitKillStyle then
-                                    -- Orbit style (circles under target)
-                                    local time = tick()
-                                    local angle = time * 6
-                                    local offset = CFrame.Angles(0, angle, 0) * CFrame.new(8, -20, 0)
-                                    myHRP.CFrame = tHRP.CFrame * offset
-                                else
-                                    -- Classic under-feet
-                                    myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -25, 0)
-                                end
-                            end
-                        end
+        if killAuraConn then killAuraConn:Disconnect() end
+        killAuraConn = task.spawn(function()
+            while states.KillAura and getgenv().NexusRunning do
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character then
+                        killPlayer(plr)
                     end
-                end)
-                task.wait(0.12 + math.random(-30, 30)/1000)  -- tiny random delay
+                end
+                task.wait(0.14)
             end
         end)
+    else
+        if killAuraConn then killAuraConn:Disconnect() end
     end
 end)
 
-killerTab:AddSwitch("Use Orbit Style (instead of under)", function(s)
-    getgenv().OrbitKillStyle = s
-end)
-
--- Existing range slider (unchanged)
-killerTab:AddSlider("Kill Aura Range", 10, 100, 30, function(val)
-    getgenv().KillAuraRange = val
-end)
-
--- New: Void folder
+-- Void / Drop Kills
 local voidKillFolder = killerTab:AddFolder("Void / Drop Kills")
-
 voidKillFolder:AddSwitch("Auto Void All (under map)", function(s)
     states.AutoVoidAll = s
     if s then
-        task.spawn(function()
+        if killAuraConn then killAuraConn:Disconnect() end
+        killAuraConn = task.spawn(function()
             while states.AutoVoidAll and getgenv().NexusRunning and getgenv().KillingEnabled do
                 pcall(function()
                     for _, plr in pairs(Players:GetPlayers()) do
@@ -709,7 +681,7 @@ voidKillFolder:AddSwitch("Auto Void All (under map)", function(s)
                         end
                     end
                 end)
-                task.wait(0.4 + math.random(0, 20)/100)  -- slower & jitter
+                task.wait(0.4 + math.random(0,20)/100)
             end
         end)
     end
@@ -734,20 +706,23 @@ end)
 
 killerTab:AddSwitch("Auto Kill Selected", function(s)
     states.AutoKillSelected = s
-    if s and selectedTarget then
-        task.spawn(function()
-            while states.AutoKillSelected and getgenv().NexusRunning and getgenv().KillingEnabled do
+    if s then
+        if killAuraConn then killAuraConn:Disconnect() end
+        killAuraConn = task.spawn(function()
+            while states.AutoKillSelected and getgenv().NexusRunning do
                 local plr = Players:FindFirstChild(selectedTarget)
                 if plr and plr.Character then
-                    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        if states.VoidSelected then
+                    if states.VoidSelected then
+                        local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
                             hrp.CFrame = CFrame.new(0, -8000 - math.random(0, 1500), 0)
-                        else
-                            -- normal under or orbit depending on global style
-                            if getgenv().OrbitKillStyle then
+                        end
+                    else
+                        local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                            if orbitKillStyle then
                                 local time = tick()
-                                local offset = CFrame.Angles(0, time * 6, 0) * CFrame.new(8, -20, 0)
+                                local offset = CFrame.Angles(0, math.rad(time*6), 0) * CFrame.new(8, -20, 0)
                                 LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame * offset
                             else
                                 LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0, -25, 0)
@@ -755,9 +730,11 @@ killerTab:AddSwitch("Auto Kill Selected", function(s)
                         end
                     end
                 end
-                task.wait(0.14 + math.random(-25, 25)/1000)
+                task.wait(0.14 + math.random(-25,25)/1000)
             end
         end)
+    else
+        if killAuraConn then killAuraConn:Disconnect() end
     end
 end)
 
@@ -765,23 +742,23 @@ killerTab:AddSwitch("Void Selected Instead of Under", function(s)
     states.VoidSelected = s
 end)
 
--- Aggressive / risky features
+-- Risky / Aggressive
 local riskyFolder = killerTab:AddFolder("Risky / Aggressive")
-
 riskyFolder:AddSwitch("Attempt God Spam (very detectable)", function(s)
     states.GodSpam = s
     if s then
-        task.spawn(function()
+        if killAuraConn then killAuraConn:Disconnect() end
+        killAuraConn = task.spawn(function()
             while states.GodSpam and getgenv().NexusRunning and getgenv().KillingEnabled do
                 pcall(function()
                     if muscleEvent then
-                        for i = 1, 10 do
+                        for i=1,10 do
                             muscleEvent:FireServer("punch", "rightHand")
                             muscleEvent:FireServer("punch", "leftHand")
                         end
                     end
                 end)
-                task.wait(0.07 + math.random(0, 40)/1000)
+                task.wait(0.07 + math.random(0,40)/1000)
             end
         end)
     end
@@ -789,7 +766,7 @@ end)
 
 riskyFolder:AddButton("Mass Network Spam (attempt crash nearby)", function()
     if not getgenv().KillingEnabled then return end
-    for i = 1, 100 do
+    for i=1,100 do
         pcall(function()
             if muscleEvent then
                 muscleEvent:FireServer("punch", "rightHand")
@@ -804,29 +781,173 @@ riskyFolder:AddButton("Mass Network Spam (attempt crash nearby)", function()
     })
 end)
 
--- Existing mass kill button (enhanced)
+-- Mass Kill All
 killFolder:AddButton("Mass Kill Everyone (once)", function()
     if not getgenv().KillingEnabled then return end
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
-            killPlayer(plr)  -- your original under method
+            killPlayer(plr)
         end
     end
 end)
 
--- Keep your existing player list auto-update task...
--- (the one that refreshes the dropdown every ~5.5s)
+-- Enable all kill features toggle
+killerTab:AddSwitch("ENABLE ALL KILL FEATURES", function(s)
+    getgenv().KillingEnabled = s
+end, true)
 
--- We'll store label references so we can update them
-local statLabels = {}
+-- Additional Kill features
+killerTab:AddSwitch("Kill Aura (All)", function(s)
+    states.KillAura = s
+    if s then
+        if killAuraConn then killAuraConn:Disconnect() end
+        killAuraConn = task.spawn(function()
+            while states.KillAura and getgenv().NexusRunning do
+                pcall(function()
+                    local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if not myHRP then return end
+                    for _, plr in pairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer and plr.Character then
+                            local tHRP = plr.Character:FindFirstChild("HumanoidRootPart")
+                            if tHRP and (tHRP.Position - myHRP.Position).Magnitude <= getgenv().KillAuraRange then
+                                if orbitKillStyle then
+                                    local t = tick()
+                                    local angle = t * 6
+                                    local offset = CFrame.Angles(0, math.rad(angle), 0) * CFrame.new(8, -20, 0)
+                                    myHRP.CFrame = tHRP.CFrame * offset
+                                else
+                                    myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -25, 0)
+                                end
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.12)
+            end
+        end)
+    else
+        if killAuraConn then killAuraConn:Disconnect() end
+    end
+end)
 
--- Stats Spy Folder / Section
+-- Void / Drop Kills
+local voidFolder = killerTab:AddFolder("Void / Drop Kills")
+voidFolder:AddSwitch("Auto Void All (under map)", function(s)
+    states.AutoVoidAll = s
+    if s then
+        if killAuraConn then killAuraConn:Disconnect() end
+        killAuraConn = task.spawn(function()
+            while states.AutoVoidAll and getgenv().NexusRunning and getgenv().KillingEnabled do
+                pcall(function()
+                    for _, plr in pairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer and plr.Character then
+                            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+                            if hrp then
+                                hrp.CFrame = CFrame.new(hrp.Position.X, -5000 - math.random(0, 2000), hrp.Position.Z)
+                                hrp.AssemblyLinearVelocity = Vector3.new(0, -180 - math.random(0, 60), 0)
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.4 + math.random(0,20)/100)
+            end
+        end)
+    end
+end)
+
+voidFolder:AddButton("Void Everyone Once", function()
+    if not getgenv().KillingEnabled then return end
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.CFrame = CFrame.new(hrp.Position.X, -9000, hrp.Position.Z)
+            end
+        end
+    end
+end)
+
+-- Selected Target Kill
+local playerDropdown2 = killerTab:AddDropdown("Select Target", function(val)
+    selectedTarget = val and val:match("^([^|]+)") or nil
+end)
+
+killerTab:AddSwitch("Auto Kill Selected", function(s)
+    states.AutoKillSelected = s
+    if s then
+        if killAuraConn then killAuraConn:Disconnect() end
+        killAuraConn = task.spawn(function()
+            while states.AutoKillSelected and getgenv().NexusRunning do
+                local plr = Players:FindFirstChild(selectedTarget)
+                if plr and plr.Character then
+                    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        if states.VoidSelected then
+                            hrp.CFrame = CFrame.new(0, -8000 - math.random(0, 1500), 0)
+                        else
+                            if orbitKillStyle then
+                                local time = tick()
+                                local offset = CFrame.Angles(0, math.rad(time*6), 0) * CFrame.new(8, -20, 0)
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame * offset
+                            else
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0, -25, 0)
+                            end
+                        end
+                    end
+                end
+                task.wait(0.14 + math.random(-25,25)/1000)
+            end
+        end)
+    end
+end)
+
+killerTab:AddSwitch("Void Selected Instead of Under", function(s)
+    states.VoidSelected = s
+end)
+
+-- Risky features
+local riskyFolder = killerTab:AddFolder("Risky / Aggressive")
+riskyFolder:AddSwitch("Attempt God Spam (very detectable)", function(s)
+    states.GodSpam = s
+    if s then
+        if killAuraConn then killAuraConn:Disconnect() end
+        killAuraConn = task.spawn(function()
+            while states.GodSpam and getgenv().NexusRunning and getgenv().KillingEnabled do
+                pcall(function()
+                    if muscleEvent then
+                        for i=1,10 do
+                            muscleEvent:FireServer("punch", "rightHand")
+                            muscleEvent:FireServer("punch", "leftHand")
+                        end
+                    end
+                end)
+                task.wait(0.07 + math.random(0,40)/1000)
+            end
+        end)
+    end
+end)
+
+riskyFolder:AddButton("Mass Network Spam (attempt crash nearby)", function()
+    if not getgenv().KillingEnabled then return end
+    for i=1,100 do
+        pcall(function()
+            if muscleEvent then
+                muscleEvent:FireServer("punch", "rightHand")
+                muscleEvent:FireServer("punch", "leftHand")
+            end
+        end)
+    end
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Spam Sent",
+        Text = "Network spam x100 — use carefully!",
+        Duration = 4
+    })
+end)
+
+-- Stats spy UI
 local statsFolder = specsTab:AddFolder("my stats")
-
--- We'll store label references so we can update them
 local statLabels = {}
 
--- Helper to create/update a label
 local function addOrUpdateStatLabel(name, initialValue)
     local labelName = name .. ":"
     if not statLabels[name] then
@@ -839,14 +960,10 @@ local function addOrUpdateStatLabel(name, initialValue)
     end
 end
 
--- Main stats updating loop
 task.spawn(function()
     while getgenv().NexusRunning do
-        
         pcall(function()
             local lp = game.Players.LocalPlayer
-            
-            -- Leaderstats (most important)
             local leaderstats = lp:FindFirstChild("leaderstats")
             if leaderstats then
                 for _, stat in ipairs(leaderstats:GetChildren()) do
@@ -855,40 +972,46 @@ task.spawn(function()
                     end
                 end
             end
-            
-            -- Durability (very common in this game genre)
             local durability = lp:FindFirstChild("Durability")
             if durability and durability:IsA("IntValue") then
                 addOrUpdateStatLabel("Durability", durability.Value)
             end
-            
-            -- Strength / Muscle (sometimes stored separately)
             local strength = lp:FindFirstChild("Strength") or (leaderstats and leaderstats:FindFirstChild("Strength"))
             if strength and (strength:IsA("IntValue") or strength:IsA("NumberValue")) then
                 addOrUpdateStatLabel("Strength", strength.Value)
             end
-            
-            -- Gamepasses / extras (optional – comment out if not needed)
             local owned = lp:FindFirstChild("ownedGamepasses")
             if owned then
                 addOrUpdateStatLabel("Gamepasses Owned", #owned:GetChildren())
             end
-            
-            -- Current area / zone (if the game has it)
             local currentArea = lp:FindFirstChild("CurrentArea") or lp:FindFirstChild("Zone")
             if currentArea and currentArea:IsA("StringValue") then
                 addOrUpdateStatLabel("Area", currentArea.Value)
             end
         end)
-        
-        task.wait(1.4)   -- update every ~1.4 seconds — feels smooth but not performance heavy
+        task.wait(1.4)
     end
-    
-    -- Cleanup (optional)
+    -- Cleanup
     for _, lbl in pairs(statLabels) do
         pcall(function() lbl:Destroy() end)
     end
 end)
 
--- Optional: initial "Loading..." state
-statsFolder:AddLabel("Loading stats...").TextColor3 = Color3.fromRGB(180, 180, 120)
+-- Additional: create the base parts (Floor)
+task.spawn(function()
+    local BasePosition = Vector3.new(-2, -9.5, -2)
+    local BlockSize = Vector3.new(2048, 1, 2048)
+    for XCoordinate = -5, 5 do
+        for ZCoordinate = -5, 5 do
+            local CalculatedPosition = BasePosition + Vector3.new(XCoordinate * 2048, 0, ZCoordinate * 2048)
+            local BasePart = Instance.new("Part")
+            BasePart.Size = BlockSize
+            BasePart.Position = CalculatedPosition
+            BasePart.Anchored = true
+            BasePart.Transparency = 1
+            BasePart.CanCollide = true
+            BasePart.Name = string.format("FloorPart_%d_%d", XCoordinate, ZCoordinate)
+            BasePart.Parent = workspace
+        end
+    end
+end)
