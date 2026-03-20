@@ -16,9 +16,9 @@ local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
-local Lighting = game:GetService("Lighting") -- Corrected
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
 
@@ -148,7 +148,7 @@ local function killPlayer(targetPlayer)
     end)
 end
 
--- Initialize tabs
+-- Initialization of Tabs
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
 local farmingTab = window:AddTab("Farm++")
@@ -157,12 +157,12 @@ local teleportTab = window:AddTab("Teleport")
 local killTab = window:AddTab("Killer")
 local miscTab = window:AddTab("Misc")
 
--- Tools folder
+-- Folders inside mainTab
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder = killTab:AddFolder("Auto Kill")
 
--- Tools toggle switches
+-- Switches for Tools
 toolsFolder:AddSwitch("Auto Pushups", function(s)
     states.AutoPushups = s
     if s then startAutoRep("Pushups", "AutoPushups") end
@@ -295,53 +295,52 @@ task.spawn(function()
     while getgenv().NexusRunning do
         if not getgenv().rockFarmActive or getgenv().selectedRockDurability <= 0 then
             task.wait(0.8)
-            continue
-        end
+        else
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
+                    task.wait(1.4)
+                    return
+                end
 
-        pcall(function()
-            local char = LocalPlayer.Character
-            if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
-                task.wait(1.4)
-                return
-            end
+                local dur = LocalPlayer:FindFirstChild("Durability")
+                if not dur or dur.Value < getgenv().selectedRockDurability then
+                    task.wait(0.6)
+                    return
+                end
 
-            local dur = LocalPlayer:FindFirstChild("Durability")
-            if not dur or dur.Value < getgenv().selectedRockDurability then
-                task.wait(0.6)
-                return
-            end
+                safeEquipTool("Punch")
 
-            safeEquipTool("Punch")
+                local machinesFolder = Workspace:FindFirstChild("machinesFolder")
+                if not machinesFolder then return end
 
-            local machinesFolder = Workspace:FindFirstChild("machinesFolder")
-            if not machinesFolder then return end
-
-            for _, obj in pairs(machinesFolder:GetDescendants()) do
-                if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Value == getgenv().selectedRockDurability then
-                    local rock = obj.Parent:FindFirstChild("Rock")
-                    if rock and rock:IsA("BasePart") then
-                        local hrp = char:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                            if char:FindFirstChild("RightHand") then
-                                firetouchinterest(rock, hrp, 0)
-                                task.wait(0.03)
-                                firetouchinterest(rock, hrp, 1)
-                            end
-                            if char:FindFirstChild("LeftHand") then
-                                firetouchinterest(rock, hrp, 0)
-                                task.wait(0.03)
-                                firetouchinterest(rock, hrp, 1)
-                            end
-                            if muscleEvent then
-                                muscleEvent:FireServer("punch", "leftHand")
-                                muscleEvent:FireServer("punch", "rightHand")
+                for _, obj in pairs(machinesFolder:GetDescendants()) do
+                    if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Value == getgenv().selectedRockDurability then
+                        local rock = obj.Parent:FindFirstChild("Rock")
+                        if rock and rock:IsA("BasePart") then
+                            local hrp = char:FindFirstChild("HumanoidRootPart")
+                            if hrp then
+                                if char:FindFirstChild("RightHand") then
+                                    firetouchinterest(rock, hrp, 0)
+                                    task.wait(0.03)
+                                    firetouchinterest(rock, hrp, 1)
+                                end
+                                if char:FindFirstChild("LeftHand") then
+                                    firetouchinterest(rock, hrp, 0)
+                                    task.wait(0.03)
+                                    firetouchinterest(rock, hrp, 1)
+                                end
+                                if muscleEvent then
+                                    muscleEvent:FireServer("punch", "leftHand")
+                                    muscleEvent:FireServer("punch", "rightHand")
+                                end
                             end
                         end
                     end
                 end
-            end
-        end)
-        task.wait(0.18)
+            end)
+            task.wait(0.18)
+        end
     end
 end)
 
@@ -397,7 +396,7 @@ task.spawn(function()
     end
 end)
 
--- Additional toggles (placeholders for your functions)
+-- Additional toggles (placeholders)
 local function toggleFastStrength(s)
     -- Implement your logic here
 end
@@ -418,18 +417,19 @@ local function toggleHideFrames(s)
     -- Implement your logic here
 end
 
--- Example switches (assuming you have a FarmTab, creating it now)
+-- Assuming you want to add some of these toggles to a Farm tab
 local FarmTab = window:AddTab("Farm")
-local FarmTabFolder = FarmTab:AddFolder("Auto Farm Options")
+local FarmFolder = FarmTab:AddFolder("Auto Farm")
+
 local _G = _G or {}
 
-local StrengthSwitch = FarmTabFolder:AddSwitch("Strength Op", function(s)
+local StrengthSwitch = FarmFolder:AddSwitch("Strength Op", function(s)
     _G.AutoRepFarmEnabled = s
     warn("[Auto Rep Farm] Estado cambiado a:", s and "ON" or "OFF")
 end)
 StrengthSwitch:Set(false)
 
-local AutoEatSwitch = FarmTabFolder:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
+local AutoEatEggSwitch = FarmFolder:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
     _G.AutoEatEgg = s
     task.spawn(function()
         while _G.AutoEatEgg do
@@ -444,9 +444,9 @@ local AutoEatSwitch = FarmTabFolder:AddSwitch("Auto Eat Egg 30 Minuts", function
         end
     end)
 end)
-AutoEatSwitch:Set(false)
+AutoEatEggSwitch:Set(false)
 
-local SpinWheelSwitch = FarmTabFolder:AddSwitch("Spin Fortune Wheel", function(s)
+local SpinWheelSwitch = FarmFolder:AddSwitch("Spin Fortune Wheel", function(s)
     _G.AutoSpinWheel = s
     if s then
         task.spawn(function()
@@ -458,11 +458,11 @@ local SpinWheelSwitch = FarmTabFolder:AddSwitch("Spin Fortune Wheel", function(s
 end)
 SpinWheelSwitch:Set(false)
 
-FarmTabFolder:AddSwitch("Hide All Frames", function(s)
+FarmFolder:AddSwitch("Hide All Frames", function(s)
     -- Your logic here
 end)
 
-FarmTabFolder:AddButton("Anti Lag", function()
+FarmFolder:AddButton("Anti Lag", function()
     for _, DescendantObject in pairs(workspace:GetDescendants()) do
         if DescendantObject:IsA("ParticleEmitter") then
             DescendantObject.Enabled = false
@@ -489,7 +489,7 @@ FarmTabFolder:AddButton("Anti Lag", function()
     })
 end)
 
-FarmTabFolder:AddButton("Full Optimization", function()
+FarmFolder:AddButton("Full Optimization", function()
     for _, GuiObject in pairs(LocalPlayer:WaitForChild("PlayerGui"):GetChildren()) do
         if GuiObject:IsA("ScreenGui") then
             GuiObject:Destroy()
@@ -516,28 +516,28 @@ FarmTabFolder:AddButton("Full Optimization", function()
     DarkSkybox.Parent = Lighting
     Lighting.Brightness = 0
     Lighting.ClockTime = 0
-    Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
-    Lighting.Ambient = Color3.new(0, 0, 0)
-    Lighting.FogColor = Color3.new(0, 0, 0)
+    Lighting.OutdoorAmbient = Color3.new(0,0,0)
+    Lighting.Ambient = Color3.new(0,0,0)
+    Lighting.FogColor = Color3.new(0,0,0)
     Lighting.FogEnd = 100
 end)
 
-FarmTabFolder:AddButton("Equip Swift Samurai", function()
+FarmFolder:AddButton("Equip Swift Samurai", function()
     print("Botón presionado: equipando 8 Swift Samurai")
-    local PetsContainer = LocalPlayer:FindFirstChild("petsFolder")
-    if PetsContainer then
+    local PetsFolder = LocalPlayer:FindFirstChild("petsFolder")
+    if PetsFolder then
         -- Your logic here
     end
 end)
 
-FarmTabFolder:AddButton("Jungle Squat", function()
+FarmFolder:AddButton("Jungle Squat", function()
     local Character = LocalPlayer.Character
     if Character and Character:FindFirstChild("HumanoidRootPart") then
         Character.HumanoidRootPart.CFrame = CFrame.new(-8371.4336, 6.7981, 2858.8853)
     end
 end)
 
-FarmTabFolder:AddButton("Jungle lift", function()
+FarmFolder:AddButton("Jungle lift", function()
     local Character = LocalPlayer.Character
     if Character and Character:FindFirstChild("HumanoidRootPart") then
         Character.HumanoidRootPart.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
@@ -545,11 +545,16 @@ FarmTabFolder:AddButton("Jungle lift", function()
 end)
 
 -- Rebirth stats display
-FarmTabFolder:AddLabel("Rebirths Gained").TextSize = 23
-local RebirthsFunctions = FarmTabFolder:AddFolder("Fast Rebirths Functions")
-RebirthsFunctions:AddLabel("0d 0h 0m 0s").TextSize = 18
-RebirthsFunctions:AddLabel("Rebirths: 0").TextSize = 18
-RebirthsFunctions:AddLabel("Rebirths Gained: 0").TextSize = 18
+local RebirthsLabel = FarmFolder:AddLabel("Rebirths Gained")
+RebirthsLabel.TextSize = 23
+
+local RebirthsInfoFolder = FarmFolder:AddFolder("Fast Rebirths Functions")
+local RebirthsTimeLabel = RebirthsInfoFolder:AddLabel("0d 0h 0m 0s")
+RebirthsTimeLabel.TextSize = 18
+local RebirthCountLabel = RebirthsInfoFolder:AddLabel("Rebirths: 0")
+RebirthCountLabel.TextSize = 18
+local RebirthsGainedLabel = RebirthsInfoFolder:AddLabel("Rebirths Gained: 0")
+RebirthsGainedLabel.TextSize = 18
 
 task.spawn(function()
     while true do
@@ -558,7 +563,7 @@ task.spawn(function()
             if LeaderboardStats then
                 local RebirthCount = LeaderboardStats:FindFirstChild("Rebirths")
                 if RebirthCount then
-                    -- Update UI here
+                    -- Update UI here if needed
                 end
             end
         end)
@@ -566,42 +571,42 @@ task.spawn(function()
     end
 end)
 
--- Base parts creation (assuming for some purpose)
+-- Create base parts (optional, for some world setup)
 task.spawn(function()
     local BasePosition = Vector3.new(-2, -9.5, -2)
     local BlockSize = Vector3.new(2048, 1, 2048)
-    for XCoordinate = -5, 5 do
-        for ZCoordinate = -5, 5 do
-            local CalculatedPosition = BasePosition + Vector3.new(XCoordinate * 2048, 0, ZCoordinate * 2048)
-            local BasePart = Instance.new("Part")
-            BasePart.Size = BlockSize
-            BasePart.Position = CalculatedPosition
-            BasePart.Anchored = true
-            BasePart.Transparency = 1
-            BasePart.CanCollide = true
-            BasePart.Name = string.format("FloorPart_%d_%d", XCoordinate, ZCoordinate)
-            BasePart.Parent = workspace
+    for X = -5, 5 do
+        for Z = -5, 5 do
+            local pos = BasePosition + Vector3.new(X * 2048, 0, Z * 2048)
+            local part = Instance.new("Part")
+            part.Size = BlockSize
+            part.Position = pos
+            part.Anchored = true
+            part.Transparency = 1
+            part.CanCollide = true
+            part.Name = string.format("FloorPart_%d_%d", X, Z)
+            part.Parent = workspace
         end
     end
 end)
 
--- Remove Punch Animation
+-- Remove punch animation
 KillTab:AddButton("Remove Punch Anim", function()
-    local Character = LocalPlayer.Character
-    if Character and Character:FindFirstChild("Humanoid") then
-        local Animator = Character.Humanoid:FindFirstChild("Animator")
-        if Animator then
-            for _, Track in pairs(Animator:GetPlayingAnimationTracks()) do
-                if Track.Animation and (Track.Animation.AnimationId == "rbxassetid://3638729053" or Track.Animation.AnimationId == "rbxassetid://3638767427") then
-                    Track:Stop()
-                    Track:Destroy()
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("Humanoid") then
+        local animator = character.Humanoid:FindFirstChild("Animator")
+        if animator then
+            for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+                if track.Animation and (track.Animation.AnimationId == "rbxassetid://3638729053" or track.Animation.AnimationId == "rbxassetid://3638767427") then
+                    track:Stop()
+                    track:Destroy()
                 end
             end
         end
     end
 end)
 
--- View target dropdown and toggle
+-- View target dropdown
 local ViewDropdown = KillTab:AddDropdown("Select View Target", function(Value)
     _G.ViewTarget = Value
 end)
@@ -618,7 +623,6 @@ local ViewPlayerSwitch = KillTab:AddSwitch("View Player", function(BooleanValue)
                         break
                     end
                 end
-
                 if Target and Target.Character and Target.Character:FindFirstChild("Humanoid") then
                     workspace.CurrentCamera.CameraSubject = Target.Character.Humanoid
                 else
@@ -633,14 +637,15 @@ end)
 ViewPlayerSwitch:Set(false)
 
 -- Change size buttons
+local rEvents = ReplicatedStorage:WaitForChild("rEvents")
 KillTab:AddButton("Size 30", function()
-    local Arguments = { [1] = "changeSize", [2] = 30 }
-    local rEvents = ReplicatedStorage:WaitForChild("rEvents")
-    rEvents:WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(Arguments))
+    rEvents:WaitForChild("changeSpeedSizeRemote"):InvokeServer({[1] = "changeSize", [2] = 30})
 end)
 
 KillTab:AddButton("Size 2", function()
-    local Arguments = { [1] = "changeSize", [2] = 2 }
-    local rEvents = ReplicatedStorage:WaitForChild("rEvents")
-    rEvents:WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(Arguments))
+    rEvents:WaitForChild("changeSpeedSizeRemote"):InvokeServer({[1] = "changeSize", [2] = 2})
 end)
+
+-- Additional features like auto farming, rebirth, etc., should be added here following similar structure.
+
+-- You should implement any missing functions or logic as needed.
