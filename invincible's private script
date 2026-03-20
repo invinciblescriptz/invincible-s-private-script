@@ -157,11 +157,12 @@ local teleportTab = window:AddTab("Teleport")
 local killTab = window:AddTab("Killer")
 local miscTab = window:AddTab("Misc")
 
+-- Subfolders
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder = killTab:AddFolder("Auto Kill")
 
--- Tools
+-- Tools functions
 toolsFolder:AddSwitch("Auto Pushups", function(s)
     states.AutoPushups = s
     if s then startAutoRep("Pushups", "AutoPushups") end
@@ -241,21 +242,25 @@ toolsFolder:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- Teleport buttons
-teleportTab:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
-teleportTab:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
-teleportTab:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39, 6, 1886)) end)
-teleportTab:AddButton("To Frozen Area", function() tpTo(Vector3.new(-2623, 6, -409)) end)
-teleportTab:AddButton("To Mythical Area", function() tpTo(Vector3.new(2251, 6, 1073)) end)
-teleportTab:AddButton("To Inferno Area", function() tpTo(Vector3.new(-6759, 6, -1285)) end)
-teleportTab:AddButton("To Legend Area", function() tpTo(Vector3.new(4603, 990, -3898)) end)
-teleportTab:AddButton("To Muscle King Area", function() tpTo(Vector3.new(-8626, 16, -5730)) end)
-teleportTab:AddButton("To Jungle Area", function() tpTo(Vector3.new(-8642, 6, 2381)) end)
-teleportTab:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836)) end)
-teleportTab:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
-teleportTab:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
+-- Teleport Buttons
+local function addTeleportButton(name, position)
+    teleportTab:AddButton(name, function() tpTo(position) end)
+end
 
--- Rock farm controls
+addTeleportButton("To Spawn / Safe Area", Vector3.new(-6, 5, -196))
+addTeleportButton("To Secret Area", Vector3.new(1947, 2, 6191))
+addTeleportButton("To Tiny Area", Vector3.new(-39, 6, 1886))
+addTeleportButton("To Frozen Area", Vector3.new(-2623, 6, -409))
+addTeleportButton("To Mythical Area", Vector3.new(2251, 6, 1073))
+addTeleportButton("To Inferno Area", Vector3.new(-6759, 6, -1285))
+addTeleportButton("To Legend Area", Vector3.new(4603, 990, -3898))
+addTeleportButton("To Muscle King Area", Vector3.new(-8626, 16, -5730))
+addTeleportButton("To Jungle Area", Vector3.new(-8642, 6, 2381))
+addTeleportButton("To Lava Brawl", Vector3.new(4471, 119, -8836))
+addTeleportButton("To Desert Brawl", Vector3.new(960, 17, -7398))
+addTeleportButton("To Beach Brawl", Vector3.new(-1849, 20, -6335))
+
+-- Rock farm control
 local function setRockFarm(dur, enable)
     if enable then
         getgenv().selectedRockDurability = dur
@@ -306,7 +311,10 @@ task.spawn(function()
 
             safeEquipTool("Punch")
 
-            for _, obj in pairs(Workspace:FindFirstChild("machinesFolder"):GetDescendants()) do
+            local machinesFolder = Workspace:FindFirstChild("machinesFolder")
+            if not machinesFolder then return end
+
+            for _, obj in pairs(machinesFolder:GetDescendants()) do
                 if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Value == getgenv().selectedRockDurability then
                     local rock = obj.Parent:FindFirstChild("Rock")
                     if rock and rock:IsA("BasePart") then
@@ -335,7 +343,7 @@ task.spawn(function()
     end
 end)
 
--- Killer Auto Kill
+-- Killer auto kill
 local killerTab = window:AddTab("Killer")
 local killerFolder = killerTab:AddFolder("Auto Kill")
 killerFolder:AddSwitch("Kill Aura (All)", function(s)
@@ -389,4 +397,29 @@ task.spawn(function()
     end
 end)
 
--- Additional switches and buttons can be added similarly
+-- Additional switches and buttons can be added similarly...
+
+-- Example for toggling Infinite Jump
+local function toggleInfiniteJump(s)
+    toggleInfiniteJump(s)
+end
+
+-- Example for toggling Anti AFK
+local function toggleAntiAfk(s)
+    toggleAntiAfk(s)
+end
+
+-- Example for changing Rebirths
+local function setTargetRebirths(amount)
+    targetRebirths = amount
+end
+
+-- Example for setting Auto Rebirth
+local function toggleAutoRebirth(s)
+    states.AutoRebirth = s
+    -- Implement your auto rebirth logic here
+end
+
+-- For UI toggles, you can connect switches to these functions
+
+-- END OF SCRIPT
