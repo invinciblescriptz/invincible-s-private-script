@@ -1,4 +1,3 @@
--- Load UI Library
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KyleXAkimbo/Gui/refs/heads/main/INV-UI"))()
 
 local window = library:AddWindow("Invincible private farming", {
@@ -23,10 +22,9 @@ local Lighting = game:GetService("Lighting") -- Corrected
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
 
--- Global Flags
+-- Globals & states
 getgenv().NexusRunning = true
 
--- States
 local states = {
     AutoPushups = false,
     AutoWeight = false,
@@ -44,10 +42,10 @@ local states = {
 
 local targetRebirths = 1
 local selectedTarget = nil
-local jumpConnection = nil
-local antiAfkConnection = nil
+local jumpConn = nil
+local antiAfkConn = nil
 
--- Rock Farm Globals
+-- Rock farm globals
 getgenv().rockFarmActive = false
 getgenv().selectedRockDurability = 0
 
@@ -86,7 +84,7 @@ local function startAutoRep(toolName, stateKey)
             end)
             task.wait(0.09)
         end
-        -- Unequip tool
+        -- Unequip when disabled
         pcall(function()
             local char = LocalPlayer.Character
             if char and char:FindFirstChild(toolName) then
@@ -100,8 +98,8 @@ end
 local function toggleInfiniteJump(state)
     states.InfiniteJump = state
     if state then
-        if jumpConnection then return end
-        jumpConnection = UserInputService.JumpRequest:Connect(function()
+        if jumpConn then return end
+        jumpConn = UserInputService.JumpRequest:Connect(function()
             pcall(function()
                 local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
                 if hum then
@@ -110,9 +108,9 @@ local function toggleInfiniteJump(state)
             end)
         end)
     else
-        if jumpConnection then
-            jumpConnection:Disconnect()
-            jumpConnection = nil
+        if jumpConn then
+            jumpConn:Disconnect()
+            jumpConn = nil
         end
     end
 end
@@ -121,22 +119,22 @@ end
 local function toggleAntiAfk(state)
     states.AntiAfk = state
     if state then
-        if antiAfkConnection then return end
-        antiAfkConnection = LocalPlayer.Idled:Connect(function()
+        if antiAfkConn then return end
+        antiAfkConn = LocalPlayer.Idled:Connect(function()
             pcall(function()
                 VirtualUser:CaptureController()
                 VirtualUser:ClickButton2(Vector2.new())
             end)
         end)
     else
-        if antiAfkConnection then
-            antiAfkConnection:Disconnect()
-            antiAfkConnection = nil
+        if antiAfkConn then
+            antiAfkConn:Disconnect()
+            antiAfkConn = nil
         end
     end
 end
 
--- Kill Player
+-- Kill / Position under target
 local function killPlayer(targetPlayer)
     pcall(function()
         local myChar = LocalPlayer.Character
@@ -150,21 +148,21 @@ local function killPlayer(targetPlayer)
     end)
 end
 
--- UI Tabs
+-- Initialize tabs
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
-local farmTab = window:AddTab("Farm++")
+local farmingTab = window:AddTab("Farm++")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local killTab = window:AddTab("Killer")
 local miscTab = window:AddTab("Misc")
 
--- Subfolders
+-- Tools folder
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 local killFolder = killTab:AddFolder("Auto Kill")
 
--- Tool Buttons
+-- Tools toggle switches
 toolsFolder:AddSwitch("Auto Pushups", function(s)
     states.AutoPushups = s
     if s then startAutoRep("Pushups", "AutoPushups") end
@@ -244,25 +242,27 @@ toolsFolder:AddButton("Free AutoLift Gamepass", function()
     end)
 end)
 
--- Teleport Buttons
-local function addTeleportButton(name, position)
-    teleportTab:AddButton(name, function() tpTo(position) end)
+-- Teleport buttons
+local teleportButtons = {
+    {"To Spawn / Safe Area", Vector3.new(-6, 5, -196)},
+    {"To Secret Area", Vector3.new(1947, 2, 6191)},
+    {"To Tiny Area", Vector3.new(-39, 6, 1886)},
+    {"To Frozen Area", Vector3.new(-2623, 6, -409)},
+    {"To Mythical Area", Vector3.new(2251, 6, 1073)},
+    {"To Inferno Area", Vector3.new(-6759, 6, -1285)},
+    {"To Legend Area", Vector3.new(4603, 990, -3898)},
+    {"To Muscle King Area", Vector3.new(-8626, 16, -5730)},
+    {"To Jungle Area", Vector3.new(-8642, 6, 2381)},
+    {"To Lava Brawl", Vector3.new(4471, 119, -8836)},
+    {"To Desert Brawl", Vector3.new(960, 17, -7398)},
+    {"To Beach Brawl", Vector3.new(-1849, 20, -6335)},
+}
+
+for _, btn in ipairs(teleportButtons) do
+    teleportTab:AddButton(btn[1], function() tpTo(btn[2]) end)
 end
 
-addTeleportButton("To Spawn / Safe Area", Vector3.new(-6, 5, -196))
-addTeleportButton("To Secret Area", Vector3.new(1947, 2, 6191))
-addTeleportButton("To Tiny Area", Vector3.new(-39, 6, 1886))
-addTeleportButton("To Frozen Area", Vector3.new(-2623, 6, -409))
-addTeleportButton("To Mythical Area", Vector3.new(2251, 6, 1073))
-addTeleportButton("To Inferno Area", Vector3.new(-6759, 6, -1285))
-addTeleportButton("To Legend Area", Vector3.new(4603, 990, -3898))
-addTeleportButton("To Muscle King Area", Vector3.new(-8626, 16, -5730))
-addTeleportButton("To Jungle Area", Vector3.new(-8642, 6, 2381))
-addTeleportButton("To Lava Brawl", Vector3.new(4471, 119, -8836))
-addTeleportButton("To Desert Brawl", Vector3.new(960, 17, -7398))
-addTeleportButton("To Beach Brawl", Vector3.new(-1849, 20, -6335))
-
--- Rock Farm Control
+-- Rock farm controls
 local function setRockFarm(dur, enable)
     if enable then
         getgenv().selectedRockDurability = dur
@@ -290,7 +290,7 @@ rockFarmFolder:AddButton("STOP All Rock Farming", function()
     getgenv().selectedRockDurability = 0
 end)
 
--- Rock Farming Loop
+-- Rock farm loop
 task.spawn(function()
     while getgenv().NexusRunning do
         if not getgenv().rockFarmActive or getgenv().selectedRockDurability <= 0 then
@@ -312,6 +312,7 @@ task.spawn(function()
             end
 
             safeEquipTool("Punch")
+
             local machinesFolder = Workspace:FindFirstChild("machinesFolder")
             if not machinesFolder then return end
 
@@ -345,9 +346,7 @@ task.spawn(function()
 end)
 
 -- Killer Auto Kill
-local killerTab = window:AddTab("Killer")
-local killerFolder = killerTab:AddFolder("Auto Kill")
-killerFolder:AddSwitch("Kill Aura (All)", function(s)
+killerTab:AddSwitch("Kill Aura (All)", function(s)
     states.KillAura = s
     if s then
         task.spawn(function()
@@ -363,13 +362,11 @@ killerFolder:AddSwitch("Kill Aura (All)", function(s)
     end
 end)
 
-local playerDropdown = killerFolder:AddDropdown("Select Target", function(val)
-    if val then
-        selectedTarget = val:match("^([^|]+)")
-    end
+local playerDropdown = killerTab:AddDropdown("Select Target", function(val)
+    selectedTarget = val and val:match("^([^|]+)") or nil
 end)
 
-killerFolder:AddSwitch("Auto Kill Selected", function(s)
+killerTab:AddSwitch("Auto Kill Selected", function(s)
     states.AutoKillSelected = s
     if s and selectedTarget then
         task.spawn(function()
@@ -384,7 +381,7 @@ killerFolder:AddSwitch("Auto Kill Selected", function(s)
     end
 end)
 
--- Auto update player list
+-- Auto-update player list
 task.spawn(function()
     while getgenv().NexusRunning do
         local opts = {}
@@ -400,29 +397,250 @@ task.spawn(function()
     end
 end)
 
--- Additional features like Rebirth, Fast Rebirth, AutoEatEgg, etc., can be added similarly with toggles and loops.
+-- Additional toggles (placeholders for your functions)
+local function toggleFastStrength(s)
+    -- Implement your logic here
+end
 
--- Example: Rebirth
-local rebirthFolder = rebirthTab:AddFolder("Rebirth")
-rebirthFolder:AddButton("Set Rebirths", function()
-    -- Implement rebirth logic here
+local function toggleFastRebirth(s)
+    -- Implement your logic here
+end
+
+local function toggleAutoEatEgg(s)
+    -- Implement your logic here
+end
+
+local function toggleAutoSpinWheel(s)
+    -- Implement your logic here
+end
+
+local function toggleHideFrames(s)
+    -- Implement your logic here
+end
+
+-- Example switches (assuming you have a FarmTab, creating it now)
+local FarmTab = window:AddTab("Farm")
+local FarmTabFolder = FarmTab:AddFolder("Auto Farm Options")
+local _G = _G or {}
+
+local StrengthSwitch = FarmTabFolder:AddSwitch("Strength Op", function(s)
+    _G.AutoRepFarmEnabled = s
+    warn("[Auto Rep Farm] Estado cambiado a:", s and "ON" or "OFF")
+end)
+StrengthSwitch:Set(false)
+
+local AutoEatSwitch = FarmTabFolder:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
+    _G.AutoEatEgg = s
+    task.spawn(function()
+        while _G.AutoEatEgg do
+            local Backpack = LocalPlayer:FindFirstChild("Backpack")
+            if Backpack then
+                local EggItem = Backpack:FindFirstChild("Protein Egg")
+                if EggItem then
+                    -- Your logic here
+                end
+            end
+            task.wait(1800)
+        end
+    end)
+end)
+AutoEatSwitch:Set(false)
+
+local SpinWheelSwitch = FarmTabFolder:AddSwitch("Spin Fortune Wheel", function(s)
+    _G.AutoSpinWheel = s
+    if s then
+        task.spawn(function()
+            while _G.AutoSpinWheel do
+                task.wait(0.1)
+            end
+        end)
+    end
+end)
+SpinWheelSwitch:Set(false)
+
+FarmTabFolder:AddSwitch("Hide All Frames", function(s)
+    -- Your logic here
 end)
 
--- Example: Toggle Infinite Jump
-local function toggleInfJump(s)
-    toggleInfiniteJump(s)
-end
+FarmTabFolder:AddButton("Anti Lag", function()
+    for _, DescendantObject in pairs(workspace:GetDescendants()) do
+        if DescendantObject:IsA("ParticleEmitter") then
+            DescendantObject.Enabled = false
+        end
+    end
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = 9e9
+    Lighting.Brightness = 0
+    settings().Rendering.QualityLevel = 1
+    for _, DecalObject in pairs(workspace:GetDescendants()) do
+        if DecalObject:IsA("Decal") then
+            DecalObject.Transparency = 1
+        end
+    end
+    for _, EffectObject in pairs(Lighting:GetChildren()) do
+        if EffectObject:IsA("BlurEffect") then
+            EffectObject.Enabled = false
+        end
+    end
+    game.StarterGui:SetCore("SendNotification", {
+        Text = "Full optimization applied!",
+        Title = "Anti Lag activado",
+        Duration = 5
+    })
+end)
 
--- Example: Toggle Anti AFK
-local function toggleAntiAfk(s)
-    toggleAntiAfk(s)
-end
+FarmTabFolder:AddButton("Full Optimization", function()
+    for _, GuiObject in pairs(LocalPlayer:WaitForChild("PlayerGui"):GetChildren()) do
+        if GuiObject:IsA("ScreenGui") then
+            GuiObject:Destroy()
+        end
+    end
+    for _, ObjectInstance in pairs(workspace:GetDescendants()) do
+        if ObjectInstance:IsA("ParticleEmitter") or ObjectInstance:IsA("PointLight") then
+            ObjectInstance:Destroy()
+        end
+    end
+    for _, Skybox in pairs(Lighting:GetChildren()) do
+        if Skybox:IsA("Sky") then
+            Skybox:Destroy()
+        end
+    end
+    local DarkSkybox = Instance.new("Sky")
+    DarkSkybox.Name = "DarkSky"
+    DarkSkybox.SkyboxBk = "rbxassetid://0"
+    DarkSkybox.SkyboxDn = "rbxassetid://0"
+    DarkSkybox.SkyboxFt = "rbxassetid://0"
+    DarkSkybox.SkyboxLf = "rbxassetid://0"
+    DarkSkybox.SkyboxRt = "rbxassetid://0"
+    DarkSkybox.SkyboxUp = "rbxassetid://0"
+    DarkSkybox.Parent = Lighting
+    Lighting.Brightness = 0
+    Lighting.ClockTime = 0
+    Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+    Lighting.Ambient = Color3.new(0, 0, 0)
+    Lighting.FogColor = Color3.new(0, 0, 0)
+    Lighting.FogEnd = 100
+end)
 
--- Example: Set target rebirth amount
-local function setTargetRebirths(amount)
-    targetRebirths = amount
-end
+FarmTabFolder:AddButton("Equip Swift Samurai", function()
+    print("Botón presionado: equipando 8 Swift Samurai")
+    local PetsContainer = LocalPlayer:FindFirstChild("petsFolder")
+    if PetsContainer then
+        -- Your logic here
+    end
+end)
 
--- Additional features like auto-eat, auto-spin, hide frames, etc., can be similarly added.
+FarmTabFolder:AddButton("Jungle Squat", function()
+    local Character = LocalPlayer.Character
+    if Character and Character:FindFirstChild("HumanoidRootPart") then
+        Character.HumanoidRootPart.CFrame = CFrame.new(-8371.4336, 6.7981, 2858.8853)
+    end
+end)
 
--- END OF SCRIPT
+FarmTabFolder:AddButton("Jungle lift", function()
+    local Character = LocalPlayer.Character
+    if Character and Character:FindFirstChild("HumanoidRootPart") then
+        Character.HumanoidRootPart.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
+    end
+end)
+
+-- Rebirth stats display
+FarmTabFolder:AddLabel("Rebirths Gained").TextSize = 23
+local RebirthsFunctions = FarmTabFolder:AddFolder("Fast Rebirths Functions")
+RebirthsFunctions:AddLabel("0d 0h 0m 0s").TextSize = 18
+RebirthsFunctions:AddLabel("Rebirths: 0").TextSize = 18
+RebirthsFunctions:AddLabel("Rebirths Gained: 0").TextSize = 18
+
+task.spawn(function()
+    while true do
+        pcall(function()
+            local LeaderboardStats = LocalPlayer:FindFirstChild("leaderstats")
+            if LeaderboardStats then
+                local RebirthCount = LeaderboardStats:FindFirstChild("Rebirths")
+                if RebirthCount then
+                    -- Update UI here
+                end
+            end
+        end)
+        task.wait(1)
+    end
+end)
+
+-- Base parts creation (assuming for some purpose)
+task.spawn(function()
+    local BasePosition = Vector3.new(-2, -9.5, -2)
+    local BlockSize = Vector3.new(2048, 1, 2048)
+    for XCoordinate = -5, 5 do
+        for ZCoordinate = -5, 5 do
+            local CalculatedPosition = BasePosition + Vector3.new(XCoordinate * 2048, 0, ZCoordinate * 2048)
+            local BasePart = Instance.new("Part")
+            BasePart.Size = BlockSize
+            BasePart.Position = CalculatedPosition
+            BasePart.Anchored = true
+            BasePart.Transparency = 1
+            BasePart.CanCollide = true
+            BasePart.Name = string.format("FloorPart_%d_%d", XCoordinate, ZCoordinate)
+            BasePart.Parent = workspace
+        end
+    end
+end)
+
+-- Remove Punch Animation
+KillTab:AddButton("Remove Punch Anim", function()
+    local Character = LocalPlayer.Character
+    if Character and Character:FindFirstChild("Humanoid") then
+        local Animator = Character.Humanoid:FindFirstChild("Animator")
+        if Animator then
+            for _, Track in pairs(Animator:GetPlayingAnimationTracks()) do
+                if Track.Animation and (Track.Animation.AnimationId == "rbxassetid://3638729053" or Track.Animation.AnimationId == "rbxassetid://3638767427") then
+                    Track:Stop()
+                    Track:Destroy()
+                end
+            end
+        end
+    end
+end)
+
+-- View target dropdown and toggle
+local ViewDropdown = KillTab:AddDropdown("Select View Target", function(Value)
+    _G.ViewTarget = Value
+end)
+
+local ViewPlayerSwitch = KillTab:AddSwitch("View Player", function(BooleanValue)
+    _G.viewPlayer = BooleanValue
+    task.spawn(function()
+        while _G.viewPlayer do
+            pcall(function()
+                local Target = nil
+                for _, Player in pairs(Players:GetPlayers()) do
+                    if Player.DisplayName == _G.ViewTarget then
+                        Target = Player
+                        break
+                    end
+                end
+
+                if Target and Target.Character and Target.Character:FindFirstChild("Humanoid") then
+                    workspace.CurrentCamera.CameraSubject = Target.Character.Humanoid
+                else
+                    workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
+                end
+            end)
+            task.wait(0.1)
+        end
+        workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
+    end)
+end)
+ViewPlayerSwitch:Set(false)
+
+-- Change size buttons
+KillTab:AddButton("Size 30", function()
+    local Arguments = { [1] = "changeSize", [2] = 30 }
+    local rEvents = ReplicatedStorage:WaitForChild("rEvents")
+    rEvents:WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(Arguments))
+end)
+
+KillTab:AddButton("Size 2", function()
+    local Arguments = { [1] = "changeSize", [2] = 2 }
+    local rEvents = ReplicatedStorage:WaitForChild("rEvents")
+    rEvents:WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(Arguments))
+end)
