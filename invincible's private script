@@ -701,3 +701,73 @@ task.spawn(function()
         end
     end
 end)
+
+Here's a basic auto-kill (kill aura style) addition you can put into your existing script setup for Muscle Legends.
+
+Muscle Legends uses a fairly simple damage system — most "auto kill" scripts work by repeatedly firing the game's punch/attack remote with very high damage values or by teleporting + instant-damage looping. Anti-cheat exists but is quite weak in 2026, so basic loops still function on many executors.
+
+Add something like this after creating your window:
+
+-- // Auto Kill / Kill Aura Tab
+local killTab = window:AddTab("Auto Kill")
+
+local enabled = false
+local distance = 25     -- max range to target players
+local killDelay = 0.1   -- lower = faster/more aggressive (riskier)
+
+local toggle = killTab:AddSwitch("Auto Kill Players", function(bool)
+    enabled = bool
+end)
+
+killFolder:AddSlider("Kill Range", 10, 100, distance, function(val)
+    distance = val
+end)
+
+killFolder:AddSlider("Attack Delay", 0.05, 1, killDelay, function(val)
+    killDelay = val
+end)
+
+-- Simple loop (runs in background)
+spawn(function()
+    while true do
+        wait(killDelay)
+        if not enabled then continue end
+        
+        local lp = game.Players.LocalPlayer
+        if not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") then continue end
+        
+        local root = lp.Character.HumanoidRootPart
+        
+        for _, plr in pairs(game.Players:GetPlayers()) do
+            if plr == lp or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") then continue end
+            
+            local targetRoot = plr.Character.HumanoidRootPart
+            local mag = (root.Position - targetRoot.Position).Magnitude
+            
+            if mag <= distance then
+                -- Method 1: Spam the game's punch remote (most common working method in 2026)
+                pcall(function()
+                    game:GetService("ReplicatedStorage").Events.Punch:FireServer(plr.Character.Head)  -- head usually gives best hitreg
+                end)
+                
+                -- Method 2: Some scripts use body velocity / teleport nudge + punch
+                -- root.CFrame = targetRoot.CFrame * CFrame.new(0, 0, -1.5)  -- optional tiny tp behind
+            end
+        end
+    end
+end)
+
+-- Optional: Kill All button (one-shot style if remote allows)
+killFolder:AddButton("Kill Everyone (once)", function()
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= game.Players.LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
+            pcall(function()
+                for i = 1, 15 do  -- spam for reliability
+                    game:GetService("ReplicatedStorage").Events.Punch:FireServer(plr.Character.Head)
+                end
+            end)
+        end
+    end
+end)
+
+Import
