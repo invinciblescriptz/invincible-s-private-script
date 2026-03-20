@@ -100,36 +100,6 @@ local function startAutoRep(toolName, stateKey)
 end
 
 -- =============================================================
--- Fast Strength (combined grind)
--- =============================================================
-
-local function toggleFastStrength(state)
-    states.FastStrength = state
-    if state then
-        if fastStrengthConn then fastStrengthConn:Disconnect() end
-        fastStrengthConn = RunService.Heartbeat:Connect(function()
-            pcall(function()
-                if not muscleEvent then return end
-                muscleEvent:FireServer("rep")
-                muscleEvent:FireServer("punch", "rightHand")
-                muscleEvent:FireServer("punch", "leftHand")
-
-                local char = LocalPlayer.Character
-                if char then
-                    local tool = char:FindFirstChildWhichIsA("Tool")
-                    if tool then tool:Activate() end
-                end
-            end)
-        end)
-    else
-        if fastStrengthConn then
-            fastStrengthConn:Disconnect()
-            fastStrengthConn = nil
-        end
-    end
-end
-
--- =============================================================
 -- Infinite Jump
 -- =============================================================
 
@@ -528,8 +498,6 @@ rebirthTab:AddSwitch("Auto TP Muscle King", function(s)
         end
     end
 end)
-
-print("Invincibles Priv Script – cleaned & safer (March 2026)")
 
 local StrengthSwitch = FarmTab:AddSwitch("Strength Op", function(SwitchState)
     _G.AutoRepFarmEnabled = SwitchState
