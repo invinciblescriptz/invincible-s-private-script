@@ -872,6 +872,41 @@ local playerDropdown2 = killerTab:AddDropdown("Select Target", function(val)
     selectedTarget = val and val:match("^([^|]+)") or nil
 end)
 
+-- Annoy / fling aura (visible chaos, not kill)
+killerTab:AddSwitch("Fling Aura (annoy nearby)", function(s)
+    states.FlingAura = s
+    if s then
+        task.spawn(function()
+            while states.FlingAura and getgenv().NexusRunning do
+                pcall(function()
+                    local myHRP = LocalPlayer.Character.HumanoidRootPart
+                    for _, plr in Players:GetPlayers() do
+                        if plr ~= LocalPlayer and plr.Character then
+                            local tHRP = plr.Character.HumanoidRootPart
+                            if tHRP and (tHRP.Position - myHRP.Position).Magnitude < 35 then
+                                tHRP.AssemblyLinearVelocity = (myHRP.Position - tHRP.Position).Unit * -150 + Vector3.new(0,80,0)
+                            end
+                        end
+                    end
+                end)
+                task.wait(0.25)
+            end
+        end)
+    end
+end)
+
+-- Bring players to you (pull them near for visual/server stress)
+killerTab:AddButton("Bring All Nearby (once)", function()
+    for _, plr in Players:GetPlayers() do
+        if plr ~= LocalPlayer and plr.Character then
+            local tHRP = plr.Character:FindFirstChild("HumanoidRootPart")
+            if tHRP then
+                tHRP.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,-8)
+            end
+        end
+    end
+end)
+
 killerTab:AddSwitch("Auto Kill Selected", function(s)
     states.AutoKillSelected = s
     if s then
