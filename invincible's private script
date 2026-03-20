@@ -156,6 +156,7 @@ local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local killerTab = window:AddTab("Killer")
 local miscTab = window:AddTab("Misc")
+local farmingTab = window:AddTab("Farming") -- Added missing Farming tab
 
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
@@ -242,18 +243,25 @@ toolsFolder:AddButton("Free AutoLift Gamepass", function()
 end)
 
 -- Teleport buttons
-teleportTab:AddButton("To Spawn / Safe Area", function() tpTo(Vector3.new(-6, 5, -196)) end)
-teleportTab:AddButton("To Secret Area", function() tpTo(Vector3.new(1947, 2, 6191)) end)
-teleportTab:AddButton("To Tiny Area", function() tpTo(Vector3.new(-39, 6, 1886)) end)
-teleportTab:AddButton("To Frozen Area", function() tpTo(Vector3.new(-2623, 6, -409)) end)
-teleportTab:AddButton("To Mythical Area", function() tpTo(Vector3.new(2251, 6, 1073)) end)
-teleportTab:AddButton("To Inferno Area", function() tpTo(Vector3.new(-6759, 6, -1285)) end)
-teleportTab:AddButton("To Legend Area", function() tpTo(Vector3.new(4603, 990, -3898)) end)
-teleportTab:AddButton("To Muscle King Area", function() tpTo(Vector3.new(-8626, 16, -5730)) end)
-teleportTab:AddButton("To Jungle Area", function() tpTo(Vector3.new(-8642, 6, 2381)) end)
-teleportTab:AddButton("To Lava Brawl", function() tpTo(Vector3.new(4471, 119, -8836)) end)
-teleportTab:AddButton("To Desert Brawl", function() tpTo(Vector3.new(960, 17, -7398)) end)
-teleportTab:AddButton("To Beach Brawl", function() tpTo(Vector3.new(-1849, 20, -6335)) end)
+local teleportButtons = {
+    {"To Spawn / Safe Area", Vector3.new(-6, 5, -196)},
+    {"To Secret Area", Vector3.new(1947, 2, 6191)},
+    {"To Tiny Area", Vector3.new(-39, 6, 1886)},
+    {"To Frozen Area", Vector3.new(-2623, 6, -409)},
+    {"To Mythical Area", Vector3.new(2251, 6, 1073)},
+    {"To Inferno Area", Vector3.new(-6759, 6, -1285)},
+    {"To Legend Area", Vector3.new(4603, 990, -3898)},
+    {"To Muscle King Area", Vector3.new(-8626, 16, -5730)},
+    {"To Jungle Area", Vector3.new(-8642, 6, 2381)},
+    {"To Lava Brawl", Vector3.new(4471, 119, -8836)},
+    {"To Desert Brawl", Vector3.new(960, 17, -7398)},
+    {"To Beach Brawl", Vector3.new(-1849, 20, -6335)}
+}
+
+for _, btn in ipairs(teleportButtons) do
+    local name, pos = btn[1], btn[2]
+    teleportTab:AddButton(name, function() tpTo(pos) end)
+end
 
 -- Rock farm controls
 local function setRockFarm(dur, enable)
@@ -268,15 +276,22 @@ local function setRockFarm(dur, enable)
     end
 end
 
-rockFarmFolder:AddSwitch("Farm Tiny Island Rock (0)", function(s) setRockFarm(0, s) end)
-rockFarmFolder:AddSwitch("Farm Starter Island Rock (100)", function(s) setRockFarm(100, s) end)
-rockFarmFolder:AddSwitch("Farm Legend Beach Rock (5000)", function(s) setRockFarm(5000, s) end)
-rockFarmFolder:AddSwitch("Farm Frost Gym Rock (150k)", function(s) setRockFarm(150000, s) end)
-rockFarmFolder:AddSwitch("Farm Mythical Gym Rock (400k)", function(s) setRockFarm(400000, s) end)
-rockFarmFolder:AddSwitch("Farm Eternal Gym Rock (750k)", function(s) setRockFarm(750000, s) end)
-rockFarmFolder:AddSwitch("Farm Legend Gym Rock (1M)", function(s) setRockFarm(1000000, s) end)
-rockFarmFolder:AddSwitch("Farm Muscle King Gym Rock (5M)", function(s) setRockFarm(5000000, s) end)
-rockFarmFolder:AddSwitch("Farm Ancient Jungle Rock (10M)", function(s) setRockFarm(10000000, s) end)
+local rockFarmOptions = {
+    {"Farm Tiny Island Rock (0)", 0},
+    {"Farm Starter Island Rock (100)", 100},
+    {"Farm Legend Beach Rock (5000)", 5000},
+    {"Farm Frost Gym Rock (150k)", 150000},
+    {"Farm Mythical Gym Rock (400k)", 400000},
+    {"Farm Eternal Gym Rock (750k)", 750000},
+    {"Farm Legend Gym Rock (1M)", 1000000},
+    {"Farm Muscle King Gym Rock (5M)", 5000000},
+    {"Farm Ancient Jungle Rock (10M)", 10000000}
+}
+
+for _, option in ipairs(rockFarmOptions) do
+    local name, dur = option[1], option[2]
+    rockFarmFolder:AddSwitch(name, function(s) setRockFarm(dur, s) end)
+end
 
 rockFarmFolder:AddButton("STOP All Rock Farming", function()
     getgenv().rockFarmActive = false
@@ -304,33 +319,40 @@ task.spawn(function()
                 return
             end
 
+            -- Equip Punch tool
             safeEquipTool("Punch")
 
-            for _, obj in pairs(Workspace:FindFirstChild("machinesFolder"):GetDescendants()) do
-                if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Value == getgenv().selectedRockDurability then
-                    local rock = obj.Parent:FindFirstChild("Rock")
-                    if rock and rock:IsA("BasePart") then
-                        local hrp = char:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                            if char:FindFirstChild("RightHand") then
-                                firetouchinterest(rock, hrp, 0)
-                                task.wait(0.03)
-                                firetouchinterest(rock, hrp, 1)
-                            end
-                            if char:FindFirstChild("LeftHand") then
-                                firetouchinterest(rock, hrp, 0)
-                                task.wait(0.03)
-                                firetouchinterest(rock, hrp, 1)
-                            end
-                            if muscleEvent then
-                                muscleEvent:FireServer("punch", "leftHand")
-                                muscleEvent:FireServer("punch", "rightHand")
+            -- Find the machine with neededDurability
+            local machinesFolder = Workspace:FindFirstChild("machinesFolder")
+            if machinesFolder then
+                for _, obj in pairs(machinesFolder:GetDescendants()) do
+                    if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Value == getgenv().selectedRockDurability then
+                        local rock = obj.Parent:FindFirstChild("Rock")
+                        if rock and rock:IsA("BasePart") then
+                            local hrp = char:FindFirstChild("HumanoidRootPart")
+                            if hrp then
+                                if char:FindFirstChild("RightHand") then
+                                    firetouchinterest(rock, hrp, 0)
+                                    task.wait(0.03)
+                                    firetouchinterest(rock, hrp, 1)
+                                end
+                                if char:FindFirstChild("LeftHand") then
+                                    firetouchinterest(rock, hrp, 0)
+                                    task.wait(0.03)
+                                    firetouchinterest(rock, hrp, 1)
+                                end
+                                -- Punch
+                                if muscleEvent then
+                                    muscleEvent:FireServer("punch", "leftHand")
+                                    muscleEvent:FireServer("punch", "rightHand")
+                                end
                             end
                         end
                     end
                 end
             end
         end)
+
         task.wait(0.18)
     end
 end)
@@ -387,31 +409,11 @@ task.spawn(function()
     end
 end)
 
--- Farming controls
-local farmingTab = window:AddTab("Farming") -- Added missing tab
-
--- Example switches (define toggleFastStrength if needed)
-local function toggleFastStrength(s)
-    -- Implement your logic here
-end
-
-local function toggleFastRebirth(s)
-    -- Implement your logic here
-end
-
-local function toggleAutoEatEgg(s)
-    -- Implement your logic here
-end
-
-local function toggleAutoSpinWheel(s)
-    -- Implement your logic here
-end
-
-local function toggleHideFrames(s)
-    -- Implement your logic here
-end
-
-farmingTab:AddSwitch("Fast Grind / Strength", toggleFastStrength)
+-- Farming tab (already added above)
+-- Additional controls
+farmingTab:AddSwitch("Fast Grind / Strength", function(s)
+    -- Implement your logic if needed
+end)
 
 farmingTab:AddSwitch("Fast Rebirth", function(s)
     states.FastRebirth = s
@@ -443,7 +445,7 @@ local AutoEatSwitch = farmingTab:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
             if Backpack then
                 local EggItem = Backpack:FindFirstChild("Protein Egg")
                 if EggItem then
-                    -- Auto eat logic here if needed
+                    -- Auto eat logic if needed
                 end
             end
             task.wait(1800)
@@ -465,7 +467,7 @@ end)
 SpinWheelSwitch:Set(false)
 
 farmingTab:AddSwitch("Hide All Frames", function(s)
-    -- Your implementation
+    -- Your implementation if needed
 end)
 
 farmingTab:AddButton("Anti Lag", function()
@@ -564,7 +566,8 @@ task.spawn(function()
             if LeaderboardStats then
                 local RebirthCount = LeaderboardStats:FindFirstChild("Rebirths")
                 if RebirthCount then
-                    -- Update UI here
+                    -- Update UI here, example:
+                    RebirthsFolder:GetChildren()[2].Text = "Rebirths: " .. RebirthCount.Value
                 end
             end
         end)
@@ -587,6 +590,45 @@ task.spawn(function()
             BasePart.CanCollide = true
             BasePart.Name = string.format("FloorPart_%d_%d", XCoordinate, ZCoordinate)
             BasePart.Parent = workspace
+        end
+    end
+end)
+
+-- Globals
+getgenv().KillAuraRange = 30
+
+-- Kill Aura with adjustable range
+killerTab:AddSlider("Kill Aura Range", 10, 100, 30, function(val)
+    getgenv().KillAuraRange = val
+end)
+
+-- Replace the existing Kill Aura loop with this improved version
+if states.KillAura then
+    task.spawn(function()
+        while states.KillAura and getgenv().NexusRunning do
+            pcall(function()
+                local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if not myHRP then return end
+                
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character then
+                        local tHRP = plr.Character:FindFirstChild("HumanoidRootPart")
+                        if tHRP and (tHRP.Position - myHRP.Position).Magnitude <= getgenv().KillAuraRange then
+                            killPlayer(plr)
+                        end
+                    end
+                end
+            end)
+            task.wait(0.12)
+        end
+    end)
+end
+
+-- Mass Kill button
+killFolder:AddButton("Mass Kill Everyone (once)", function()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            killPlayer(plr)
         end
     end
 end)
