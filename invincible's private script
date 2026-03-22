@@ -134,18 +134,32 @@ local function toggleAntiAfk(state)
     end
 end
 
+-- Kill / Position under target
+local function killPlayer(targetPlayer)
+    pcall(function()
+        local myChar = LocalPlayer.Character
+        local tChar = targetPlayer.Character
+        if not myChar or not tChar then return end
+        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+        local tHRP = tChar:FindFirstChild("HumanoidRootPart")
+        if myHRP and tHRP then
+            myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -25, 0)
+        end
+    end)
+end
+
 -- Initialize tabs
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
-local killTab = window:AddTab("Killer") -- Corrected tab name
+local killerTab = window:AddTab("Killer")
 local miscTab = window:AddTab("Misc")
 local farmingTab = window:AddTab("Farming") -- Added missing Farming tab
 
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
-local killFolder = killTab:AddFolder("Auto Kill") -- Corrected to use killTab
+local killFolder = killerTab:AddFolder("Auto Kill")
 
 -- Tools
 toolsFolder:AddSwitch("Auto Pushups", function(s)
@@ -308,7 +322,43 @@ rockFarmFolder:AddButton("STOP All Rock Farming", function()
     print("[Rock Farm] All farming stopped")
 end)
 
--- Auto-update player list (example)
+-- Killer Auto Kill
+killerTab:AddSwitch("Kill Aura (All)", function(s)
+    states.KillAura = s
+    if s then
+        task.spawn(function()
+            while states.KillAura and getgenv().NexusRunning do
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character then
+                        killPlayer(plr)
+                    end
+                end
+                task.wait(0.14)
+            end
+        end)
+    end
+end)
+
+local playerDropdown = killerTab:AddDropdown("Select Target", function(val)
+    selectedTarget = val and val:match("^([^|]+)") or nil
+end)
+
+killerTab:AddSwitch("Auto Kill Selected", function(s)
+    states.AutoKillSelected = s
+    if s and selectedTarget then
+        task.spawn(function()
+            while states.AutoKillSelected and getgenv().NexusRunning do
+                local plr = Players:FindFirstChild(selectedTarget)
+                if plr and plr.Character then
+                    killPlayer(plr)
+                end
+                task.wait(0.14)
+            end
+        end)
+    end
+end)
+
+-- Auto-update player list
 task.spawn(function()
     while getgenv().NexusRunning do
         local opts = {}
@@ -317,8 +367,8 @@ task.spawn(function()
                 table.insert(opts, plr.Name .. " | " .. (plr.DisplayName or plr.Name))
             end
         end
-        if _G.playerDropdown then
-            _G.playerDropdown:SetValues(opts)
+        if playerDropdown then
+            playerDropdown:SetValues(opts)
         end
         task.wait(5.5)
     end
@@ -327,7 +377,7 @@ end)
 -- Farming tab (already added above)
 -- Additional controls
 farmingTab:AddSwitch("Fast Grind / Strength", function(s)
-    -- Your implementation here
+    -- Implement your logic if needed
 end)
 
 farmingTab:AddSwitch('Hide Frame', function(p73)
@@ -342,6 +392,7 @@ end)
 
 farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
     local fastRebirth = p79
+
     if fastRebirth then
         spawn(function()
             local _ReplicatedStorage = game:GetService('ReplicatedStorage')
@@ -429,7 +480,7 @@ farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
                 task.wait(0.1)
                 v97('Tribal Overlord')
 
-                -- Find and interact with Jungle Bar Lift
+                -- Find and interact with the Jungle Bar Lift
                 local _JungleBarLift = v105('Jungle Bar Lift')
                 if _JungleBarLift and _JungleBarLift:FindFirstChild('interactSeat') then
                     _LocalPlayer.Character.HumanoidRootPart.CFrame = _JungleBarLift.interactSeat.CFrame * CFrame.new(0, 3, 0)
@@ -452,10 +503,57 @@ farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
     end
 end)
 
--- Stats Spy display
+
+
+-- Globals
+getgenv().KillAuraRange = 30
+
+-- Kill Aura with adjustable range
+killerTab:AddSlider("Kill Aura Range", 10, 100, 30, function(val)
+    getgenv().KillAuraRange = val
+end)
+
+-- Replace the existing Kill Aura loop with this improved version
+if states.KillAura then
+    task.spawn(function()
+        while states.KillAura and getgenv().NexusRunning do
+            pcall(function()
+                local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if not myHRP then return end
+                
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character then
+                        local tHRP = plr.Character:FindFirstChild("HumanoidRootPart")
+                        if tHRP and (tHRP.Position - myHRP.Position).Magnitude <= getgenv().KillAuraRange then
+                            killPlayer(plr)
+                        end
+                    end
+                end
+            end)
+            task.wait(0.12)
+        end
+    end)
+end
+
+-- Mass Kill button
+killFolder:AddButton("Mass Kill Everyone (once)", function()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            killPlayer(plr)
+        end
+    end
+end)
+
+-- We'll store label references so we can update them
 local statLabels = {}
+
+-- Stats Spy Folder / Section
 local statsFolder = specsTab:AddFolder("my stats")
 
+-- We'll store label references so we can update them
+local statLabels = {}
+
+-- Helper to create/update a label
 local function addOrUpdateStatLabel(name, initialValue)
     local labelName = name .. ":"
     if not statLabels[name] then
@@ -468,10 +566,14 @@ local function addOrUpdateStatLabel(name, initialValue)
     end
 end
 
+-- Main stats updating loop
 task.spawn(function()
     while getgenv().NexusRunning do
+        
         pcall(function()
             local lp = game.Players.LocalPlayer
+            
+            -- Leaderstats (most important)
             local leaderstats = lp:FindFirstChild("leaderstats")
             if leaderstats then
                 for _, stat in ipairs(leaderstats:GetChildren()) do
@@ -480,606 +582,40 @@ task.spawn(function()
                     end
                 end
             end
-
+            
+            -- Durability (very common in this game genre)
             local durability = lp:FindFirstChild("Durability")
             if durability and durability:IsA("IntValue") then
                 addOrUpdateStatLabel("Durability", durability.Value)
             end
-
+            
+            -- Strength / Muscle (sometimes stored separately)
             local strength = lp:FindFirstChild("Strength") or (leaderstats and leaderstats:FindFirstChild("Strength"))
             if strength and (strength:IsA("IntValue") or strength:IsA("NumberValue")) then
                 addOrUpdateStatLabel("Strength", strength.Value)
             end
-
-            -- Optional: gamepasses
+            
+            -- Gamepasses / extras (optional – comment out if not needed)
             local owned = lp:FindFirstChild("ownedGamepasses")
             if owned then
                 addOrUpdateStatLabel("Gamepasses Owned", #owned:GetChildren())
             end
-
-            -- Area or zone info
+            
+            -- Current area / zone (if the game has it)
             local currentArea = lp:FindFirstChild("CurrentArea") or lp:FindFirstChild("Zone")
             if currentArea and currentArea:IsA("StringValue") then
                 addOrUpdateStatLabel("Area", currentArea.Value)
             end
         end)
-        task.wait(1.4)
+        
+        task.wait(1.4)   -- update every ~1.4 seconds — feels smooth but not performance heavy
     end
-    -- Cleanup
+    
+    -- Cleanup (optional)
     for _, lbl in pairs(statLabels) do
         pcall(function() lbl:Destroy() end)
     end
 end)
 
--- Kill tab with dropdown for target selection
-local targetPlayerNames = {}
-local targetDropdownItems = {}
-local selectedTarget = nil
-
-local targetDropdown = killTab:AddDropdown("Select Target", function(displayName)
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr.DisplayName == displayName then
-            if not table.find(targetPlayerNames, plr.Name) then
-                table.insert(targetPlayerNames, plr.Name)
-            end
-            selectedTarget = plr.Name
-            break
-        end
-    end
-end)
-
-local function updateTargetDropdown()
-    local options = {}
-    for _, name in ipairs(targetPlayerNames) do
-        table.insert(options, name)
-    end
-    if targetDropdown then
-        targetDropdown:SetValues(options)
-    end
-end
-
-killTab:AddButton("Remove Selected Target", function()
-    if selectedTarget then
-        for i, v in ipairs(targetPlayerNames) do
-            if v == selectedTarget then
-                table.remove(targetPlayerNames, i)
-                break
-            end
-        end
-        selectedTarget = nil
-        updateTargetDropdown()
-    end
-end)
-
--- Populate initial player list
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        targetDropdown:Add(player.DisplayName)
-        targetDropdownItems[player.Name] = player.DisplayName
-    end
-end
-
-Players.PlayerAdded:Connect(function(player)
-    if player ~= LocalPlayer then
-        targetDropdown:Add(player.DisplayName)
-        targetDropdownItems[player.Name] = player.DisplayName
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    if targetDropdownItems[player.Name] then
-        targetDropdownItems[player.Name] = nil
-        targetDropdown:Clear()
-        for _, displayName in pairs(targetDropdownItems) do
-            targetDropdown:Add(displayName)
-        end
-    end
-    for i = #targetPlayerNames, 1, -1 do
-        if targetPlayerNames[i] == player.Name then
-            table.remove(targetPlayerNames, i)
-        end
-    end
-end)
-
--- Kill with touch interest (example)
-local killSwitch = false
-local function startKill()
-    task.spawn(function()
-        while killSwitch do
-            local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-            local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
-            if punch and not character:FindFirstChild("Punch") then
-                punch.Parent = character
-            end
-            local rightHand = character:FindFirstChild("RightHand")
-            local leftHand = character:FindFirstChild("LeftHand")
-            if rightHand and leftHand then
-                for _, name in ipairs(targetPlayerNames) do
-                    local target = Players:FindFirstChild(name)
-                    if target and target ~= LocalPlayer and target.Character then
-                        local rootPart = target.Character:FindFirstChild("HumanoidRootPart")
-                        local humanoid = target.Character:FindFirstChild("Humanoid")
-                        if rootPart and humanoid and humanoid.Health > 0 then
-                            pcall(function()
-                                firetouchinterest(rightHand, rootPart, 1)
-                                firetouchinterest(leftHand, rootPart, 1)
-                                firetouchinterest(rightHand, rootPart, 0)
-                                firetouchinterest(leftHand, rootPart, 0)
-                            end)
-                        end
-                    end
-                end
-            end
-            task.wait(0.05)
-        end
-    end)
-end
-
-local killSwitchActive = false
-local function toggleKill()
-    killSwitchActive = not killSwitchActive
-    if killSwitchActive then
-        startKill()
-    end
-end
-
-Killer:AddSwitch("Start Kill Target", function(state)
-    killSwitch = state
-    if state then
-        startKill()
-    end
-end)
-
--- View Target Dropdown
-local spyTargetDropdownItems = {}
-local targetPlayerName = nil
-local spying = false
-
-local spyTargetDropdown = Killer:AddDropdown("Select View Target", function(displayName)
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.DisplayName == displayName then
-            targetPlayerName = player.Name
-            break
-        end
-    end
-end)
-
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        spyTargetDropdown:Add(player.DisplayName)
-        spyTargetDropdownItems[player.Name] = player.DisplayName
-    end
-end
-
-Players.PlayerAdded:Connect(function(player)
-    if player ~= LocalPlayer then
-        spyTargetDropdown:Add(player.DisplayName)
-        spyTargetDropdownItems[player.Name] = player.DisplayName
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    if player ~= LocalPlayer then
-        spyTargetDropdownItems[player.Name] = nil
-        spyTargetDropdown:Clear()
-        for _, displayName in pairs(spyTargetDropdownItems) do
-            spyTargetDropdown:Add(displayName)
-        end
-    end
-end)
-
-Killer:AddSwitch("View Player", function(bool)
-    spying = bool
-    if not spying then
-        local cam = workspace.CurrentCamera
-        cam.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") or LocalPlayer
-        return
-    end
-    task.spawn(function()
-        while spying do
-            local target = Players:FindFirstChild(targetPlayerName)
-            if target and target ~= LocalPlayer then
-                local humanoid = target.Character and target.Character:FindFirstChild("Humanoid")
-                if humanoid then
-                    workspace.CurrentCamera.CameraSubject = humanoid
-                end
-            end
-            task.wait(0.1)
-        end
-    end)
-end)
-
-local function recoverPunch()
-    if _G.AnimBlockConnection then
-        _G.AnimBlockConnection:Disconnect()
-        _G.AnimBlockConnection = nil
-    end
-    if _G.AnimMonitorConnection then
-        _G.AnimMonitorConnection:Disconnect()
-        _G.AnimMonitorConnection = nil
-    end
-    if _G.ToolConnections then
-        for _, conn in pairs(_G.ToolConnections) do
-            if conn then conn:Disconnect() end
-        end
-        _G.ToolConnections = nil
-    end
-    if _G.BackpackAddedConnection then
-        _G.BackpackAddedConnection:Disconnect()
-        _G.BackpackAddedConnection = nil
-    end
-    if _G.CharacterToolAddedConnection then
-        _G.CharacterToolAddedConnection:Disconnect()
-        _G.CharacterToolAddedConnection = nil
-    end
-    if _G.CharacterAddedConnection then
-        _G.CharacterAddedConnection:Disconnect()
-        _G.CharacterAddedConnection = nil
-    end
-end
-
-Killer:AddButton("Recover Punch Anim", function()
-    recoverPunch()
-end)
-
-Killer:AddSwitch("Auto Equip Punch", function(state)
-    autoEquipPunch = state
-    task.spawn(function()
-        while autoEquipPunch do
-            local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
-            if punch then
-                punch.Parent = LocalPlayer.Character
-            end
-            task.wait(0.1)
-        end
-    end)
-end)
-
-Killer:AddSwitch("Auto Punch [without animation]", function(state)
-    autoPunchNoAnim = state
-    task.spawn(function()
-        while autoPunchNoAnim do
-            local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
-            if punch then
-                if punch.Parent ~= LocalPlayer.Character then
-                    punch.Parent = LocalPlayer.Character
-                end
-                LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
-                LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
-            else
-                autoPunchNoAnim = false
-            end
-            task.wait(0.01)
-        end
-    end)
-end)
-
-Killer:AddSwitch("Auto Punch", function(state)
-    _G.fastHitActive = state
-    if state then
-        task.spawn(function()
-            while _G.fastHitActive do
-                local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
-                if punch then
-                    punch.Parent = LocalPlayer.Character
-                    if punch:FindFirstChild("attackTime") then
-                        punch.attackTime.Value = 0
-                    end
-                end
-                task.wait(0.1)
-            end
-        end)
-        task.spawn(function()
-            while _G.fastHitActive do
-                local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
-                if punch then
-                    punch:Activate()
-                end
-                task.wait(0.1)
-            end
-        end)
-    else
-        local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
-        if punch then
-            punch.Parent = LocalPlayer.Backpack
-        end
-    end
-end)
-
-Killer:AddSwitch("Fast punch", function(state)
-    _G.autoPunchActive = state
-    if state then
-        task.spawn(function()
-            while _G.autoPunchActive do
-                local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
-                if punch then
-                    punch.Parent = LocalPlayer.Character
-                    if punch:FindFirstChild("attackTime") then
-                        punch.attackTime.Value = 0
-                    end
-                end
-                task.wait()
-            end
-        end)
-        task.spawn(function()
-            while _G.autoPunchActive do
-                local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
-                if punch then
-                    punch:Activate()
-                end
-                task.wait()
-            end
-        end)
-    else
-        local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
-        if punch then
-            punch.Parent = LocalPlayer.Backpack
-        end
-    end
-end)
-
-local godModeToggle = false
-Killer:AddSwitch("Good mode", function(State)
-    godModeToggle = State
-    if State then
-        task.spawn(function()
-            while godModeToggle do
-                game:GetService("ReplicatedStorage").rEvents.brawlEvent:FireServer("joinBrawl")
-                task.wait()
-            end
-        end)
-    end
-end)
-
--- TP / Follow System (auto-follow)
-local following = false
-local followTarget = nil
-
-local function followPlayer(targetPlayer)
-    local myChar = LocalPlayer.Character
-    local targetChar = targetPlayer.Character
-    if not (myChar and targetChar) then return end
-    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-    if myHRP and targetHRP then
-        local followPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 3)
-        myHRP.CFrame = CFrame.new(followPos, targetHRP.Position)
-    end
-end
-
-local followDropdown = Killer:AddDropdown("Teleport player", function(selectedDisplayName)
-    if selectedDisplayName and selectedDisplayName ~= "" then
-        local target = nil
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr.DisplayName == selectedDisplayName then
-                target = plr
-                break
-            end
-        end
-        if target then
-            followTarget = target.Name
-            following = true
-            print("✅ Started following:", target.Name)
-            followPlayer(target)
-        end
-    end
-end)
-
--- Initialize dropdown options
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        followDropdown:Add(player.DisplayName)
-    end
-end
-
-Players.PlayerAdded:Connect(function(player)
-    if player ~= LocalPlayer then
-        followDropdown:Add(player.DisplayName)
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    -- Update list
-    followDropdown:Clear()
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            followDropdown:Add(plr.DisplayName)
-        end
-    end
-    -- Stop following if target left
-    if followTarget == player.Name then
-        followTarget = nil
-        following = false
-    end
-end)
-
--- Button to stop following
-Killer:AddButton("Dejar de Seguir", function()
-    following = false
-    followTarget = nil
-    print("⛔ Stopped following")
-end)
-
--- Auto-follow loop
-task.spawn(function()
-    while true do
-        if following and followTarget then
-            local target = Players:FindFirstChild(followTarget)
-            if target then
-                followPlayer(target)
-            else
-                following = false
-                followTarget = nil
-            end
-        end
-        task.wait(0.01)
-    end
-end)
-
--- Reattempt follow on respawn
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    if following and followTarget then
-        local target = Players:FindFirstChild(followTarget)
-        if target then followPlayer(target) end
-    end
-end)
-
--- Auto-Slam / Auto-Damage
-local autoSlams = false
-Killer:AddSwitch("auto slams", function(State)
-    autoSlams = State
-    if State then
-        task.spawn(function()
-            while autoSlams do
-                local player = LocalPlayer
-                local groundSlam = player.Backpack:FindFirstChild("Ground Slam") or (player.Character and player.Character:FindFirstChild("Ground Slam"))
-                if groundSlam then
-                    if groundSlam.Parent == player.Backpack then
-                        groundSlam.Parent = player.Character
-                    end
-                    if groundSlam:FindFirstChild("attackTime") then
-                        groundSlam.attackTime.Value = 0
-                    end
-                    player.muscleEvent:FireServer("slam")
-                    groundSlam:Activate()
-                end
-                task.wait(0.1)
-            end
-        end)
-    end
-end)
-
--- Water Freeze Button
-local waterFreezeBtn = Killer:AddButton("freeze the water", function()
-    local positions = {
-        Vector3.new(11, -9, 78),
-        Vector3.new(-110, -9, -999),
-        Vector3.new(-110, -9, 1999),
-        Vector3.new(-110, -9, -409),
-        Vector3.new(-8922.48, -9.85, -6233.65),
-        Vector3.new(-1107.29, -9.78, -4127.03),
-        Vector3.new(-2054.99, -9.43, -5135.06),
-        Vector3.new(-3072.02, -9.65, -6136.02),
-        Vector3.new(-4088.71, -9.43, -5125.28),
-        Vector3.new(-5100.05, -9.22, -5128.03),
-        Vector3.new(-6103.43, -9, -5590.59),
-        Vector3.new(-7096.39, -9.78, -6403.66),
-        Vector3.new(-9882.7, -9.63, -5228.54),
-        Vector3.new(-8889.23, -9.42, -4767.07),
-        Vector3.new(-7888.44, -9.20, -4648.04),
-        Vector3.new(-6868.95, -9.99, -4124.43),
-        Vector3.new(-5883.84, -9.77, -4073.55),
-        Vector3.new(-9873.09, -9.26, -6775.56),
-        Vector3.new(-8453.77, -9.26, -7212.89),
-        Vector3.new(-7482.23, -9.85, -8082.72),
-        Vector3.new(-6483.57, -9.26, -9055.9),
-        Vector3.new(-6561.25, -9.84, -10038.51),
-        Vector3.new(1009.69, -9.11, 1046.96),
-        Vector3.new(2178.02, -9.09, 287.15),
-        Vector3.new(1023.45, -9.78, -478.55),
-        Vector3.new(1416.96, -9.90, 2066.50),
-        Vector3.new(1514.36, -9.69, 3077.93),
-        Vector3.new(1624.86, -9.47, 4074.02),
-        Vector3.new(1687.23, -9.25, 5069.82),
-        Vector3.new(1655.41, -9.04, 6056.37),
-        Vector3.new(650.44, -9.82, 6532.19),
-        Vector3.new(-347.35, -9.61, 6912.16),
-        Vector3.new(218.80, -9.39, 7934.68),
-        Vector3.new(251.17, -9.18, 8951.56),
-        Vector3.new(360.15, -9.96, 9967.01),
-        Vector3.new(488.19, -9.75, 10972.18),
-        Vector3.new(569.88, -9.53, 11982.73),
-        Vector3.new(629.54, -9.32, 12985.85),
-        Vector3.new(1664.97, -9.61, 7491.61),
-        Vector3.new(1945.24, -9.39, 8507.65),
-        Vector3.new(904.49, -9.78, -2151.78),
-        Vector3.new(1890.26, -9.56, -2413.07),
-        Vector3.new(2895.56, -9.35, -2546.12),
-        Vector3.new(3881.86, -9.13, -2962.39),
-        Vector3.new(4874.55, -9.92, -3218.87),
-        Vector3.new(5892.51, -9.70, -3338.17),
-        Vector3.new(6886.39, -9.51, -3488.15),
-        Vector3.new(7863.33, -9.29, -3597.61),
-        -- Add more as needed...
-    }
-    for _, pos in pairs(positions) do
-        local part = Instance.new("Part")
-        part.Parent = Workspace
-        part.Anchored = true
-        part.Position = pos
-        part.Size = Vector3.new(10000, 0, 10000)
-    end
-end)
-
-Killer:AddButton("Size NaN", function()
-    local args = {"changeSize", 0/0}
-    game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
-end)
-
-Killer:AddButton("activate dead hit", function()
-    loadstring(game:HttpGet("https://pastebin.com/raw/AxVHmk1i"))()
-end)
-
--- Change Time (Lighting)
-local timeOptions = {
-    "Morning",
-    "Noon",
-    "Afternoon",
-    "Sunset",
-    "Night",
-    "Midnight",
-    "Dawn",
-    "Early Morning"
-}
-
-local function setLighting(timeSelection)
-    -- Reset first
-    Lighting.Brightness = 2
-    Lighting.FogEnd = 100000
-    Lighting.Ambient = Color3.fromRGB(127,127,127)
-
-    if timeSelection == "Morning" then
-        Lighting.ClockTime = 6
-        Lighting.Brightness = 2
-        Lighting.Ambient = Color3.fromRGB(200, 200, 255)
-    elseif timeSelection == "Noon" then
-        Lighting.ClockTime = 12
-        Lighting.Brightness = 3
-        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-    elseif timeSelection == "Afternoon" then
-        Lighting.ClockTime = 16
-        Lighting.Brightness = 2.5
-        Lighting.Ambient = Color3.fromRGB(255, 220, 180)
-    elseif timeSelection == "Sunset" then
-        Lighting.ClockTime = 18
-        Lighting.Brightness = 2
-        Lighting.Ambient = Color3.fromRGB(255, 150, 100)
-        Lighting.FogEnd = 500
-    elseif timeSelection == "Night" then -- corrected typo from "Nigth"
-        Lighting.ClockTime = 20
-        Lighting.Brightness = 1.5
-        Lighting.Ambient = Color3.fromRGB(100, 100, 150)
-        Lighting.FogEnd = 800
-    elseif timeSelection == "Midnight" then
-        Lighting.ClockTime = 0
-        Lighting.Brightness = 1
-        Lighting.Ambient = Color3.fromRGB(50, 50, 100)
-        Lighting.FogEnd = 400
-    elseif timeSelection == "Dawn" then
-        Lighting.ClockTime = 4
-        Lighting.Brightness = 1.8
-        Lighting.Ambient = Color3.fromRGB(180, 180, 220)
-    elseif timeSelection == "Early Morning" then
-        Lighting.ClockTime = 2
-        Lighting.Brightness = 1.2
-        Lighting.Ambient = Color3.fromRGB(100, 120, 180)
-    end
-end
-
-local timeDropdown = Killer:AddDropdown("change time", function(selection)
-    setLighting(selection)
-end)
-for _, option in ipairs(timeOptions) do
-    timeDropdown:Add(option)
-end
+-- Optional: initial "Loading..." state
+statsFolder:AddLabel("Loading stats...").TextColor3 = Color3.fromRGB(180, 180, 120)
