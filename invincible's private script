@@ -145,7 +145,7 @@ local farmingTab = window:AddTab("Farming") -- Added missing Farming tab
 
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
-local killFolder = killerTab:AddFolder("Auto Kill")
+local killFolder = killTab:AddFolder("Auto Kill")
 
 -- Tools
 toolsFolder:AddSwitch("Auto Pushups", function(s)
