@@ -263,98 +263,64 @@ for _, btn in ipairs(teleportButtons) do
     teleportTab:AddButton(name, function() tpTo(pos) end)
 end
 
--- Rock farm controls
-local function setRockFarm(dur, enable)
-    if enable then
-        getgenv().selectedRockDurability = dur
-        getgenv().rockFarmActive = true
-    else
-        if getgenv().selectedRockDurability == dur then
-            getgenv().rockFarmActive = false
-            getgenv().selectedRockDurability = 0
-        end
-    end
-end
+rockFarmFolder:AddSwitch("Farm Tiny Island Rock (0)", function(s)
+    getgenv().rockFarmActive = s
+    getgenv().selectedRockDurability = s and 0 or 0
+    print(s and "[Rock Farm] Tiny Island → ON" or "[Rock Farm] OFF")
+end)
 
-local rockFarmOptions = {
-    {"Farm Tiny Island Rock (0)", 0},
-    {"Farm Starter Island Rock (100)", 100},
-    {"Farm Legend Beach Rock (5000)", 5000},
-    {"Farm Frost Gym Rock (150k)", 150000},
-    {"Farm Mythical Gym Rock (400k)", 400000},
-    {"Farm Eternal Gym Rock (750k)", 750000},
-    {"Farm Legend Gym Rock (1M)", 1000000},
-    {"Farm Muscle King Gym Rock (5M)", 5000000},
-    {"Farm Ancient Jungle Rock (10M)", 10000000}
-}
+rockFarmFolder:AddSwitch("Farm Starter Island Rock (100)", function(s)
+    getgenv().rockFarmActive = s
+    getgenv().selectedRockDurability = s and 100 or 0
+    print(s and "[Rock Farm] Starter Island → ON" or "[Rock Farm] OFF")
+end)
 
-for _, option in ipairs(rockFarmOptions) do
-    local name, dur = option[1], option[2]
-    rockFarmFolder:AddSwitch(name, function(s) setRockFarm(dur, s) end)
-end
+rockFarmFolder:AddSwitch("Farm Legend Beach Rock (5000)", function(s)
+    getgenv().rockFarmActive = s
+    getgenv().selectedRockDurability = s and 5000 or 0
+    print(s and "[Rock Farm] Legend Beach → ON" or "[Rock Farm] OFF")
+end)
+
+rockFarmFolder:AddSwitch("Farm Frost Gym Rock (150k)", function(s)
+    getgenv().rockFarmActive = s
+    getgenv().selectedRockDurability = s and 150000 or 0
+    print(s and "[Rock Farm] Frost Gym → ON" or "[Rock Farm] OFF")
+end)
+
+rockFarmFolder:AddSwitch("Farm Mythical Gym Rock (400k)", function(s)
+    getgenv().rockFarmActive = s
+    getgenv().selectedRockDurability = s and 400000 or 0
+    print(s and "[Rock Farm] Mythical Gym → ON" or "[Rock Farm] OFF")
+end)
+
+rockFarmFolder:AddSwitch("Farm Eternal Gym Rock (750k)", function(s)
+    getgenv().rockFarmActive = s
+    getgenv().selectedRockDurability = s and 750000 or 0
+    print(s and "[Rock Farm] Eternal Gym → ON" or "[Rock Farm] OFF")
+end)
+
+rockFarmFolder:AddSwitch("Farm Legend Gym Rock (1M)", function(s)
+    getgenv().rockFarmActive = s
+    getgenv().selectedRockDurability = s and 1000000 or 0
+    print(s and "[Rock Farm] Legend Gym → ON" or "[Rock Farm] OFF")
+end)
+
+rockFarmFolder:AddSwitch("Farm Muscle King Gym Rock (5M)", function(s)
+    getgenv().rockFarmActive = s
+    getgenv().selectedRockDurability = s and 5000000 or 0
+    print(s and "[Rock Farm] Muscle King → ON" or "[Rock Farm] OFF")
+end)
+
+rockFarmFolder:AddSwitch("Farm Ancient Jungle Rock (10M)", function(s)
+    getgenv().rockFarmActive = s
+    getgenv().selectedRockDurability = s and 10000000 or 0
+    print(s and "[Rock Farm] Ancient Jungle → ON" or "[Rock Farm] OFF")
+end)
 
 rockFarmFolder:AddButton("STOP All Rock Farming", function()
     getgenv().rockFarmActive = false
     getgenv().selectedRockDurability = 0
-end)
-
--- Rock farm loop
-task.spawn(function()
-    while getgenv().NexusRunning do
-        if not getgenv().rockFarmActive or getgenv().selectedRockDurability <= 0 then
-            task.wait(0.8)
-            continue
-        end
-
-        pcall(function()
-            local char = LocalPlayer.Character
-            if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
-                task.wait(1.4)
-                return
-            end
-
-            local dur = LocalPlayer:FindFirstChild("Durability")
-            if not dur or dur.Value < getgenv().selectedRockDurability then
-                task.wait(0.6)
-                return
-            end
-
-            -- Equip Punch tool
-            safeEquipTool("Punch")
-
-            -- Find the machine with neededDurability
-            local machinesFolder = Workspace:FindFirstChild("machinesFolder")
-            if machinesFolder then
-                for _, obj in pairs(machinesFolder:GetDescendants()) do
-                    if obj.Name == "neededDurability" and obj:IsA("IntValue") and obj.Value == getgenv().selectedRockDurability then
-                        local rock = obj.Parent:FindFirstChild("Rock")
-                        if rock and rock:IsA("BasePart") then
-                            local hrp = char:FindFirstChild("HumanoidRootPart")
-                            if hrp then
-                                if char:FindFirstChild("RightHand") then
-                                    firetouchinterest(rock, hrp, 0)
-                                    task.wait(0.03)
-                                    firetouchinterest(rock, hrp, 1)
-                                end
-                                if char:FindFirstChild("LeftHand") then
-                                    firetouchinterest(rock, hrp, 0)
-                                    task.wait(0.03)
-                                    firetouchinterest(rock, hrp, 1)
-                                end
-                                -- Punch
-                                if muscleEvent then
-                                    muscleEvent:FireServer("punch", "leftHand")
-                                    muscleEvent:FireServer("punch", "rightHand")
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-
-        task.wait(0.18)
-    end
+    print("[Rock Farm] All farming stopped")
 end)
 
 -- Killer Auto Kill
