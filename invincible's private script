@@ -10,7 +10,7 @@ local window = library:AddWindow("Invincible private farming", {
     can_resize = true
 })
 
--- Services
+-- Services 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
@@ -972,3 +972,13 @@ KillTab:AddSwitch("Fast punch", function(state)
         end
     end
 end)
+
+-- ===========================
+-- Add the test elements here to verify the UI
+local killTabTest = window:AddTab("Killer") -- Create the tab again if needed
+-- Or, if you already have `killTab` declared above, just add the test elements directly:
+
+-- Testing UI elements
+killTab:AddLabel("Killer Tab Loaded")
+killTab:AddButton("Test Button", function() print("Button clicked") end)
+killTab:AddSwitch("Test Switch", function(s) print("Switch toggled:", s) end)
