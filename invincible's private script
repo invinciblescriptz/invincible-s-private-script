@@ -137,10 +137,9 @@ end
 -- Initialize tabs
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
-local FarmTab = window:AddTab("Farm Op")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
-local killerTab = window:AddTab("Killer")
+local killTab = window:AddTab("Killer")
 local miscTab = window:AddTab("Misc")
 local farmingTab = window:AddTab("Farming") -- Added missing Farming tab
 
