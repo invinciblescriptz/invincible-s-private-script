@@ -1,6 +1,6 @@
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KyleXAkimbo/Gui/refs/heads/main/INV-UI"))()
 
-local window = library:AddWindow("Invincible private farming", {
+local window = library:AddWindow("Invincible Private Farming", {
     title_bar = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
     title_bar_transparency = 0.2,
     background = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(20, 0, 0), Color3.fromRGB(20, 0, 0)},
@@ -10,7 +10,7 @@ local window = library:AddWindow("Invincible private farming", {
     can_resize = true
 })
 
--- Servicios
+-- Services
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
@@ -22,7 +22,7 @@ local Lighting = game:GetService("Lighting")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
 
--- Globals & estados
+-- Globals & states
 getgenv().NexusRunning = true
 local states = {
     AutoPushups = false,
@@ -32,7 +32,7 @@ local states = {
     FastStrength = false,
     FastRebirth = false,
     InfiniteJump = false,
-    AntiAfk = false,
+    AntiAFK = false,
     AutoRebirth = false,
     AutoRebirthTarget = false,
     KillAura = false,
@@ -44,11 +44,11 @@ local selectedTarget = nil
 local jumpConn = nil
 local antiAfkConn = nil
 
--- Rock farm globals
+-- Rock farming globals
 getgenv().rockFarmActive = false
 getgenv().selectedRockDurability = 0
 
--- Funciones auxiliares
+-- Helper functions
 local function tpTo(pos)
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
@@ -83,7 +83,7 @@ local function startAutoRep(toolName, stateKey)
             end)
             task.wait(0.09)
         end
-        -- Unequip al desactivar
+        -- Unequip when disabled
         pcall(function()
             local char = LocalPlayer.Character
             if char and char:FindFirstChild(toolName) then
@@ -116,7 +116,7 @@ end
 
 -- Anti AFK
 local function toggleAntiAfk(state)
-    states.AntiAfk = state
+    states.AntiAFK = state
     if state then
         if antiAfkConn then return end
         antiAfkConn = LocalPlayer.Idled:Connect(function()
@@ -133,7 +133,7 @@ local function toggleAntiAfk(state)
     end
 end
 
--- Kill / Posicionar bajo target
+-- Kill / Position under target
 local function killPlayer(targetPlayer)
     pcall(function()
         local myChar = LocalPlayer.Character
@@ -147,19 +147,19 @@ local function killPlayer(targetPlayer)
     end)
 end
 
--- Inicialización de pestañas
+-- Initialize tabs
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local killerTab = window:AddTab("Killer")
-local farmingTab = window:AddTab("Farming")
+local farmingTab = window:AddTab("Farming") -- Added missing Farming tab
 
--- Carpeta de herramientas
+-- Tools folder
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 
--- Herramientas
+-- Tools
 toolsFolder:AddSwitch("Auto Pushups", function(s)
     states.AutoPushups = s
     if s then startAutoRep("Pushups", "AutoPushups") end
@@ -204,7 +204,7 @@ toolsFolder:AddSwitch("Auto Punch (Fast)", function(s)
     end
 end)
 
-toolsFolder:AddButton("Anti Lag (Boost FPS)", function()
+toolsFolder:AddButton("Boost FPS (Lag Fix)", function()
     Lighting.GlobalShadows = false
     Lighting.Brightness = 1
     Lighting.ClockTime = 12
@@ -219,7 +219,7 @@ toolsFolder:AddButton("Anti Lag (Boost FPS)", function()
     end
 end)
 
-toolsFolder:AddButton("Free AutoLift Gamepass", function()
+toolsFolder:AddButton("Auto Lift Gamepass (Free)", function()
     pcall(function()
         local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
         if not gpFolder then return end
@@ -260,13 +260,13 @@ for _, btn in ipairs(teleportButtons) do
     teleportTab:AddButton(name, function() tpTo(pos) end)
 end
 
--- Rock farm controls
-local function setRockFarm(dur, enable)
+-- Rock Farm Controls
+local function setRockFarm(durability, enable)
     if enable then
-        getgenv().selectedRockDurability = dur
+        getgenv().selectedRockDurability = durability
         getgenv().rockFarmActive = true
     else
-        if getgenv().selectedRockDurability == dur then
+        if getgenv().selectedRockDurability == durability then
             getgenv().rockFarmActive = false
             getgenv().selectedRockDurability = 0
         end
@@ -290,12 +290,12 @@ for _, option in ipairs(rockFarmOptions) do
     rockFarmFolder:AddSwitch(name, function(s) setRockFarm(dur, s) end)
 end
 
-rockFarmFolder:AddButton("STOP All Rock Farming", function()
+rockFarmFolder:AddButton("Stop All Rock Farming", function()
     getgenv().rockFarmActive = false
     getgenv().selectedRockDurability = 0
 end)
 
--- Loop de rock farm
+-- Rock Farming Loop
 task.spawn(function()
     while getgenv().NexusRunning do
         if not getgenv().rockFarmActive or getgenv().selectedRockDurability <= 0 then
@@ -316,10 +316,10 @@ task.spawn(function()
                 return
             end
 
-            -- Equip Punch
+            -- Equip Punch Tool
             safeEquipTool("Punch")
 
-            -- Encontrar las máquinas con neededDurability
+            -- Find the machine with the needed durability
             local machinesFolder = Workspace:FindFirstChild("machinesFolder")
             if machinesFolder then
                 for _, obj in pairs(machinesFolder:GetDescendants()) do
@@ -353,7 +353,7 @@ task.spawn(function()
     end
 end)
 
--- Auto Kill Aura
+-- Kill Aura (All Players)
 killerTab:AddSwitch("Kill Aura (All)", function(s)
     states.KillAura = s
     if s then
@@ -389,7 +389,7 @@ killerTab:AddSwitch("Auto Kill Selected", function(s)
     end
 end)
 
--- Actualizar lista de jugadores en dropdown
+-- Update Player List in Dropdown
 task.spawn(function()
     while getgenv().NexusRunning do
         local opts = {}
@@ -405,7 +405,7 @@ task.spawn(function()
     end
 end)
 
--- Visualización de stats y actualizaciones
+-- Stats Spy & Dynamic Updates
 local statLabels = {}
 local statsFolder = specsTab:AddFolder("My Stats")
 
@@ -456,13 +456,13 @@ task.spawn(function()
         end)
         task.wait(1.4)
     end
-    -- Limpiar
+    -- Cleanup labels
     for _, lbl in pairs(statLabels) do
         pcall(function() lbl:Destroy() end)
     end
 end)
 
--- Lock position / control de rebirth en Farming
+-- Lock Position / Rebirth Control Button in Farming tab
 local lockConn = nil
 local lockEnabled = false
 
@@ -496,10 +496,10 @@ local function updatePosLock(state)
     end
 end
 
--- Añadir botón para bloquear/desbloquear posición
+-- Add button to toggle lock position
 local lockButton = farmingTab:AddButton("Lock Position", function()
     updatePosLock(not lockEnabled)
-    -- Cambio de texto del botón
+    -- Change button text based on state
     if lockEnabled then
         lockButton:SetText("Unlock")
     else
@@ -507,7 +507,7 @@ local lockButton = farmingTab:AddButton("Lock Position", function()
     end
 end)
 
--- Sistema de seguir (auto-follow)
+-- Auto-follow system
 local followTarget = nil
 local following = false
 
@@ -529,7 +529,7 @@ local followDropdown = killerTab:AddDropdown("Follow Player", function(selectedD
             if plr.DisplayName == selectedDisplayName then
                 followTarget = plr
                 following = true
-                print("✅ Following:", plr.Name)
+                print("✅ Started following:", plr.Name)
                 followPlayer(plr)
                 break
             end
@@ -537,14 +537,14 @@ local followDropdown = killerTab:AddDropdown("Follow Player", function(selectedD
     end
 end)
 
--- Población inicial del dropdown
+-- Populate dropdown with current players
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
         followDropdown:Add(player.DisplayName)
     end
 end
 
--- Actualización de lista cuando un jugador entra o sale
+-- Update list when players join/leave
 Players.PlayerAdded:Connect(function(player)
     if player ~= LocalPlayer then
         followDropdown:Add(player.DisplayName)
@@ -552,14 +552,14 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    -- Actualizar lista
+    -- Refresh list
     followDropdown:Clear()
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             followDropdown:Add(plr.DisplayName)
         end
     end
-    -- Dejar de seguir si un jugador sale
+    -- Stop following if the player leaves
     if followTarget and followTarget.Name == player.Name then
         followTarget = nil
         following = false
@@ -582,7 +582,7 @@ end
 
 task.spawn(followLoop)
 
--- Re-spawn para seguir después de respawn
+-- Re-follow after respawn
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(1)
     if following and followTarget then
@@ -593,7 +593,7 @@ LocalPlayer.CharacterAdded:Connect(function()
     end
 end)
 
--- Auto Slam (Ground Slam)
+-- Auto Ground Slam
 local autoSlamActive = false
 killerTab:AddSwitch("auto slams", function(state)
     autoSlamActive = state
@@ -618,17 +618,17 @@ killerTab:AddSwitch("auto slams", function(state)
     end
 end)
 
-killerTab:AddButton("Combo NaN", function()
+killerTab:AddButton("NaN Combo", function()
     local args = {"changeSize", 0/0}
     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
 end)
 
--- Auto rebirth hacia un objetivo
-local targetRebirths = 10 -- Puedes ajustar
+-- Auto Rebirth towards target
+local targetRebirths = 10 -- You can set your target
 local targetRebirthLoop = nil
 local rebirthTargetToggle = rebirthTab:CreateToggle("AutoRebirthTarget", {
     Title = "Auto Rebirth [Target]",
-    Description = "Rebirth hasta alcanzar el objetivo",
+    Description = "Rebirth until reaching the target",
     Default = false,
     Callback = function(Value)
         if Value then
@@ -659,10 +659,10 @@ local function autoRebirthInfinite()
     end)
 end
 
-local infiniteSwitch
-local autoRebirthInfiniteToggle = rebirthTab:AddSwitch("AutoRebirthInfinite", {
-    Title = "Auto Rebirth [Infinite]",
-    Description = "Rebirth sin parar",
+local infiniteSwitch = nil
+local autoRebirthInfiniteToggle = rebirthTab:AddSwitch("AutoRebirth (Infinite)", {
+    Title = "Auto Rebirth (Infinite)",
+    Description = "Keep rebirthing endlessly",
     Default = false,
     Callback = function(val)
         if val then
@@ -671,7 +671,6 @@ local autoRebirthInfiniteToggle = rebirthTab:AddSwitch("AutoRebirthInfinite", {
     end
 })
 
--- Control de tamaño automático
 local autoSizeSwitch = rebirthTab:AddSwitch("Auto Size 1", {
     Default = false,
     Callback = function(val)
@@ -687,7 +686,6 @@ local autoSizeSwitch = rebirthTab:AddSwitch("Auto Size 1", {
     end
 })
 
--- Teleport a Muscle King
 local teleportSwitch
 teleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", {
     Default = false,
@@ -706,10 +704,10 @@ teleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", {
     end
 })
 
--- MISC
+-- Misc
 local miscTab = window:AddTab("Misc")
 
--- Folder de MISC 1
+-- Misc 1 Folder
 local misc1Folder = miscTab:AddFolder("Misc 1")
 
 misc1Folder:AddButton("Remove Portals", function()
@@ -727,8 +725,8 @@ misc1Folder:AddButton("Remove Portals", function()
         end
     end)
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Anuncios Eliminados",
-        Text = "Los anuncios de Roblox han sido eliminados",
+        Title = "Ads Removed",
+        Text = "Roblox ads have been eliminated",
         Duration = 0
     })
 end)
@@ -841,7 +839,7 @@ misc1Folder:AddSwitch("Auto Claim Gifts", function(bool)
     end
 end)
 
--- Folder de MISC 2
+-- Misc 2 Folder
 local misc2Folder = miscTab:AddFolder("Misc 2")
 
 misc2Folder:AddSwitch("No-Clip", function(bool)
@@ -858,13 +856,12 @@ misc2Folder:AddSwitch("No-Clip", function(bool)
             else
                 if noclipLoop then
                     noclipLoop:Disconnect()
-                    noclipLoop = nil
                 end
             end
         end)
         game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "No-Clip Activado",
-            Text = "Puedes atravesar objetos ahora",
+            Title = "No-Clip Activated",
+            Text = "You can now pass through objects",
             Duration = 0
         })
     end
@@ -880,17 +877,14 @@ misc2Folder:AddSwitch("Infinite Jump", function(bool)
             end
         end)
         game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Salto Infinito Activado",
-            Text = "Puedes saltar sin límites",
+            Title = "Infinite Jump Activated",
+            Text = "You can now jump infinitely",
             Duration = 0
         })
-    else
-        -- Desconectar si se apaga
-        -- Para mayor control, puedes guardar la conexión y desconectarla aquí
     end
 end)
 
--- Cambio de hora en el juego
+-- Change Time of Day
 local timeDropdown = farmingTab:AddDropdown("Change Time", function(selection)
     local lighting = game:GetService("Lighting")
     if selection == "Night" then
@@ -901,8 +895,8 @@ local timeDropdown = farmingTab:AddDropdown("Change Time", function(selection)
         lighting.ClockTime = 6
     end
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Hora Cambiada",
-        Text = "La hora del día ha sido cambiada a: " .. selection,
+        Title = "Time Changed",
+        Text = "The time of day has been set to: " .. selection,
         Duration = 0
     })
 end)
