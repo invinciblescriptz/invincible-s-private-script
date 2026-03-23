@@ -875,3 +875,54 @@ farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
         end)
     end
 end)
+
+local farmingTab = -- reference to your farming tab UI
+local autoRepToggle = farmingTab:FindFirstChild("AutoRepToggle") -- your toggle button
+
+local autoRepActive = false
+local repTask = nil
+
+autoRepToggle.MouseButton1Click:Connect(function()
+    autoRepActive = not autoRepActive
+    autoRepToggle.Text = autoRepActive and "Auto Rep: ON" or "Auto Rep: OFF"
+    
+    if autoRepActive then
+        -- Start the task
+        repTask = task.spawn(function()
+            equipPet()
+            while autoRepActive do
+                local dt = task.wait(0.03)
+                if isAutoRepEnabled then
+                    local targetSpeed = SWIFT_SAMURAI_REP_SPEED
+                    if hasDoubleRepPass then
+                        targetSpeed = targetSpeed * DOUBLE_REP_MULTIPLIER
+                    end
+                    repAccumulator = repAccumulator + (targetSpeed * dt)
+                    local reps = math.floor(repAccumulator)
+                    if reps > 0 then
+                        for _=1,reps do
+                            LocalPlayer.muscleEvent:FireServer("rep")
+                        end
+                        repAccumulator = repAccumulator - reps
+                    end
+
+                    if tick() - lastProteinEggTime >= PROTEIN_EGG_INTERVAL then
+                        eatProteinEgg()
+                        lastProteinEggTime = tick()
+                    end
+
+                    if tick() % 5 < 0.1 then
+                        hitRock()
+                    end
+                end
+            end
+        end)
+    else
+        -- Stop the task
+        autoRepActive = false
+        if repTask then
+            -- The task is checking autoRepActive, so it will end naturally
+            repTask = nil
+        end
+    end
+end)
