@@ -464,122 +464,6 @@ local lockButton = farmingTab:AddButton("Lock Position", function()
     end
 end)
 
--- Auto-follow Player
-local function followPlayer(target)
-    local myChar = LocalPlayer.Character
-    local targetChar = target.Character
-    if not (myChar and targetChar) then return end
-    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-    if myHRP and targetHRP then
-        local followPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 3)
-        myHRP.CFrame = CFrame.new(followPos, targetHRP.Position)
-    end
-end
-
-local function startFollow()
-    if followTarget then
-        following = true
-        print("✅ Started following:", followTarget.Name)
-        task.spawn(function()
-            while following do
-                followPlayer(followTarget)
-                task.wait(0.01)
-            end
-        end)
-    end
-end
-
-local function stopFollow()
-    following = false
-end
-
-local followDropdown = killerTab:AddDropdown("Follow Player", function(selectedDisplayName)
-    if selectedDisplayName and selectedDisplayName ~= "" then
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr.DisplayName == selectedDisplayName then
-                followTarget = plr
-                startFollow()
-                break
-            end
-        end
-    end
-end)
-
--- Populate dropdown
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        followDropdown:Add(player.DisplayName)
-    end
-end
-
--- Update list when players join/leave
-Players.PlayerAdded:Connect(function(player)
-    if player ~= LocalPlayer then
-        followDropdown:Add(player.DisplayName)
-    end
-end)
-Players.PlayerRemoving:Connect(function(player)
-    -- Refresh list
-    followDropdown:Clear()
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            followDropdown:Add(plr.DisplayName)
-        end
-    end
-    -- Stop following if the player leaves
-    if followTarget and followTarget.Name == player.Name then
-        followTarget = nil
-        following = false
-    end
-end)
-
-local function followLoop()
-    while true do
-        if following and followTarget then
-            local target = Players:FindFirstChild(followTarget.Name)
-            if target then
-                followPlayer(target)
-            else
-                following = false
-            end
-        end
-        task.wait(0.01)
-    end
-end
-
-task.spawn(followLoop)
-
--- Auto Slam
-local autoSlamActive = false
-killerTab:AddSwitch("auto slams", function(state)
-    autoSlamActive = state
-    if state then
-        task.spawn(function()
-            while autoSlamActive do
-                local player = LocalPlayer
-                local groundSlam = player.Backpack:FindFirstChild("Ground Slam") or (player.Character and player.Character:FindFirstChild("Ground Slam"))
-                if groundSlam then
-                    if groundSlam.Parent == player.Backpack then
-                        groundSlam.Parent = player.Character
-                    end
-                    if groundSlam:FindFirstChild("attackTime") then
-                        groundSlam.attackTime.Value = 0
-                    end
-                    player.muscleEvent:FireServer("slam")
-                    groundSlam:Activate()
-                end
-                task.wait(0.1)
-            end
-        end)
-    end
-end)
-
-killerTab:AddButton("NaN Combo", function()
-    local args = {"changeSize", 0/0}
-    game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
-end)
-
 -- Auto Rebirth towards target
 local targetRebirths = 10 -- set your target
 local function autoRebirth()
@@ -958,3 +842,333 @@ end
 local fastRebirthSwitch = farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', toggleFastRebirth)
 
 -- End of added code
+
+-- ========== KILLER TAB ==========
+local killerTab = KillerTab
+
+_G.whitelistedPlayers = _G.whitelistedPlayers or {}
+_G.targetPlayer = _G.targetPlayer or ""
+
+local function checkCharacter()
+    local player = game.Players.LocalPlayer
+    if not player then return nil end
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+        local startTime = tick()
+        repeat
+            task.wait(0.1)
+            if tick() - startTime > 5 then
+                return nil
+            end
+        until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    end
+    return player.Character
+end
+
+local function gettool()
+    pcall(function()
+        if not game.Players.LocalPlayer.Character or 
+           not game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            return
+        end
+        for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+            if v.Name == "Punch" then
+                game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+                break
+            end
+        end
+        game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+        game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+    end)
+end
+
+local function killPlayer(target)
+    local character = checkCharacter()
+    if not character then return end
+    if not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+    if not character:FindFirstChild("LeftHand") then
+        return
+    end
+    pcall(function()
+        firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 0)
+        task.wait(0.01)
+        firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 1)
+        gettool()
+    end)
+end
+
+local function findClosestPlayer(input)
+    if not input or input == "" then return nil end
+    input = input:lower()
+    local bestMatch = nil
+    local bestScore = 0
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer then
+            local username = player.Name:lower()
+            local displayName = player.DisplayName:lower()
+            local usernameMatch = username:find(input, 1, true) ~= nil
+            local displayMatch = displayName:find(input, 1, true) ~= nil
+            local usernameScore = 0
+            local displayScore = 0
+            if usernameMatch then
+                usernameScore = (#input / #username) * 100
+                if username:sub(1, #input) == input then
+                    usernameScore = usernameScore + 50
+                end
+            end
+            if displayMatch then
+                displayScore = (#input / #displayName) * 100
+                if displayName:sub(1, #input) == input then
+                    displayScore = displayScore + 50
+                end
+            end
+            local score = math.max(usernameScore, displayScore)
+            if score > bestScore then
+                bestScore = score
+                bestMatch = player
+            end
+        end
+    end
+    if bestScore > 20 then
+        return bestMatch
+    end
+    return nil
+end
+
+local whitelistedPlayersLabel = killerTab:AddLabel("Whitelisted Players: None")
+local targetPlayerLabel = killerTab:AddLabel("Target Player: None")
+
+local function updateWhitelistedPlayersLabel()
+    if #_G.whitelistedPlayers == 0 then
+        whitelistedPlayersLabel.Text = "Whitelisted Players: None"
+    else
+        local displayText = "Players on the White List: "
+        for i, playerInfo in ipairs(_G.whitelistedPlayers) do
+            if i > 1 then displayText = displayText .. ", " end
+            displayText = displayText .. playerInfo
+        end
+        whitelistedPlayersLabel.Text = displayText
+    end
+end
+
+local function updateTargetPlayerLabel()
+    if _G.targetPlayer == "" then
+        targetPlayerLabel.Text = "Jugador Objetivo: Ninguno"
+    else
+        targetPlayerLabel.Text = "Jugador Objetivo: " .. _G.targetPlayer
+    end
+end
+
+local autoWhitelistFriendsSwitch = killerTab:AddToggle({
+    Title = "Add Friends to Whitelist Automatically",
+    Callback = function(bool)
+        _G.autoWhitelistFriends = bool
+        if bool then
+            pcall(function()
+                for _, player in pairs(game.Players:GetPlayers()) do
+                    if player:IsFriendsWith(game.Players.LocalPlayer.UserId) then
+                        local playerInfo = player.Name .. " (" .. player.DisplayName .. ")"
+                        if not table.find(_G.whitelistedPlayers, playerInfo) then
+                            table.insert(_G.whitelistedPlayers, playerInfo)
+                        end
+                    end
+                end
+                updateWhitelistedPlayersLabel()
+            end)
+        end
+    end
+})
+
+game.Players.PlayerAdded:Connect(function(player)
+    if _G.autoWhitelistFriends then
+        pcall(function()
+            if player:IsFriendsWith(game.Players.LocalPlayer.UserId) then
+                local playerInfo = player.Name .. " (" .. player.DisplayName .. ")"
+                if not table.find(_G.whitelistedPlayers, playerInfo) then
+                    table.insert(_G.whitelistedPlayers, playerInfo)
+                    updateWhitelistedPlayersLabel()
+                end
+            end
+        end)
+    end
+end)
+
+killerTab:AddInput({
+    Title = "Add Player to Whitelist (Name/Nickname)",
+    Placeholder = "Player name",
+    Callback = function(text)
+        if text and text ~= "" then
+            local player = findClosestPlayer(text)
+            if player then
+                local playerInfo = player.Name .. " (" .. player.DisplayName .. ")"
+                local alreadyWhitelisted = false
+                for _, info in ipairs(_G.whitelistedPlayers) do
+                    if info:find(player.Name, 1, true) then
+                        alreadyWhitelisted = true
+                        break
+                    end
+                end
+                if not alreadyWhitelisted then
+                    table.insert(_G.whitelistedPlayers, playerInfo)
+                    updateWhitelistedPlayersLabel()
+                end
+            end
+        end
+    end
+})
+
+killerTab:AddInput({
+    Title = "Remove Player from Whitelist (Name/Nickname)",
+    Placeholder = "Player name",
+    Callback = function(text)
+        if text and text ~= "" then
+            local textLower = text:lower()
+            for i, playerInfo in ipairs(_G.whitelistedPlayers) do
+                if playerInfo:lower():find(textLower, 1, true) then
+                    table.remove(_G.whitelistedPlayers, i)
+                    updateWhitelistedPlayersLabel()
+                    return
+                end
+            end
+            local player = findClosestPlayer(text)
+            if player then
+                for i, playerInfo in ipairs(_G.whitelistedPlayers) do
+                    if playerInfo:find(player.Name, 1, true) then
+                        table.remove(_G.whitelistedPlayers, i)
+                        updateWhitelistedPlayersLabel()
+                        break
+                    end
+                end
+            end
+        end
+    end
+})
+
+killerTab:AddButton({ Title = "Clear WhiteList", Callback = function()
+    _G.whitelistedPlayers = {}
+    updateWhitelistedPlayersLabel()
+end })
+
+local autoKillAllSwitch = killerTab:AddToggle({
+    Title = "Automatically Remove Everyone (Except Whitelist)",
+    Callback = function(bool)
+        _G.autoKillAll = bool
+        if bool then
+            spawn(function()
+                while _G.autoKillAll do
+                    pcall(function()
+                        local players = game:GetService("Players"):GetPlayers()
+                        for _, player in ipairs(players) do
+                            if player == game.Players.LocalPlayer or not _G.autoKillAll then
+                                continue
+                            end
+                            local isWhitelisted = false
+                            for _, whitelistedInfo in ipairs(_G.whitelistedPlayers) do
+                                if whitelistedInfo:find(player.Name, 1, true) then
+                                    isWhitelisted = true
+                                    break
+                                end
+                            end
+                            if not isWhitelisted and player.Character and 
+                               player.Character:FindFirstChild("HumanoidRootPart") and
+                               player.Character:FindFirstChild("Humanoid") and
+                               player.Character.Humanoid.Health > 0 then
+                                pcall(function()
+                                    killPlayer(player)
+                                end)
+                                task.wait(0.05)
+                            end
+                        end
+                    end)
+                    task.wait(0.2)
+                end
+            end)
+        end
+    end
+})
+
+killerTab:AddInput({
+    Title = "Select Target Player (Name/Nickname)",
+    Placeholder = "Player name",
+    Callback = function(text)
+        if text and text ~= "" then
+            local player = findClosestPlayer(text)
+            if player then
+                _G.targetPlayer = player.Name .. " (" .. player.DisplayName .. ")"
+                updateTargetPlayerLabel()
+            end
+        end
+    end
+})
+
+killerTab:AddButton({ Title = "Remove Target", Callback = function()
+    _G.targetPlayer = ""
+    updateTargetPlayerLabel()
+end })
+
+local autoKillTargetSwitch = killerTab:AddToggle({
+    Title = "Delete Target Automatically",
+    Callback = function(bool)
+        _G.autoKillTarget = bool
+        if bool and _G.targetPlayer ~= "" then
+            spawn(function()
+                while _G.autoKillTarget and _G.targetPlayer ~= "" do
+                    pcall(function()
+                        local targetName = _G.targetPlayer:match("^([^%(]+)")
+                        if targetName then
+                            targetName = targetName:gsub("%s+$", "")
+                            local targetPlayer = game.Players:FindFirstChild(targetName)
+                            if targetPlayer and targetPlayer.Character and 
+                               targetPlayer.Character:FindFirstChild("HumanoidRootPart") and
+                               targetPlayer.Character:FindFirstChild("Humanoid") and
+                               targetPlayer.Character.Humanoid.Health > 0 then
+                                killPlayer(targetPlayer)
+                            end
+                        end
+                    end)
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+killerTab:AddButton({ Title = "Remove Everyone (Except Whitelist)", Callback = function()
+    pcall(function()
+        for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+            if player ~= game.Players.LocalPlayer then
+                local isWhitelisted = false
+                for _, whitelistedInfo in ipairs(_G.whitelistedPlayers) do
+                    if whitelistedInfo:find(player.Name, 1, true) then
+                        isWhitelisted = true
+                        break
+                    end
+                end
+                if not isWhitelisted and player.Character and 
+                   player.Character:FindFirstChild("HumanoidRootPart") then
+                    killPlayer(player)
+                    task.wait(0.05)
+                end
+            end
+        end
+    end)
+end })
+
+killerTab:AddButton({ Title = "Delete Target", Callback = function()
+    if _G.targetPlayer ~= "" then
+        pcall(function()
+            local targetName = _G.targetPlayer:match("^([^%(]+)")
+            if targetName then
+                targetName = targetName:gsub("%s+$", "")
+                local targetPlayer = game.Players:FindFirstChild(targetName)
+                if targetPlayer then
+                    killPlayer(targetPlayer)
+                end
+            end
+        end)
+    end
+end })
+
+updateWhitelistedPlayersLabel()
+updateTargetPlayerLabel()
