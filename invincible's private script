@@ -761,3 +761,117 @@ end)
 timeDropdown:Add("Night")
 timeDropdown:Add("Day")
 timeDropdown:Add("Midnight")
+
+-- Initialize the variable outside so it can be referenced elsewhere if needed
+local fastRebirth = false
+
+-- Add the switch to the Farming tab
+farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
+    fastRebirth = p79
+
+    if p79 then
+        spawn(function()
+            local _ReplicatedStorage = game:GetService('ReplicatedStorage')
+            local _LocalPlayer = game:GetService('Players').LocalPlayer
+
+            local function u91(_)
+                local _petsFolder = _LocalPlayer.petsFolder
+                local v83, v84, v85 = pairs(_petsFolder:GetChildren())
+
+                while true do
+                    local v86
+                    v85, v86 = v83(v84, v85)
+                    if v85 == nil then break end
+                    if v86:IsA('Folder') then
+                        local v87, v88, v89 = pairs(v86:GetChildren())
+                        while true do
+                            local v90
+                            v89, v90 = v87(v88, v89)
+                            if v89 == nil then break end
+                            _ReplicatedStorage.rEvents.equipPetEvent:FireServer('unequipPet', v90)
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+
+            local function v97(p92)
+                u91()
+                task.wait(0.01)
+                local v93, v94, v95 = pairs(_LocalPlayer.petsFolder.Unique:GetChildren())
+                while true do
+                    local v96
+                    v95, v96 = v93(v94, v95)
+                    if v95 == nil then break end
+                    if v96.Name == p92 then
+                        _ReplicatedStorage.rEvents.equipPetEvent:FireServer('equipPet', v96)
+                    end
+                end
+            end
+
+            local function v105(p99)
+                local v100 = workspace.machinesFolder:FindFirstChild(p99)
+                if not v100 then
+                    local v101, v102, v103 = pairs(workspace:GetChildren())
+                    while true do
+                        local v104
+                        v103, v104 = v101(v102, v103)
+                        if v103 == nil then break end
+                        if v104:IsA('Folder') and v104.Name:find('machines') then
+                            v100 = v104:FindFirstChild(p99)
+                            if v100 then break end
+                        end
+                    end
+                end
+                return v100
+            end
+
+            local function v107()
+                local _VirtualInputManager = game:GetService('VirtualInputManager')
+                _VirtualInputManager:SendKeyEvent(true, 'E', false, game)
+                task.wait(0.1)
+                _VirtualInputManager:SendKeyEvent(false, 'E', false, game)
+            end
+
+            while fastRebirth do
+                local v108 = 10000 + 5000 * _LocalPlayer.leaderstats.Rebirths.Value
+                if _LocalPlayer.ultimatesFolder:FindFirstChild('Golden Rebirth') then
+                    local _Value = _LocalPlayer.ultimatesFolder['Golden Rebirth'].Value
+                    v108 = math.floor(v108 * (1 - _Value * 0.1))
+                end
+
+                u91()
+                task.wait(0.1)
+                v97('Swift Samurai')
+
+                while _LocalPlayer.leaderstats.Strength.Value < v108 do
+                    for _ = 1, 15 do
+                        _LocalPlayer.muscleEvent:FireServer('rep')
+                    end
+                    task.wait()
+                end
+
+                u91()
+                task.wait(0.1)
+                v97('Tribal Overlord')
+
+                local _JungleBarLift = v105('Jungle Bar Lift')
+                if _JungleBarLift and _JungleBarLift:FindFirstChild('interactSeat') then
+                    _LocalPlayer.Character.HumanoidRootPart.CFrame = _JungleBarLift.interactSeat.CFrame * CFrame.new(0, 3, 0)
+                    repeat
+                        task.wait(0.1)
+                        v107()
+                    until _LocalPlayer.Character.Humanoid.Sit
+                end
+
+                local _Value2 = _LocalPlayer.leaderstats.Rebirths.Value
+                repeat
+                    _ReplicatedStorage.rEvents.rebirthRemote:InvokeServer('rebirthRequest')
+                    task.wait(0.1)
+                until _Value2 < _LocalPlayer.leaderstats.Rebirths.Value
+
+                task.wait()
+            end
+        end)
+    end
+end)
