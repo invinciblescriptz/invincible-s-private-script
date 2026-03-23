@@ -880,3 +880,55 @@ Kill:AddButton("NaN Combo", function()
     local args = {"changeSize", 0/0}
     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
 end)
+
+-- ===========================
+-- FIXED & ADDED FEATURES BELOW
+-- ===========================
+
+-- ===========================
+-- Specs Tab - Player Stats
+local specsTab = window:AddTab("Specs")
+
+specsTab:AddSlider("WalkSpeed", 16, 0, 100, function(val)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = val
+    end
+end)
+
+specsTab:AddSlider("JumpPower", 50, 0, 200, function(val)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.JumpPower = val
+    end
+end)
+
+specsTab:AddButton("Reset Stats", function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = 16
+        LocalPlayer.Character.Humanoid.JumpPower = 50
+    end
+end)
+
+-- ===========================
+-- Farming Tab - Auto Farming features
+local farmingTab = window:AddTab("Farming")
+
+local autoFarm = false
+farmingTab:AddSwitch("Auto Farm Resources", function(s)
+    autoFarm = s
+    if s then
+        task.spawn(function()
+            while autoFarm and getgenv().NexusRunning do
+                game:GetService("ReplicatedStorage").rEvents.CollectResource:FireServer()
+                task.wait(2) -- adjust delay as needed
+            end
+        end)
+    end
+end)
+
+farmingTab:AddButton("Collect Resources Now", function()
+    game:GetService("ReplicatedStorage").rEvents.CollectResource:FireServer()
+end)
+
+-- ===========================
+-- Additional Features (Optional)
+-- Add more features here if needed
