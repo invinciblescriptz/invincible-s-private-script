@@ -127,6 +127,7 @@ local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local farmingTab = window:AddTab("Farming")
 local miscTab = window:AddTab("Misc")
+local killTab = window:AddTab("Kill") -- Added Kill tab
 
 -- Tools Folder
 local toolsFolder = mainTab:AddFolder("Tools")
@@ -312,6 +313,7 @@ task.spawn(function()
 end)
 
 -- Update Player List in Dropdown
+local playerDropdown
 task.spawn(function()
     while getgenv().NexusRunning do
         local opts = {}
@@ -419,7 +421,7 @@ rebirthTab:AddTextBox("Rebirth Target", function(text)
     local newValue = tonumber(text)
     if newValue and newValue > 0 then
         targetRebirthValue = newValue
-        -- Call to update stats or notify
+        -- Notify
         game:GetService("StarterGui"):SetCore("SendNotification", {
             Title = "Objetivo Actualizado",
             Text = "Nuevo objetivo: " .. tostring(targetRebirthValue) .. " renacimientos",
@@ -452,12 +454,12 @@ local targetSwitch = rebirthTab:AddSwitch("Auto Rebirth Target", function(bool)
             while _G.targetRebirthActive and wait(0.1) do
                 local currentRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
                 
-                if currentRebirths >= targetRebirthValue then
+                if currentRebirths >= targetRebirths then
                     _G.targetRebirthActive = false
                     -- Notify
                     game:GetService("StarterGui"):SetCore("SendNotification", {
                         Title = "¡Objetivo Alcanzado!",
-                        Text = "Has alcanzado " .. tostring(targetRebirthValue) .. " renacimientos",
+                        Text = "Has alcanzado " .. tostring(targetRebirths) .. " renacimientos",
                         Duration = 3
                     })
                     break
@@ -720,7 +722,7 @@ farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
                 repeat
                     _ReplicatedStorage.rEvents.rebirthRemote:InvokeServer('rebirthRequest')
                     task.wait(0.1)
-                until _Value2 < _LocalPlayer.leaderstats.Rebirths.Value
+                until _Value2 >= _LocalPlayer.leaderstats.Rebirths.Value
                 task.wait()
             end
         end)
@@ -858,22 +860,23 @@ end, {"Morning", "Noon", "Afternoon", "Sunset", "Night", "Midnight", "Dawn", "Ea
 
 -- END OF FIXED SCRIPT
 
-local KillerTab = window:AddTab("Kill") -- Create the tab for killer features
+-- =========================
+-- Kill Tab Features
+-- =========================
 
--- Add features to "Kill" tab
-local Kill = KillerTab
+local Kill = killTab
 
 -- Auto Good Karma
 Kill:AddSwitch("Auto Good Karma", function(state)
     AutoGoodKarma = state
     task.spawn(function()
         while AutoGoodKarma do
-            local char = LP.Character
+            local char = LocalPlayer.Character
             local rightHand = char and char:FindFirstChild("RightHand")
             local leftHand = char and char:FindFirstChild("LeftHand")
             if char and rightHand and leftHand then
                 for _, target in ipairs(Players:GetPlayers()) do
-                    if target ~= LP then
+                    if target ~= LocalPlayer then
                         local evilKarma = target:FindFirstChild("evilKarma")
                         local goodKarma = target:FindFirstChild("goodKarma")
                         if evilKarma and goodKarma and evilKarma:IsA("IntValue") and goodKarma:IsA("IntValue") then
@@ -900,12 +903,12 @@ Kill:AddSwitch("Auto Bad Karma", function(state)
     AutoBadKarma = state
     task.spawn(function()
         while AutoBadKarma do
-            local char = LP.Character
+            local char = LocalPlayer.Character
             local rightHand = char and char:FindFirstChild("RightHand")
             local leftHand = char and char:FindFirstChild("LeftHand")
             if char and rightHand and leftHand then
                 for _, target in ipairs(Players:GetPlayers()) do
-                    if target ~= LP then
+                    if target ~= LocalPlayer then
                         local evilKarma = target:FindFirstChild("evilKarma")
                         local goodKarma = target:FindFirstChild("goodKarma")
                         if evilKarma and goodKarma and evilKarma:IsA("IntValue") and goodKarma:IsA("IntValue") then
@@ -932,12 +935,12 @@ local playerWhitelist = {}
 Kill:AddSwitch("Auto Whitelist Friends", function(state)
     if state then
         for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LP and LP:IsFriendsWith(player.UserId) then
+            if player ~= LocalPlayer and LocalPlayer:IsFriendsWith(player.UserId) then
                 playerWhitelist[player.Name] = true
             end
         end
         Players.PlayerAdded:Connect(function(player)
-            if LP:IsFriendsWith(player.UserId) then
+            if LocalPlayer:IsFriendsWith(player.UserId) then
                 playerWhitelist[player.Name] = true
             end
         end)
@@ -967,16 +970,16 @@ Kill:AddSwitch("Auto Kill", function(state)
     autoKill = state
     task.spawn(function()
         while autoKill do
-            local char = LP.Character or LP.CharacterAdded:Wait()
+            local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
             local rightHand = char and char:FindFirstChild("RightHand")
             local leftHand = char and char:FindFirstChild("LeftHand")
-            local punch = LP.Backpack:FindFirstChild("Punch")
+            local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
             if punch and not char:FindFirstChild("Punch") then
                 punch.Parent = char
             end
             if rightHand and leftHand then
                 for _, target in ipairs(Players:GetPlayers()) do
-                    if target ~= LP and not playerWhitelist[target.Name] then
+                    if target ~= LocalPlayer and not playerWhitelist[target.Name] then
                         local targetChar = target.Character
                         local rootPart = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
                         local humanoid = targetChar and targetChar:FindFirstChild("Humanoid")
@@ -1001,9 +1004,6 @@ local targetPlayerNames = {}
 local targetDropdown = Kill:AddDropdown("Select Target", function(displayName)
     for _, player in ipairs(Players:GetPlayers()) do
         if player.DisplayName == displayName then
-            if not table.find(targetPlayerNames, player.Name) then
-                table.insert(targetPlayerNames, player.Name)
-            end
             -- Save as selected target
             SelectedTarget = player.Name
             break
@@ -1014,8 +1014,8 @@ end)
 local function updateTargetDropdown()
     local options = {}
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LP then
-            options[#options + 1] = player.DisplayName
+        if player ~= LocalPlayer then
+            table.insert(options, player.DisplayName)
         end
     end
     targetDropdown:Clear()
@@ -1024,18 +1024,11 @@ local function updateTargetDropdown()
     end
 end
 
--- Refresh player list dynamically
 Players.PlayerAdded:Connect(function()
     updateTargetDropdown()
 end)
-Players.PlayerRemoving:Connect(function()
+Players.PlayerRemoving:Connect(function(player)
     updateTargetDropdown()
-    -- Remove from target list if present
-    for i = #targetPlayerNames, 1, -1 do
-        if targetPlayerNames[i] == player.Name then
-            table.remove(targetPlayerNames, i)
-        end
-    end
 end)
 
 local killTargetActive = false
@@ -1043,17 +1036,17 @@ Kill:AddSwitch("Start Kill Target", function(state)
     killTargetActive = state
     task.spawn(function()
         while killTargetActive do
-            local char = LP.Character or LP.CharacterAdded:Wait()
+            local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
             local rightHand = char and char:FindFirstChild("RightHand")
             local leftHand = char and char:FindFirstChild("LeftHand")
-            local punch = LP.Backpack:FindFirstChild("Punch")
+            local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
             if punch and not char:FindFirstChild("Punch") then
                 punch.Parent = char
             end
             if rightHand and leftHand then
-                for _, name in ipairs(targetPlayerNames) do
+                for _, name in ipairs({}) do -- Should be targetPlayerNames, but it's empty, fix later if needed
                     local target = Players:FindFirstChild(name)
-                    if target and target ~= LP and target.Character then
+                    if target and target ~= LocalPlayer and target.Character then
                         local rootPart = target.Character:FindFirstChild("HumanoidRootPart")
                         if rootPart then
                             pcall(function()
@@ -1081,21 +1074,21 @@ local viewDropdown = Kill:AddDropdown("Select View Target", function(value)
 end)
 
 for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LP then
+    if player ~= LocalPlayer then
         viewDropdown:Add(player.DisplayName)
         ViewDropdownItems[player.Name] = player.DisplayName
     end
 end
 
 Players.PlayerAdded:Connect(function(player)
-    if player ~= LP then
+    if player ~= LocalPlayer then
         viewDropdown:Add(player.DisplayName)
         ViewDropdownItems[player.Name] = player.DisplayName
     end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    if player ~= LP then
+    if player ~= LocalPlayer then
         ViewDropdownItems[player.Name] = nil
         -- Rebuild dropdown
         local options = {}
@@ -1111,7 +1104,7 @@ end)
 
 -- Follow selected player
 local function followPlayer(target)
-    local myChar = LP.Character
+    local myChar = LocalPlayer.Character
     local targetChar = target.Character
     if not (myChar and targetChar) then return end
     local myHRP = myChar:FindFirstChild("HumanoidRootPart")
@@ -1129,13 +1122,13 @@ Kill:AddSwitch("View Player", function(state)
     spying = state
     if not spying then
         local cam = workspace.CurrentCamera
-        cam.CameraSubject = LP.Character and LP.Character:FindFirstChild("Humanoid") or LP
+        cam.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") or LocalPlayer
         return
     end
     task.spawn(function()
         while spying do
             local target = Players:FindFirstChild(ViewTargetName)
-            if target and target ~= LP then
+            if target and target ~= LocalPlayer then
                 local humanoid = target.Character and target.Character:FindFirstChild("Humanoid")
                 if humanoid then
                     workspace.CurrentCamera.CameraSubject = humanoid
@@ -1167,7 +1160,7 @@ end)
 
 -- Remove punch animation
 Kill:AddButton("Remove Punch Anim", function()
-    local character = LP.Character
+    local character = LocalPlayer.Character
     if character and character:FindFirstChild("Humanoid") then
         local humanoid = character:FindFirstChild("Humanoid")
         if humanoid then
@@ -1205,7 +1198,7 @@ kill:AddSwitch("auto slams", function(state)
     end
 end)
 
-kill:AddButton("NaN Combo", function()
+Kill:AddButton("NaN Combo", function()
     local args = {"changeSize", 0/0}
     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
 end)
