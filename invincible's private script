@@ -19,7 +19,27 @@ local window = library:AddWindow("Invincible Private Farming", {
     can_resize = true
 })
 
--- Services
+-- Immediately open the window if supported
+if window then
+    if window.Open then
+        window:Open()
+    end
+end
+
+-- Optional: Add a button to toggle the UI
+local mainTab = window:AddTab("Main")
+mainTab:AddButton("Toggle UI", function()
+    if window then
+        if window.IsOpen and window:IsOpen() then
+            window:Close()
+        else
+            window:Open()
+        end
+    end
+end)
+
+-- Continue with your existing setup below...
+-- SERVICES
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
@@ -32,7 +52,7 @@ local Lighting = game:GetService("Lighting")
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
 getgenv().NexusRunning = true
 
--- Globals & states
+-- GLOBALS & STATES
 local states = {
     AutoPushups = false,
     AutoWeight = false,
@@ -52,12 +72,10 @@ local targetRebirths = 1
 local SelectedTarget = nil
 local jumpConn, antiAfkConn, lockConn, followConn, following = nil, nil, nil, nil, false
 
--- Helper functions
+-- HELPERS
 local function tpTo(pos)
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(pos)
-    end
+    if hrp then hrp.CFrame = CFrame.new(pos) end
 end
 
 local function safeEquipTool(toolName)
@@ -129,20 +147,20 @@ local function toggleAntiAfk(state)
     end
 end
 
--- Tabs
+-- TABS
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local farmingTab = window:AddTab("Farming")
 local miscTab = window:AddTab("Misc")
-local killTab = window:AddTab("Kill") -- Added Kill tab
+local killTab = window:AddTab("Kill") -- added Kill tab
 
 -- Tools Folder
 local toolsFolder = mainTab:AddFolder("Tools")
 local rockFarmFolder = mainTab:AddFolder("Rock Farm")
 
--- Tools toggles
+-- TOOLS TOGGLES
 toolsFolder:AddSwitch("Auto Pushups", function(s)
     states.AutoPushups = s
     if s then startAutoRep("Pushups", "AutoPushups") end
@@ -216,7 +234,7 @@ toolsFolder:AddButton("Auto Lift Gamepass (Free)", function()
     end)
 end)
 
--- Teleport Buttons
+-- TELEPORT BUTTONS
 local teleportButtons = {
     {"To Spawn / Safe Area", Vector3.new(-6, 5, -196)},
     {"To Secret Area", Vector3.new(1947, 2, 6191)},
@@ -263,7 +281,7 @@ local rockFarmOptions = {
 for _, option in ipairs(rockFarmOptions) do
     local name, dur = option[1], option[2]
     rockFarmFolder:AddSwitch(name, function(s) setRockFarm(dur, s) end)
-end
+end}
 rockFarmFolder:AddButton("Stop All Rock Farming", function()
     getgenv().rockFarmActive = false
     getgenv().selectedRockDurability = 0
@@ -390,22 +408,22 @@ task.spawn(function()
     end
 end)
 
--- Lock position / Rebirth control
+-- Lock Position / Rebirth Control
 local lockEnabled = false
 local function stopLock()
     if lockConn then lockConn:Disconnect() lockConn = nil end
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.Anchored = false end
+    local r = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if r then r.Anchored = false end
 end
 local function startLock()
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local currentPos = hrp.CFrame
-    hrp.Anchored = true
+    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local currentPos = root.CFrame
+    root.Anchored = true
     lockConn = RunService.Heartbeat:Connect(function()
-        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.CFrame = currentPos
+        local r = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if r then
+            r.CFrame = currentPos
         end
     end)
 end
@@ -469,7 +487,7 @@ local timeDropdown = farmingTab:AddDropdown("change time", function(selection)
 end, {"Morning", "Noon", "Afternoon", "Sunset", "Night", "Midnight", "Dawn", "Early Morning"})
 
 -- =========================
--- Kill Tab Features
+-- KILL TAB FEATURES
 -- =========================
 
 local Kill = killTab
@@ -651,20 +669,17 @@ Kill:AddSwitch("Start Kill Target", function(state)
                 punch.Parent = char
             end
             if rightHand and leftHand then
-                for _, targetName in ipairs({}) do -- You can fill in targetNames or use SelectedTarget
-                    -- Use SelectedTarget or dropdown selection
-                    local targetNameToUse = SelectedTarget
-                    local target = Players:FindFirstChild(targetNameToUse)
-                    if target and target ~= LocalPlayer and target.Character then
-                        local rootPart = target.Character:FindFirstChild("HumanoidRootPart")
-                        if rootPart then
-                            pcall(function()
-                                firetouchinterest(rightHand, rootPart, 1)
-                                firetouchinterest(leftHand, rootPart, 1)
-                                firetouchinterest(rightHand, rootPart, 0)
-                                firetouchinterest(leftHand, rootPart, 0)
-                            end)
-                        end
+                local targetNameToUse = SelectedTarget -- Use dropdown selection
+                local target = Players:FindFirstChild(targetNameToUse)
+                if target and target ~= LocalPlayer and target.Character then
+                    local rootPart = target.Character:FindFirstChild("HumanoidRootPart")
+                    if rootPart then
+                        pcall(function()
+                            firetouchinterest(rightHand, rootPart, 1)
+                            firetouchinterest(leftHand, rootPart, 1)
+                            firetouchinterest(rightHand, rootPart, 0)
+                            firetouchinterest(leftHand, rootPart, 0)
+                        end)
                     end
                 end
             end
@@ -810,3 +825,5 @@ kill:AddButton("NaN Combo", function()
     local args = {"changeSize", 0/0} -- NaN
     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
 end)
+
+-- END OF SCRIPT
