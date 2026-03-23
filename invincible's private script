@@ -152,17 +152,14 @@ toolsFolder:AddSwitch("Auto Pushups", function(s)
     states.AutoPushups = s
     if s then startAutoRep("Pushups", "AutoPushups") end
 end)
-
 toolsFolder:AddSwitch("Auto Weight", function(s)
     states.AutoWeight = s
     if s then startAutoRep("Weight", "AutoWeight") end
 end)
-
 toolsFolder:AddSwitch("Auto Handstands", function(s)
     states.AutoHandstands = s
     if s then startAutoRep("Handstands", "AutoHandstands") end
 end)
-
 toolsFolder:AddSwitch("Auto Punch (Fast)", function(s)
     states.FastPunch = s
     if s then
@@ -329,20 +326,27 @@ task.spawn(function()
     end
 end)
 
--- Kill Aura (All Players)
-killerTab:AddSwitch("Kill Aura (All)", function(s)
-    states.KillAura = s
-    if s then
-        task.spawn(function()
-            while states.KillAura and getgenv().NexusRunning do
-                for _, plr in pairs(Players:GetPlayers()) do
-                    if plr ~= LocalPlayer then
-                        killPlayer(plr)
+killerTab:AddSwitch("Kill All Players (Aura)", function(state)
+    getgenv().killAura = state
+    if state then
+        killAuraToggle = true
+        killAuraConnection = task.spawn(function()
+            while killAuraToggle do
+                pcall(function()
+                    for _, plr in pairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer and plr.Character then
+                            killPlayer(plr)
+                        end
                     end
-                end
-                task.wait(0.14)
+                end)
+                task.wait(0.08)
             end
         end)
+    else
+        killAuraToggle = false
+        if killAuraConnection then
+            -- This is a spawn; no need to cancel, just set flag
+        end
     end
 end)
 
@@ -637,6 +641,7 @@ local autoTeleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", 
         else
             stopAutoTeleport()
         end
+        -- update button text if needed
     end
 })
 
@@ -645,7 +650,7 @@ local misc1Folder = miscTab:AddFolder("Misc 1")
 local misc2Folder = miscTab:AddFolder("Misc 2")
 
 misc1Folder:AddButton("Remove Portals", function()
-    for _, portal in pairs(workspace:GetDescendants()) do
+    for _, portal in pairs(game:GetDescendants()) do
         if portal.Name == "RobloxForwardPortals" then
             portal:Destroy()
         end
@@ -879,6 +884,7 @@ farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
 end)
 
 farmingTab:AddButton("Jungle Squat", function()
+    -- Assuming CharacterModel is the player's character
     local CharacterModel = LocalPlayer.Character
     if CharacterModel and CharacterModel:FindFirstChild("HumanoidRootPart") then
         CharacterModel.HumanoidRootPart.CFrame = CFrame.new(-8371.4336, 6.7981, 2858.8853)
@@ -892,7 +898,6 @@ farmingTab:AddButton("Jungle lift", function()
     end
 end)
 
-local AutoEatEgg = false
 local AutoEatSwitch = farmingTab:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
     AutoEatEgg = s
     task.spawn(function()
@@ -901,10 +906,10 @@ local AutoEatSwitch = farmingTab:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
             if Backpack then
                 local EggItem = Backpack:FindFirstChild("Protein Egg")
                 if EggItem then
-                    -- Auto eat logic can be added here if needed
+                    -- Auto eat logic here if needed
                 end
             end
-            task.wait(1800) -- 30 minutes
+            task.wait(1800)
         end
     end)
 end)
