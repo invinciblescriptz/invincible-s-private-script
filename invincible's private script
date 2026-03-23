@@ -932,7 +932,7 @@ farmingTab:AddButton("Anti Lag", function()
     end
     game.StarterGui:SetCore("SendNotification", {
         Text = "Full optimization applied!",
-        Title = "Anti Lag activado",
+        Title = "Anti Lag applied",
         Duration = 5
     })
 end)
