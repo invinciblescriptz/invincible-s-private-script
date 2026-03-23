@@ -139,7 +139,7 @@ local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
-local killerTab = window:AddTab("Killer")
+local killTab = window:AddTab("Killer")
 local farmingTab = window:AddTab("Farming")
 local miscTab = window:AddTab("Misc")
 
@@ -843,9 +843,6 @@ local fastRebirthSwitch = farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', toggl
 
 -- End of added code
 
--- ========== KILLER TAB ==========
-local killerTab = KillerTab
-
 _G.whitelistedPlayers = _G.whitelistedPlayers or {}
 _G.targetPlayer = _G.targetPlayer or ""
 
@@ -936,8 +933,8 @@ local function findClosestPlayer(input)
     return nil
 end
 
-local whitelistedPlayersLabel = killerTab:AddLabel("Whitelisted Players: None")
-local targetPlayerLabel = killerTab:AddLabel("Target Player: None")
+local whitelistedPlayersLabel = killTab:AddLabel("Whitelisted Players: None")
+local targetPlayerLabel = killTab:AddLabel("Target Player: None")
 
 local function updateWhitelistedPlayersLabel()
     if #_G.whitelistedPlayers == 0 then
@@ -960,7 +957,7 @@ local function updateTargetPlayerLabel()
     end
 end
 
-local autoWhitelistFriendsSwitch = killerTab:AddToggle({
+local autoWhitelistFriendsSwitch = killTab:AddToggle({
     Title = "Add Friends to Whitelist Automatically",
     Callback = function(bool)
         _G.autoWhitelistFriends = bool
@@ -994,7 +991,7 @@ game.Players.PlayerAdded:Connect(function(player)
     end
 end)
 
-killerTab:AddInput({
+killTab:AddInput({
     Title = "Add Player to Whitelist (Name/Nickname)",
     Placeholder = "Player name",
     Callback = function(text)
@@ -1018,7 +1015,7 @@ killerTab:AddInput({
     end
 })
 
-killerTab:AddInput({
+killTab:AddInput({
     Title = "Remove Player from Whitelist (Name/Nickname)",
     Placeholder = "Player name",
     Callback = function(text)
@@ -1045,12 +1042,12 @@ killerTab:AddInput({
     end
 })
 
-killerTab:AddButton({ Title = "Clear WhiteList", Callback = function()
+killTab:AddButton({ Title = "Clear WhiteList", Callback = function()
     _G.whitelistedPlayers = {}
     updateWhitelistedPlayersLabel()
 end })
 
-local autoKillAllSwitch = killerTab:AddToggle({
+local autoKillAllSwitch = killTab:AddToggle({
     Title = "Automatically Remove Everyone (Except Whitelist)",
     Callback = function(bool)
         _G.autoKillAll = bool
@@ -1088,7 +1085,7 @@ local autoKillAllSwitch = killerTab:AddToggle({
     end
 })
 
-killerTab:AddInput({
+killTab:AddInput({
     Title = "Select Target Player (Name/Nickname)",
     Placeholder = "Player name",
     Callback = function(text)
@@ -1102,7 +1099,7 @@ killerTab:AddInput({
     end
 })
 
-killerTab:AddButton({ Title = "Remove Target", Callback = function()
+killTab:AddButton({ Title = "Remove Target", Callback = function()
     _G.targetPlayer = ""
     updateTargetPlayerLabel()
 end })
@@ -1134,7 +1131,7 @@ local autoKillTargetSwitch = killerTab:AddToggle({
     end
 })
 
-killerTab:AddButton({ Title = "Remove Everyone (Except Whitelist)", Callback = function()
+killTab:AddButton({ Title = "Remove Everyone (Except Whitelist)", Callback = function()
     pcall(function()
         for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
             if player ~= game.Players.LocalPlayer then
@@ -1155,7 +1152,7 @@ killerTab:AddButton({ Title = "Remove Everyone (Except Whitelist)", Callback = f
     end)
 end })
 
-killerTab:AddButton({ Title = "Delete Target", Callback = function()
+killTab:AddButton({ Title = "Delete Target", Callback = function()
     if _G.targetPlayer ~= "" then
         pcall(function()
             local targetName = _G.targetPlayer:match("^([^%(]+)")
