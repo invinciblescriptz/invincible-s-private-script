@@ -985,3 +985,27 @@ farmingTab:AddSwitch('Hide Frame', function(p73)
         end
     end
 end)
+
+killerTab:AddSwitch("auto kill)", function(state)
+    getgenv().killAura = state
+    if state then
+        killAuraToggle = true
+        killAuraConnection = task.spawn(function()
+            while killAuraToggle do
+                pcall(function()
+                    for _, plr in pairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer and plr.Character then
+                            killPlayer(plr)
+                        end
+                    end
+                end)
+                task.wait(0.08)
+            end
+        end)
+    else
+        killAuraToggle = false
+        if killAuraConnection then
+            -- This is a spawn; no need to cancel, just set flag
+        end
+    end
+end
