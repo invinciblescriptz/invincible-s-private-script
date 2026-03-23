@@ -1,7 +1,6 @@
 -- Load UI Library
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KyleXAkimbo/Gui/refs/heads/main/INV-UI"))()
 
--- Create Main Window
 local window = library:AddWindow("Invincible Private Farming", {
     title_bar = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
     title_bar_transparency = 0.2,
@@ -12,14 +11,16 @@ local window = library:AddWindow("Invincible Private Farming", {
     can_resize = true
 })
 
--- Create Tabs
-local mainTab = window:AddTab("Main")
-local specsTab = window:AddTab("Specs")
-local rebirthTab = window:AddTab("Rebirth")
-local teleportTab = window:AddTab("Teleport")
-local killTab = window:AddTab("Killer")
-local farmingTab = window:AddTab("Farming")
-local miscTab = window:AddTab("Misc")
+-- Tabs
+local tabs = {
+    main = window:AddTab("Main"),
+    specs = window:AddTab("Specs"),
+    rebirth = window:AddTab("Rebirth"),
+    teleport = window:AddTab("Teleport"),
+    killer = window:AddTab("Killer"),
+    farming = window:AddTab("Farming"),
+    misc = window:AddTab("Misc")
+}
 
 -- Services
 local Players = game:GetService("Players")
@@ -30,86 +31,89 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local Lighting = game:GetService("Lighting")
+local camera = Workspace.CurrentCamera
 
-local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
+-- Variables
+local NexusActive = true
+local player = LocalPlayer
+local muscleEvent = player:WaitForChild("muscleEvent", 8)
 
--- Globals
-getgenv().NexusRunning = true
-
--- States
-local states = {
+-- State tables
+local boolStates = {
+    InfiniteJump = false,
+    AntiAFK = false,
     AutoPushups = false,
     AutoWeight = false,
     AutoHandstands = false,
     FastPunch = false,
     FastStrength = false,
     FastRebirth = false,
-    InfiniteJump = false,
-    AntiAFK = false,
     AutoRebirth = false,
     AutoRebirthTarget = false,
     KillAura = false,
     AutoKillSelected = false,
+    AutoWaterWalk = false,
+    AutoSpinWheel = false,
+    AutoClaimGifts = false,
+    NoClip = false,
 }
 
-local targetRebirths = 1
-local selectedTarget = nil
-local jumpConn, antiAfkConn, lockConn = nil, nil, nil
+local targetPlayerName = ""
+local whitelist = {}
+local targetPlayerObject = nil
 
 -- Helper functions
 local function tpTo(pos)
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(pos)
-    end
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(pos) end
 end
 
-local function safeEquipTool(toolName)
+local function safeEquipTool(name)
     pcall(function()
-        local char = LocalPlayer.Character
-        if not char or not char:FindFirstChild("Humanoid") then return end
-        local tool = LocalPlayer.Backpack:FindFirstChild(toolName) or char:FindFirstChild(toolName)
+        local char = player.Character
+        if not char then return end
+        local hr = char:FindFirstChild("Humanoid")
+        local backpack = player.Backpack
+        local tool = backpack:FindFirstChild(name) or char:FindFirstChild(name)
         if tool and tool.Parent ~= char then
-            char.Humanoid:EquipTool(tool)
+            hr:EquipTool(tool)
         end
     end)
 end
 
-local function startAutoRep(toolName, stateKey)
+local function fireServer(key)
+    pcall(function()
+        if muscleEvent then muscleEvent:FireServer(key) end
+    end)
+end
+
+local function toggleAutoRep(toolName, key)
+    boolStates[toolName] = true
     task.spawn(function()
-        while states[stateKey] and getgenv().NexusRunning do
-            pcall(function()
-                local char = LocalPlayer.Character
-                if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
-                    task.wait(1.6)
-                    return
-                end
-                safeEquipTool(toolName)
-                if muscleEvent then
-                    muscleEvent:FireServer("rep")
-                end
-            end)
-            task.wait(0.09)
+        while boolStates[toolName] do
+            local char = player.Character
+            if not char or char.Humanoid.Health <= 0 then wait(1.5) continue end
+            safeEquipTool(toolName)
+            fireServer(key)
+            wait(0.09)
         end
-        -- Unequip tool
-        pcall(function()
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild(toolName) then
-                char[toolName].Parent = LocalPlayer.Backpack
-            end
-        end)
     end)
 end
 
--- Infinite Jump
+local function stopAutoRep(toolName)
+    boolStates[toolName] = false
+end
+
 local function toggleInfiniteJump(state)
-    states.InfiniteJump = state
+    boolStates.InfiniteJump = state
     if state then
         if jumpConn then return end
         jumpConn = UserInputService.JumpRequest:Connect(function()
             pcall(function()
-                local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+                local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
             end)
         end)
     else
@@ -117,726 +121,416 @@ local function toggleInfiniteJump(state)
     end
 end
 
--- Anti AFK
-local function toggleAntiAfk(state)
-    states.AntiAFK = state
+local function toggleAntiAFK(state)
+    boolStates.AntiAFK = state
     if state then
         if antiAfkConn then return end
-        antiAfkConn = LocalPlayer.Idled:Connect(function()
+        antiAfkConn = player.Idled:Connect(function()
             pcall(function()
                 VirtualUser:CaptureController()
                 VirtualUser:ClickButton2(Vector2.new())
             end)
         end)
     else
-        if antiAfkConn then antiAfkConn:Disconnect() antiAfkConn = nil end
+        if antiAfkConn then antiAfkConn:Disconnect() end
     end
 end
 
--- Kill Player
-local function killPlayer(targetPlayer)
+local function killTarget(target)
     pcall(function()
-        local myChar = LocalPlayer.Character
-        local tChar = targetPlayer.Character
-        if not myChar or not tChar then return end
-        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-        local tHRP = tChar:FindFirstChild("HumanoidRootPart")
-        if myHRP and tHRP then
+        local tchar = target.Character
+        local mychar = player.Character
+        if not tchar or not mychar then return end
+        local tHRP = tchar:FindFirstChild("HumanoidRootPart")
+        local myHRP = mychar:FindFirstChild("HumanoidRootPart")
+        if tHRP and myHRP then
             myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -25, 0)
         end
     end)
 end
 
--- Find closest player based on input
 local function findClosestPlayer(input)
     if not input or input == "" then return nil end
     input = input:lower()
-    local bestMatch = nil
-    local bestScore = 0
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local username = player.Name:lower()
-            local displayName = player.DisplayName and player.DisplayName:lower() or ""
-            local usernameMatch = username:find(input, 1, true) ~= nil
-            local displayMatch = displayName:find(input, 1, true) ~= nil
-            local usernameScore = 0
-            local displayScore = 0
-            if usernameMatch then
-                usernameScore = (#input / #username) * 100
-                if username:sub(1, #input) == input then
-                    usernameScore = usernameScore + 50
-                end
-            end
-            if displayMatch then
-                displayScore = (#input / #displayName) * 100
-                if displayName:sub(1, #input) == input then
-                    displayScore = displayScore + 50
-                end
-            end
-            local score = math.max(usernameScore, displayScore)
-            if score > bestScore then
-                bestScore = score
-                bestMatch = player
-            end
+    local best, score = nil, 0
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local name = plr.Name:lower()
+            local display = (plr.DisplayName or ""):lower()
+            local s = 0
+            if name:find(input) then s = s + 50 end
+            if display:find(input) then s = s + 50 end
+            if s > score then score = s; best = plr end
         end
     end
-    if bestScore > 20 then
-        return bestMatch
-    end
-    return nil
+    if score > 20 then return best end
 end
 
--- ============================
--- UI Labels for whitelist and target
-local whitelistedPlayersLabel = killTab:AddLabel("Whitelisted Players: None")
-local targetPlayerLabel = killTab:AddLabel("Target Player: None")
+-- ==== UI Labels for Killer tab ====
+local whitelistLabel = tabs.killer:AddLabel("Whitelisted Players: None")
+local targetLabel = tabs.killer:AddLabel("Target Player: None")
 
--- Update Labels
-local function updateWhitelistedPlayersLabel()
-    if #_G.whitelistedPlayers == 0 then
-        whitelistedPlayersLabel.Text = "Whitelisted Players: None"
+local function updateWhitelistLabel()
+    if #whitelist == 0 then
+        whitelistLabel.Text = "Whitelisted Players: None"
     else
-        local text = "Players on the White List: "
-        for i, info in ipairs(_G.whitelistedPlayers) do
-            if i > 1 then text = text .. ", " end
-            text = text .. info
-        end
-        whitelistedPlayersLabel.Text = text
+        whitelistLabel.Text = "Whitelisted: " .. table.concat(whitelist, ", ")
     end
 end
 
-local function updateTargetPlayerLabel()
-    if _G.targetPlayer == "" then
-        targetPlayerLabel.Text = "Jugador Objetivo: Ninguno"
+local function updateTargetLabel()
+    if targetPlayerName == "" then
+        targetLabel.Text = "Target Player: None"
     else
-        targetPlayerLabel.Text = "Jugador Objetivo: " .. _G.targetPlayer
+        targetLabel.Text = "Target Player: " .. targetPlayerName
     end
 end
 
--- ============================
--- ADD YOUR FUNCTIONALITIES INTO THE TABS
--- ============================
-
--- **Killer Tab** (Kill/Whitelist)
-local function addPlayerToWhitelist(name)
-    local player = findClosestPlayer(name)
-    if player then
-        local info = player.Name .. " (" .. player.DisplayName .. ")"
-        if not table.find(_G.whitelistedPlayers, info) then
-            table.insert(_G.whitelistedPlayers, info)
-            updateWhitelistedPlayersLabel()
-        end
-    end
-end
-
-local function removePlayerFromWhitelist(name)
-    local lowerName = name:lower()
-    for i, info in ipairs(_G.whitelistedPlayers) do
-        if info:lower():find(lowerName, 1, true) then
-            table.remove(_G.whitelistedPlayers, i)
-            updateWhitelistedPlayersLabel()
-            return
-        end
-    end
-    local player = findClosestPlayer(name)
-    if player then
-        for i, info in ipairs(_G.whitelistedPlayers) do
-            if info:find(player.Name, 1, true) then
-                table.remove(_G.whitelistedPlayers, i)
-                updateWhitelistedPlayersLabel()
-                return
-            end
-        end
-    end
-end
-
--- Initialize whitelist
-_G.whitelistedPlayers = {}
-updateWhitelistedPlayersLabel()
-updateTargetPlayerLabel()
-
--- Player added event
-game.Players.PlayerAdded:Connect(function(player)
-    if _G.autoWhitelistFriends then
-        pcall(function()
-            if player:IsFriendsWith(LocalPlayer.UserId) then
-                local info = player.Name .. " (" .. player.DisplayName .. ")"
-                if not table.find(_G.whitelistedPlayers, info) then
-                    table.insert(_G.whitelistedPlayers, info)
-                    updateWhitelistedPlayersLabel()
+-- ====================
+-- UI: Main Tab
+-- ====================
+local mainFolder = tabs.main:AddFolder("Tools")
+mainFolder:AddSwitch("Auto Pushups", function(s)
+    if s then toggleAutoRep("Pushups", "AutoPushups")
+    else stopAutoRep("AutoPushups") end
+end)
+mainFolder:AddSwitch("Auto Weight", function(s)
+    if s then toggleAutoRep("Weight", "AutoWeight")
+    else stopAutoRep("AutoWeight") end
+end)
+mainFolder:AddSwitch("Auto Handstands", function(s)
+    if s then toggleAutoRep("Handstands", "AutoHandstands")
+    else stopAutoRep("AutoHandstands") end
+end)
+mainFolder:AddSwitch("Fast Punch", function(s)
+    boolStates.FastPunch = s
+    if s then
+        task.spawn(function()
+            while s do
+                local c = player.Character
+                if c then
+                    fireServer("punch")
+                    wait(0.085)
                 end
             end
         end)
     end
 end)
-
--- Add toggle for auto whitelist friends
-local autoWhitelistSwitch = killTab:AddToggle({
-    Title = "Add Friends to Whitelist Automatically",
-    Callback = function(bool)
-        _G.autoWhitelistFriends = bool
-        if bool then
-            pcall(function()
-                for _, player in pairs(Players:GetPlayers()) do
-                    if player:IsFriendsWith(LocalPlayer.UserId) then
-                        local info = player.Name .. " (" .. player.DisplayName .. ")"
-                        if not table.find(_G.whitelistedPlayers, info) then
-                            table.insert(_G.whitelistedPlayers, info)
-                        end
-                    end
-                end
-                updateWhitelistedPlayersLabel()
-            end)
-        end
+mainFolder:AddButton("Boost FPS", function()
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 1
+    Lighting.ClockTime = 12
+    Lighting.FogEnd = 9999
+    Lighting.FogStart = 0
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Sparkles") then v.Enabled = false end
     end
-})
-
--- Add Player to whitelist
-killTab:AddInput({
-    Title = "Add Player to Whitelist (Name/Nickname)",
-    Placeholder = "Player name",
-    Callback = function(text)
-        if text and text ~= "" then
-            addPlayerToWhitelist(text)
-        end
-    end
-})
-
--- Remove Player from whitelist
-killTab:AddInput({
-    Title = "Remove Player from Whitelist (Name/Nickname)",
-    Placeholder = "Player name",
-    Callback = function(text)
-        if text and text ~= "" then
-            removePlayerFromWhitelist(text)
-        end
-    end
-})
-
--- Clear whitelist
-killTab:AddButton({ 
-    Title = "Clear WhiteList", 
-    Callback = function()
-        _G.whitelistedPlayers = {}
-        updateWhitelistedPlayersLabel()
-    end
-})
-
--- Auto Kill Everyone (except whitelist)
-local autoKillAllSwitch = killTab:AddToggle({
-    Title = "Automatically Remove Everyone (Except Whitelist)",
-    Callback = function(bool)
-        _G.autoKillAll = bool
-        if bool then
-            spawn(function()
-                while _G.autoKillAll do
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= LocalPlayer then
-                            local isWhitelisted = false
-                            for _, info in ipairs(_G.whitelistedPlayers) do
-                                if info:find(player.Name, 1, true) then
-                                    isWhitelisted = true
-                                    break
-                                end
-                            end
-                            if not isWhitelisted and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                                killPlayer(player)
-                                task.wait(0.05)
-                            end
-                        end
-                    end
-                    task.wait(0.2)
-                end
-            end)
-        end
-    end
-})
-
--- Select target player
-killTab:AddInput({
-    Title = "Select Target Player (Name/Nickname)",
-    Placeholder = "Player name",
-    Callback = function(text)
-        if text and text ~= "" then
-            local player = findClosestPlayer(text)
-            if player then
-                _G.targetPlayer = player.Name .. " (" .. player.DisplayName .. ")"
-                updateTargetPlayerLabel()
+end)
+mainFolder:AddButton("Auto Lift Gamepass", function()
+    pcall(function()
+        local gpFolder = ReplicatedStorage:FindFirstChild("gamepassIds")
+        if not gpFolder then return end
+        local owned = player:FindFirstChild("ownedGamepasses") or Instance.new("Folder")
+        owned.Name = "ownedGamepasses"
+        owned.Parent = player
+        for _, gp in pairs(gpFolder:GetChildren()) do
+            if gp:IsA("IntValue") then
+                local v = Instance.new("IntValue")
+                v.Name = gp.Name
+                v.Value = gp.Value
+                v.Parent = owned
             end
         end
-    end
-})
-
--- Remove target
-killTab:AddButton({ 
-    Title = "Remove Target", 
-    Callback = function()
-        _G.targetPlayer = ""
-        updateTargetPlayerLabel()
-    end
-})
-
--- Auto Kill Target
-local function autoKillTarget()
-    spawn(function()
-        while _G.autoKillTarget and _G.targetPlayer ~= "" do
-            pcall(function()
-                local targetName = _G.targetPlayer:match("^([^%(]+)")
-                if targetName then
-                    targetName = targetName:gsub("%s+$", "")
-                    local targetPlayer = game.Players:FindFirstChild(targetName)
-                    if targetPlayer and targetPlayer.Character then
-                        killPlayer(targetPlayer)
-                    end
-                end
-            end)
-            task.wait(0.1)
-        end
     end)
+end)
+
+-- Teleport Buttons
+local teleportCoords = {
+    {"Spawn", Vector3.new(-6, 5, -196)},
+    {"Secret", Vector3.new(1947, 2, 6191)},
+    {"Tiny", Vector3.new(-39, 6, 1886)},
+    {"Frozen", Vector3.new(-2623, 6, -409)},
+    {"Mythical", Vector3.new(2251, 6, 1073)},
+    {"Inferno", Vector3.new(-6759, 6, -1285)},
+    {"Legend", Vector3.new(4603, 990, -3898)},
+    {"Muscle King", Vector3.new(-8626, 16, -5730)},
+    {"Jungle", Vector3.new(-8642, 6, 2381)},
+    {"Lava Brawl", Vector3.new(4471, 119, -8836)},
+    {"Desert Brawl", Vector3.new(960, 17, -7398)},
+    {"Beach Brawl", Vector3.new(-1849, 20, -6335)}
+}
+for _, v in pairs(teleportCoords) do
+    tabs.teleport:AddButton(v[1], function() tpTo(v[2]) end)
 end
 
-local autoKillTargetSwitch = killTab:AddToggle({
-    Title = "Delete Target Automatically",
-    Callback = function(bool)
-        _G.autoKillTarget = bool
-        if bool and _G.targetPlayer ~= "" then
-            autoKillTarget()
-        end
-    end
-})
-
--- ============================
--- Rebirth, Stats, Misc features
--- ============================
-
--- Stats display
-local statsFolder = specsTab:AddFolder("My Stats")
+-- ====================
+-- UI: Specs tab
+-- ====================
+local statsFolder = tabs.specs:AddFolder("My Stats")
 local statLabels = {}
 
-local function addOrUpdateStatLabel(name, value)
-    if not statLabels[name] then
-        local lbl = statsFolder:AddLabel(name .. ": " .. tostring(value))
-        lbl.TextSize = 16
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        statLabels[name] = lbl
-    else
-        statLabels[name].Text = name .. ": " .. tostring(value)
-    end
-end
-
-spawn(function()
-    while getgenv().NexusRunning do
-        pcall(function()
-            local lp = LocalPlayer
-            local leaderstats = lp:FindFirstChild("leaderstats")
-            if leaderstats then
-                for _, stat in ipairs(leaderstats:GetChildren()) do
-                    if stat:IsA("IntValue") or stat:IsA("NumberValue") then
-                        addOrUpdateStatLabel(stat.Name, stat.Value)
-                    end
-                end
-            end
-            local durability = lp:FindFirstChild("Durability")
-            if durability and durability:IsA("IntValue") then
-                addOrUpdateStatLabel("Durability", durability.Value)
-            end
-            local strength = lp:FindFirstChild("Strength") or (leaderstats and leaderstats:FindFirstChild("Strength"))
-            if strength and (strength:IsA("IntValue") or strength:IsA("NumberValue")) then
-                addOrUpdateStatLabel("Strength", strength.Value)
-            end
-            local owned = lp:FindFirstChild("ownedGamepasses")
-            if owned then
-                addOrUpdateStatLabel("Gamepasses Owned", #owned:GetChildren())
-            end
-            local currentArea = lp:FindFirstChild("CurrentArea") or lp:FindFirstChild("Zone")
-            if currentArea and currentArea:IsA("StringValue") then
-                addOrUpdateStatLabel("Area", currentArea.Value)
-            end
-        end)
-        task.wait(1.4)
-    end
-    -- On stop, destroy labels
-    for _, lbl in pairs(statLabels) do
-        pcall(function() lbl:Destroy() end)
-    end
-end)
-
--- Lock Position / Rebirth Button
-local lockPos = false
-local function startLock()
-    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    local currentCFrame = root.CFrame
-    root.Anchored = true
-    lockConn = RunService.Heartbeat:Connect(function()
-        local r = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if r then
-            r.CFrame = currentCFrame
-        end
-    end)
-end
-
-local function stopLock()
-    if lockConn then lockConn:Disconnect() lockConn = nil end
-    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.Anchored = false
-    end
-end
-
-local function toggleLock()
-    lockPos = not lockPos
-    if lockPos then
-        startLock()
-        lockButton:SetText("Unlock")
-    else
-        stopLock()
-        lockButton:SetText("Lock")
-    end
-end
-
-local lockButton = farmingTab:AddButton("Lock Position", toggleLock)
-
--- Auto Rebirth
-local function doRebirth()
+local function updateStats()
     spawn(function()
         while true do
-            game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-            task.wait(0.1)
-        end
-    end)
-end
-
-local autoRebirthSwitch = rebirthTab:AddSwitch("Auto Rebirth (Infinite)", {
-    Default = false,
-    Callback = function(val)
-        if val then
-            doRebirth()
-        end
-    end
-})
-
--- Auto Size
-local function autoSize()
-    spawn(function()
-        while _G.autoSizeActive do
-            game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
-            task.wait(0.2)
-        end
-    end)
-end
-
-local autoSizeSwitch = rebirthTab:AddSwitch("Auto Size 1", {
-    Default = false,
-    Callback = function(val)
-        _G.autoSizeActive = val
-        if val then autoSize() end
-    end
-})
-
--- Auto Teleport to Muscle King
-local function autoTeleport()
-    spawn(function()
-        while _G.teleportActive do
-            if game:GetService("Players").LocalPlayer.Character then
-                game:GetService("Players").LocalPlayer.Character:MoveTo(Vector3.new(-8646, 17, -5738))
-            end
-            task.wait(0.5)
-        end
-    end)
-end
-
-local teleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", {
-    Default = false,
-    Callback = function(val)
-        _G.teleportActive = val
-        if val then autoTeleport() end
-    end
-})
-
--- Misc Features
-
--- Remove Portals
-local function removePortals()
-    for _, portal in pairs(workspace:GetDescendants()) do
-        if portal.Name == "RobloxForwardPortals" then
-            portal:Destroy()
-        end
-    end
-    if _G.AdRemovalConnection then _G.AdRemovalConnection:Disconnect() end
-    _G.AdRemovalConnection = game.DescendantAdded:Connect(function(descendant)
-        if descendant.Name == "RobloxForwardPortals" then
-            descendant:Destroy()
-        end
-    end)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Ads Removed",
-        Text = "Roblox ads have been eliminated",
-        Duration= 0
-    })
-end
-misc1Folder:AddButton("Remove Portals", removePortals)
-
--- Create Parts for Water Walk
-local waterParts = {}
-local createdWaterParts = false
-
-local function createWaterParts()
-    local partsList = {}
-    local partSize = 2048
-    local totalDistance = 50000
-    local startPos = Vector3.new(-2, -9.5, -2)
-    local num = math.ceil(totalDistance / partSize)
-    for x=0, num-1 do
-        for z=0, num-1 do
-            local p1 = Instance.new("Part")
-            p1.Size = Vector3.new(partSize, 1, partSize)
-            p1.Position = startPos + Vector3.new(x*partSize,0,z*partSize)
-            p1.Anchored = true
-            p1.Transparency = 1
-            p1.CanCollide = true
-            p1.Name = "Part_Side_"..x.."_"..z
-            p1.Parent = workspace
-            table.insert(partsList, p1)
-            local p2 = Instance.new("Part")
-            p2.Size = Vector3.new(partSize, 1, partSize)
-            p2.Position = startPos + Vector3.new(-x*partSize,0,z*partSize)
-            p2.Anchored = true
-            p2.Transparency = 1
-            p2.CanCollide = true
-            p2.Name = "Part_LeftRight_"..x.."_"..z
-            p2.Parent = workspace
-            table.insert(partsList, p2)
-            local p3 = Instance.new("Part")
-            p3.Size = Vector3.new(partSize, 1, partSize)
-            p3.Position = startPos + Vector3.new(-x*partSize,0,-z*partSize)
-            p3.Anchored = true
-            p3.Transparency = 1
-            p3.CanCollide = true
-            p3.Name = "Part_UpLeft_"..x.."_"..z
-            p3.Parent = workspace
-            table.insert(partsList, p3)
-            local p4 = Instance.new("Part")
-            p4.Size = Vector3.new(partSize, 1, partSize)
-            p4.Position = startPos + Vector3.new(x*partSize,0,-z*partSize)
-            p4.Anchored = true
-            p4.Transparency = 1
-            p4.CanCollide = true
-            p4.Name = "Part_UpRight_"..x.."_"..z
-            p4.Parent = workspace
-            table.insert(partsList, p4)
-        end
-    end
-    return partsList
-end
-
-local function setWaterWalk(enable)
-    if enable then
-        if not createdWaterParts then
-            waterParts = createWaterParts()
-            createdWaterParts = true
-        end
-        for _, p in ipairs(waterParts) do
-            p.CanCollide = false
-        end
-    else
-        for _, p in ipairs(waterParts) do
-            p.CanCollide = true
-        end
-    end
-end
-misc1Folder:AddSwitch("Walk on Water", setWaterWalk)
-
--- Auto Spin Wheel
-misc1Folder:AddSwitch("Auto Spin Wheel", function(bool)
-    _G.AutoSpinWheel = bool
-    if bool then
-        spawn(function()
-            while _G.AutoSpinWheel do
-                game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"])
-                task.wait(1)
-            end
-        end)
-    end
-end)
-
--- Auto Claim Gifts
-misc1Folder:AddSwitch("Auto Claim Gifts", function(bool)
-    _G.AutoClaimGifts = bool
-    if bool then
-        spawn(function()
-            while _G.AutoClaimGifts do
-                for i=1,8 do
-                    game:GetService("ReplicatedStorage").rEvents.freeGiftClaimRemote:InvokeServer("claimGift", i)
-                end
-                task.wait(1)
-            end
-        end)
-    end
-end)
-
--- Misc 2: No-Clip
-misc2Folder:AddSwitch("No-Clip", function(bool)
-    _G.NoClip = bool
-    if bool then
-        local noclipLoop
-        noclipLoop = game:GetService("RunService").Stepped:Connect(function()
-            if _G.NoClip then
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") and part.CanCollide then
-                        part.CanCollide = false
+            local leaderstats = player:FindFirstChild("leaderstats")
+            if leaderstats then
+                for _, stat in pairs(leaderstats:GetChildren()) do
+                    if stat:IsA("NumberValue") then
+                        if not statLabels[stat.Name] then
+                            local lbl = statsFolder:AddLabel(stat.Name .. ": " .. stat.Value)
+                            statLabels[stat.Name] = lbl
+                        else
+                            statLabels[stat.Name].Text = stat.Name .. ": " .. stat.Value
+                        end
                     end
                 end
-            else
-                if noclipLoop then
-                    noclipLoop:Disconnect()
-                end
             end
-        end)
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "No-Clip Activated",
-            Text = "You can pass through objects",
-            Duration = 0
-        })
-    end
-end)
+            wait(1)
+        end
+    end)
+end
+updateStats()
 
--- Infinite Jump
-misc2Folder:AddSwitch("Infinite Jump", function(bool)
-    _G.InfiniteJump = bool
-    if bool then
-        local InfiniteJumpConn
-        InfiniteJumpConn = UserInputService.JumpRequest:Connect(function()
-            if _G.InfiniteJump then
-                game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-            end
-        end)
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Infinite Jump Activated",
-            Text = "You can jump infinitely",
-            Duration = 0
-        })
-    end
-end)
-
--- Change Time of Day Dropdown
-local timeDropdown = farmingTab:AddDropdown("Change Time", function(selection)
-    local lighting = game:GetService("Lighting")
-    if selection == "Night" then
-        lighting.ClockTime = 0
-    elseif selection == "Day" then
-        lighting.ClockTime = 12
-    elseif selection == "Midnight" then
-        lighting.ClockTime = 6
-    end
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Time Changed",
-        Text = "The time of day has been set to: " .. selection,
-        Duration= 0
-    })
-end)
-timeDropdown:Add("Night")
-timeDropdown:Add("Day")
-timeDropdown:Add("Midnight")
-
--- ============================
--- END OF YOUR ADDITIONS
--- ============================
-
--- Lock Position / Rebirth Control Button in Farming tab
-local lockButton = farmingTab:AddButton("Lock Position", function()
-    if not lockConn then
-        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-        local currentCFrame = root.CFrame
-        root.Anchored = true
-        lockConn = RunService.Heartbeat:Connect(function()
-            local r = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if r then r.CFrame = currentCFrame end
-        end)
-        lockButton:SetText("Unlock")
-    else
-        if lockConn then lockConn:Disconnect() lockConn = nil end
-        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if root then root.Anchored = false end
-        lockButton:SetText("Lock")
-    end
-end)
-
--- Auto Rebirth
+-- ====================
+-- UI: Rebirth tab
+-- ====================
 local function autoRebirth()
     spawn(function()
         while true do
             game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-            task.wait(0.1)
+            wait(0.1)
         end
     end)
 end
+tabs.rebirth:AddSwitch("Auto Rebirth", function(s)
+    if s then autoRebirth() end
+end)
 
-local autoRebirthSwitch = rebirthTab:AddSwitch("Auto Rebirth (Infinite)", {
-    Default = false,
-    Callback = function(val)
-        if val then
-            autoRebirth()
-        end
-    end
-})
-
--- Auto Size
 local function autoSize()
     spawn(function()
-        while _G.autoSizeActive do
+        while _G.autoSize do
             game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
-            task.wait(0.2)
+            wait(0.2)
         end
     end)
 end
+tabs.rebirth:AddSwitch("Auto Size", function(s)
+    _G.autoSize = s
+    if s then autoSize() end
+end)
 
-local autoSizeSwitch = rebirthTab:AddSwitch("Auto Size 1", {
-    Default = false,
-    Callback = function(val)
-        _G.autoSizeActive = val
-        if val then autoSize() end
-    end
-})
-
--- Auto Teleport to Muscle King
 local function autoTeleport()
     spawn(function()
-        while _G.teleportActive do
-            if game:GetService("Players").LocalPlayer.Character then
-                game:GetService("Players").LocalPlayer.Character:MoveTo(Vector3.new(-8646, 17, -5738))
+        while _G.teleport do
+            tpTo(Vector3.new(-8646, 17, -5738))
+            wait(0.5)
+        end
+    end)
+end
+tabs.rebirth:AddSwitch("Auto Teleport to Muscle King", function(s)
+    _G.teleport = s
+    if s then autoTeleport() end
+end)
+
+-- ====================
+-- UI: Killer tab
+-- ====================
+local function addWhitelist(name)
+    table.insert(whitelist, name)
+    updateWhitelistLabel()
+end
+
+local function removeWhitelist(name)
+    for i, v in ipairs(whitelist) do
+        if v == name then table.remove(whitelist, i) end
+    end
+    updateWhitelistLabel()
+end
+
+local function updatePlayerDropdown()
+    local options = {}
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player then
+            table.insert(options, plr.Name)
+        end
+    end
+    return options
+end
+
+local killDropdown = tabs.killer:AddDropdown("Select Player", function(val)
+    targetPlayerName = val
+    updateTargetLabel()
+end)
+
+spawn(function()
+    while true do
+        local options = updatePlayerDropdown()
+        killDropdown:SetValues(options)
+        wait(5)
+    end
+end)
+
+tabs.killer:AddSwitch("Kill Aura (All)", function(s)
+    boolStates.KillAura = s
+    if s then
+        spawn(function()
+            while s do
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= player then
+                        killPlayer(plr)
+                    end
+                end
+                wait(0.14)
             end
-            task.wait(0.5)
+        end)
+    end
+end)
+
+tabs.killer:AddSwitch("Auto Kill Selected", function(s)
+    boolStates.AutoKillSelected = s
+    if s then
+        spawn(function()
+            while s do
+                if targetPlayerName ~= "" then
+                    local target = Players:FindFirstChild(targetPlayerName)
+                    if target then killPlayer(target) end
+                end
+                wait(0.14)
+            end
+        end)
+    end
+end)
+
+-- ====================
+-- UI: Farming tab
+-- ====================
+local function setWaterWalk(enable)
+    if enable then
+        -- create water parts if not exist
+        if not waterParts then
+            waterParts = createParts()
+        end
+        for _, p in ipairs(waterParts) do p.CanCollide = false end
+    else
+        if waterParts then
+            for _, p in ipairs(waterParts) do p.CanCollide = true end
+        end
+    end
+end
+tabs.farming:AddSwitch("Walk on Water", setWaterWalk)
+
+local function autoSpinWheel()
+    spawn(function()
+        while boolStates.AutoSpinWheel do
+            game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", "Fortune Wheel")
+            wait(1)
+        end
+    end)
+end
+tabs.farming:AddSwitch("Auto Spin Wheel", function(s)
+    boolStates.AutoSpinWheel = s
+    if s then autoSpinWheel() end
+end)
+
+local function autoClaimGifts()
+    spawn(function()
+        while boolStates.AutoClaimGifts do
+            for i=1,8 do
+                game:GetService("ReplicatedStorage").rEvents.freeGiftClaimRemote:InvokeServer("claimGift", i)
+            end
+            wait(1)
+        end
+    end)
+end
+tabs.farming:AddSwitch("Auto Claim Gifts", function(s)
+    boolStates.AutoClaimGifts = s
+    if s then autoClaimGifts() end
+end)
+
+-- ====================
+-- UI: Misc tab
+-- ====================
+tabs.misc:AddSwitch("No-Clip", function(s)
+    boolStates.NoClip = s
+    if s then
+        local noclipLoop
+        noclipLoop = RunService.Stepped:Connect(function()
+            if s then
+                for _, p in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if p:IsA("BasePart") then p.CanCollide = false end
+                end
+            else
+                if noclipLoop then noclipLoop:Disconnect() end
+            end
+        end)
+    end
+end)
+
+tabs.misc:AddSwitch("Infinite Jump", function(s)
+    toggleInfiniteJump(s)
+end)
+
+tabs.misc:AddDropdown("Change Time", function(selection)
+    local lighting = game:GetService("Lighting")
+    if selection == "Night" then lighting.ClockTime = 0
+    elseif selection == "Day" then lighting.ClockTime = 12
+    elseif selection == "Midnight" then lighting.ClockTime = 6
+    end
+    -- Notification
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title="Time Set", Text="Time changed to "..selection, Duration=2})
+end):Add("Night"):Add("Day"):Add("Midnight")
+
+-- ====================
+-- Additional features (auto rebirth, stats, lock position, etc.)
+-- ====================
+local function autoRebirth()
+    spawn(function()
+        while true do
+            game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            wait(0.1)
         end
     end)
 end
 
-local teleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", {
-    Default = false,
-    Callback = function(val)
-        _G.teleportActive = val
-        if val then autoTeleport() end
-    end
-})
-
--- Misc: Remove Portals
-local function removePortals()
-    for _, portal in pairs(workspace:GetDescendants()) do
-        if portal.Name == "RobloxForwardPortals" then
-            portal:Destroy()
-        end
-    end
-    if _G.AdRemovalConnection then _G.AdRemovalConnection:Disconnect() end
-    _G.AdRemovalConnection = game.DescendantAdded:Connect(function(descendant)
-        if descendant.Name == "RobloxForwardPortals" then
-            descendant:Destroy()
+local function autoSize()
+    spawn(function()
+        while _G.autoSize do
+            game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
+            wait(0.2)
         end
     end)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Ads Removed",
-        Text = "Roblox ads have been eliminated",
-        Duration= 0
-    })
 end
-misc1Folder:AddButton("Remove Portals", removePortals)
+
+local function autoTeleportToMuscle()
+    spawn(function()
+        while _G.teleport do
+            tpTo(Vector3.new(-8646, 17, -5738))
+            wait(0.5)
+        end
+    end)
+end
+
+local function toggleLockPos()
+    -- Lock position code
+    local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    local c = rootPart.CFrame
+    rootPart.Anchored = true
+    lockConn = RunService.Heartbeat:Connect(function()
+        local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if r then r.CFrame = c end
+    end)
+end
+
+local function unlockLockPos()
+    if lockConn then lockConn:Disconnect() end
+    local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if rootPart then rootPart.Anchored = false end
+end
+
+local lockBtn = tabs.farming:AddButton("Lock Position", function()
+    toggleLockPos()
+    lockBtn:SetText("Unlock")
+end)
+
+-- ********* END OF SCRIPT ****************
