@@ -10,7 +10,7 @@ local window = library:AddWindow("Invincible Private Farming", {
     can_resize = true
 })
 
--- Services
+-- Services setup
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
@@ -141,6 +141,7 @@ local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local farmingTab = window:AddTab("Farming")
 local miscTab = window:AddTab("Misc")
+local KillTab = window:AddTab("Kill") -- Corrected tab name
 
 -- Tools Folder
 local toolsFolder = mainTab:AddFolder("Tools")
@@ -310,7 +311,6 @@ task.spawn(function()
                                     task.wait(0.03)
                                     firetouchinterest(rock, hrp, 1)
                                 end
-                                -- Punch
                                 if muscleEvent then
                                     muscleEvent:FireServer("punch", "leftHand")
                                     muscleEvent:FireServer("punch", "rightHand")
@@ -385,7 +385,6 @@ local autoTeleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", 
         else
             stopAutoTeleport()
         end
-        -- update button text if needed
     end
 })
 
@@ -502,16 +501,41 @@ local timeDropdown = farmingTab:AddDropdown("Change Time", function(selection)
         lighting.ClockTime = 12
     elseif selection == "Midnight" then
         lighting.ClockTime = 6
+    elseif selection == "Morning" then
+        lighting.ClockTime = 6
+    elseif selection == "Noon" then
+        lighting.ClockTime = 12
+    elseif selection == "Afternoon" then
+        lighting.ClockTime = 16
+    elseif selection == "Sunset" then
+        lighting.ClockTime = 18
+        lighting.FogEnd = 500
+    elseif selection == "Nigth" then
+        lighting.ClockTime = 20
+        lighting.FogEnd = 800
+    elseif selection == "Midnight" then
+        lighting.ClockTime = 0
+        lighting.FogEnd = 400
+    elseif selection == "Dawn" then
+        lighting.ClockTime = 4
+        lighting.Brightness = 1.8
+        lighting.Ambient = Color3.fromRGB(180, 180, 220)
+    elseif selection == "Early Morning" then
+        lighting.ClockTime = 2
+        lighting.Brightness = 1.2
+        lighting.Ambient = Color3.fromRGB(100, 120, 180)
     end
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Time Changed",
-        Text = "The time of day has been set to: " .. selection,
-        Duration = 0
-    })
 end)
 timeDropdown:Add("Night")
 timeDropdown:Add("Day")
 timeDropdown:Add("Midnight")
+timeDropdown:Add("Morning")
+timeDropdown:Add("Noon")
+timeDropdown:Add("Afternoon")
+timeDropdown:Add("Sunset")
+timeDropdown:Add("Nigth")
+timeDropdown:Add("Dawn")
+timeDropdown:Add("Early Morning")
 
 -- Initialize the variable outside so it can be referenced elsewhere if needed
 local fastRebirth = false
@@ -611,13 +635,16 @@ farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
                     _LocalPlayer.Character.HumanoidRootPart.CFrame = _JungleBarLift.interactSeat.CFrame * CFrame.new(0, 3, 0)
                     repeat
                         task.wait(0.1)
-                        v107()
+                        local _VirtualInputManager = game:GetService('VirtualInputManager')
+                        _VirtualInputManager:SendKeyEvent(true, 'E', false, game)
+                        task.wait(0.1)
+                        _VirtualInputManager:SendKeyEvent(false, 'E', false, game)
                     until _LocalPlayer.Character.Humanoid.Sit
                 end
 
                 local _Value2 = _LocalPlayer.leaderstats.Rebirths.Value
                 repeat
-                    _ReplicatedStorage.rEvents.rebirthRemote:InvokeServer('rebirthRequest')
+                    game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer('rebirthRequest')
                     task.wait(0.1)
                 until _Value2 < _LocalPlayer.leaderstats.Rebirths.Value
 
@@ -655,8 +682,8 @@ end)
 -- Optimization buttons
 farmingTab:AddButton("Full Optimization", function()
     pcall(function()
-        for _, g in ipairs(LP.PlayerGui:GetChildren()) do if g:IsA("ScreenGui") then g:Destroy() end end
-        for _, o in ipairs(WS:GetDescendants()) do
+        for _, g in ipairs(LocalPlayer.PlayerGui:GetChildren()) do if g:IsA("ScreenGui") then g:Destroy() end end
+        for _, o in ipairs(Workspace:GetDescendants()) do
             if o:IsA("ParticleEmitter") or o:IsA("PointLight") then o:Destroy() end
         end
         for _, s in ipairs(Lighting:GetChildren()) do
@@ -680,7 +707,7 @@ farmingTab:AddButton("Anti-Lag (Performance)", function()
         Lighting.GlobalShadows = false
         Lighting.FogEnd = 1e9
         Lighting.Brightness = 0
-        for _, o in ipairs(WS:GetDescendants()) do
+        for _, o in ipairs(Workspace:GetDescendants()) do
             if o:IsA("ParticleEmitter") then o.Enabled = false end
             if o:IsA("Decal") or o:IsA("Texture") then o.Transparency = 1 end
         end
@@ -698,7 +725,7 @@ farmingTab:AddButton("Lock Position", function(en)
         local pos = hrp.Position
         hrp.Anchored = true
         if lockConn then lockConn:Disconnect() end
-        lockConn = Run.Heartbeat:Connect(function()
+        lockConn = RunService.Heartbeat:Connect(function()
             if getgenv().PositionLocked and hrp and hrp.Parent then
                 hrp.CFrame = CFrame.new(pos)
             end
@@ -709,67 +736,590 @@ farmingTab:AddButton("Lock Position", function(en)
     end
 end)
 
--- Dropdown
+-- Dropdown for changing time
 local timeDropdown = farmingTab:AddDropdown("change time", function(selection)
-    -- Reset antes de aplicar
-    Lighting.Brightness = 2
-    Lighting.FogEnd = 100000
-    Lighting.Ambient = Color3.fromRGB(127,127,127)
+    -- Reset before applying
+    local lighting = game:GetService("Lighting")
+    lighting.Brightness = 2
+    lighting.FogEnd = 100000
+    lighting.Ambient = Color3.fromRGB(127,127,127)
 
     if selection == "Morning" then
-        Lighting.ClockTime = 6
-        Lighting.Brightness = 2
-        Lighting.Ambient = Color3.fromRGB(200, 200, 255)
+        lighting.ClockTime = 6
+        lighting.Brightness = 2
+        lighting.Ambient = Color3.fromRGB(200, 200, 255)
     elseif selection == "Noon" then
-        Lighting.ClockTime = 12
-        Lighting.Brightness = 3
-        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+        lighting.ClockTime = 12
+        lighting.Brightness = 3
+        lighting.Ambient = Color3.fromRGB(255, 255, 255)
     elseif selection == "Afternoon" then
-        Lighting.ClockTime = 16
-        Lighting.Brightness = 2.5
-        Lighting.Ambient = Color3.fromRGB(255, 220, 180)
+        lighting.ClockTime = 16
+        lighting.Brightness = 2.5
+        lighting.Ambient = Color3.fromRGB(255, 220, 180)
     elseif selection == "Sunset" then
-        Lighting.ClockTime = 18
-        Lighting.Brightness = 2
-        Lighting.Ambient = Color3.fromRGB(255, 150, 100)
-        Lighting.FogEnd = 500
+        lighting.ClockTime = 18
+        lighting.Brightness = 2
+        lighting.Ambient = Color3.fromRGB(255, 150, 100)
+        lighting.FogEnd = 500
     elseif selection == "Nigth" then
-        Lighting.ClockTime = 20
-        Lighting.Brightness = 1.5
-        Lighting.Ambient = Color3.fromRGB(100, 100, 150)
-        Lighting.FogEnd = 800
+        lighting.ClockTime = 20
+        lighting.Brightness = 1.5
+        lighting.Ambient = Color3.fromRGB(100, 100, 150)
+        lighting.FogEnd = 800
     elseif selection == "Midnight" then
-        Lighting.ClockTime = 0
-        Lighting.Brightness = 1
-        Lighting.Ambient = Color3.fromRGB(50, 50, 100)
-        Lighting.FogEnd = 400
+        lighting.ClockTime = 0
+        lighting.Brightness = 1
+        lighting.Ambient = Color3.fromRGB(50, 50, 100)
+        lighting.FogEnd = 400
     elseif selection == "Dawn" then
-        Lighting.ClockTime = 4
-        Lighting.Brightness = 1.8
-        Lighting.Ambient = Color3.fromRGB(180, 180, 220)
+        lighting.ClockTime = 4
+        lighting.Brightness = 1.8
+        lighting.Ambient = Color3.fromRGB(180, 180, 220)
     elseif selection == "Early Morning" then
-        Lighting.ClockTime = 2
-        Lighting.Brightness = 1.2
-        Lighting.Ambient = Color3.fromRGB(100, 120, 180)
+        lighting.ClockTime = 2
+        lighting.Brightness = 1.2
+        lighting.Ambient = Color3.fromRGB(100, 120, 180)
+    end
+end)
+timeDropdown:Add("Night")
+timeDropdown:Add("Day")
+timeDropdown:Add("Midnight")
+timeDropdown:Add("Morning")
+timeDropdown:Add("Noon")
+timeDropdown:Add("Afternoon")
+timeDropdown:Add("Sunset")
+timeDropdown:Add("Nigth")
+timeDropdown:Add("Dawn")
+timeDropdown:Add("Early Morning")
+
+-- Initialize the variable outside for external reference
+local fastRebirth = false
+
+-- Add the switch for "Fast Rebirth"
+farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
+    fastRebirth = p79
+
+    if p79 then
+        spawn(function()
+            local _ReplicatedStorage = game:GetService('ReplicatedStorage')
+            local _LocalPlayer = game:GetService('Players').LocalPlayer
+
+            local function u91(_)
+                local _petsFolder = _LocalPlayer.petsFolder
+                local v83, v84, v85 = pairs(_petsFolder:GetChildren())
+
+                while true do
+                    local v86
+                    v85, v86 = v83(v84, v85)
+                    if v85 == nil then break end
+                    if v86:IsA('Folder') then
+                        local v87, v88, v89 = pairs(v86:GetChildren())
+                        while true do
+                            local v90
+                            v89, v90 = v87(v88, v89)
+                            if v89 == nil then break end
+                            _ReplicatedStorage.rEvents.equipPetEvent:FireServer('unequipPet', v90)
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+
+            local function v97(p92)
+                u91()
+                task.wait(0.01)
+                local v93, v94, v95 = pairs(_LocalPlayer.petsFolder.Unique:GetChildren())
+                while true do
+                    local v96
+                    v95, v96 = v93(v94, v95)
+                    if v95 == nil then break end
+                    if v96.Name == p92 then
+                        _ReplicatedStorage.rEvents.equipPetEvent:FireServer('equipPet', v96)
+                    end
+                end
+            end
+
+            local function v105(p99)
+                local v100 = workspace.machinesFolder:FindFirstChild(p99)
+                if not v100 then
+                    local v101, v102, v103 = pairs(workspace:GetChildren())
+                    while true do
+                        local v104
+                        v103, v104 = v101(v102, v103)
+                        if v103 == nil then break end
+                        if v104:IsA('Folder') and v104.Name:find('machines') then
+                            v100 = v104:FindFirstChild(p99)
+                            if v100 then break end
+                        end
+                    end
+                end
+                return v100
+            end
+
+            local function v107()
+                local _VirtualInputManager = game:GetService('VirtualInputManager')
+                _VirtualInputManager:SendKeyEvent(true, 'E', false, game)
+                task.wait(0.1)
+                _VirtualInputManager:SendKeyEvent(false, 'E', false, game)
+            end
+
+            while fastRebirth do
+                local v108 = 10000 + 5000 * _LocalPlayer.leaderstats.Rebirths.Value
+                if _LocalPlayer.ultimatesFolder:FindFirstChild('Golden Rebirth') then
+                    local _Value = _LocalPlayer.ultimatesFolder['Golden Rebirth'].Value
+                    v108 = math.floor(v108 * (1 - _Value * 0.1))
+                end
+
+                u91()
+                task.wait(0.1)
+                v97('Swift Samurai')
+
+                while _LocalPlayer.leaderstats.Strength.Value < v108 do
+                    for _ = 1, 15 do
+                        _LocalPlayer.muscleEvent:FireServer('rep')
+                    end
+                    task.wait()
+                end
+
+                u91()
+                task.wait(0.1)
+                v97('Tribal Overlord')
+
+                local _JungleBarLift = v105('Jungle Bar Lift')
+                if _JungleBarLift and _JungleBarLift:FindFirstChild('interactSeat') then
+                    _LocalPlayer.Character.HumanoidRootPart.CFrame = _JungleBarLift.interactSeat.CFrame * CFrame.new(0, 3, 0)
+                    repeat
+                        task.wait(0.1)
+                        local _VirtualInputManager = game:GetService('VirtualInputManager')
+                        _VirtualInputManager:SendKeyEvent(true, 'E', false, game)
+                        task.wait(0.1)
+                        _VirtualInputManager:SendKeyEvent(false, 'E', false, game)
+                    until _LocalPlayer.Character.Humanoid.Sit
+                end
+
+                local _Value2 = _LocalPlayer.leaderstats.Rebirths.Value
+                repeat
+                    game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer('rebirthRequest')
+                    task.wait(0.1)
+                until _Value2 < _LocalPlayer.leaderstats.Rebirths.Value
+
+                task.wait()
+            end
+        end)
     end
 end)
 
-local Kill = window:AddTab("Kill") -- Create the tab for killer features
+-- Hide all frames
+farmingTab:AddSwitch("Hide All Frames", function(bool)
+    local rSto = game:GetService("ReplicatedStorage")
+    for _, obj in pairs(rSto:GetChildren()) do
+        if obj.Name:match("Frame$") then
+            obj.Visible = not bool
+        end
+    end
+end)
 
--- Add features to "Kill" tab
-local Kill = KillerTab
+-- Quick TPs
+farmingTab:AddButton("Jungle Squat Area", function() tpTo(Vector3.new(-8371.4, 6.8, 2858.9)) end)
+farmingTab:AddButton("Jungle Lift Area", function() tpTo(Vector3.new(-8652.9, 29.3, 2089.3)) end)
+
+farmingTab:AddSwitch("Auto Spin Wheel", function(bool)
+    _G.AutoSpinWheel = bool
+    if bool then
+        spawn(function()
+            while _G.AutoSpinWheel do
+                game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"])
+                task.wait(1)
+            end
+        end)
+    end
+end)
+
+-- Full Optimization
+farmingTab:AddButton("Full Optimization", function()
+    pcall(function()
+        for _, g in ipairs(LocalPlayer.PlayerGui:GetChildren()) do if g:IsA("ScreenGui") then g:Destroy() end end
+        for _, o in ipairs(Workspace:GetDescendants()) do
+            if o:IsA("ParticleEmitter") or o:IsA("PointLight") then o:Destroy() end
+        end
+        for _, s in ipairs(Lighting:GetChildren()) do
+            if s:IsA("Sky") then s:Destroy() end
+        end
+        local darkSky = Instance.new("Sky", Lighting)
+        for _, face in ipairs({"Bk", "Dn", "Ft", "Lf", "Rt", "Up"}) do
+            darkSky["Skybox" .. face] = "rbxassetid://0"
+        end
+        Lighting.Brightness = 0
+        Lighting.ClockTime = 0
+        Lighting.OutdoorAmbient = Color3.new()
+        Lighting.Ambient = Color3.new()
+        Lighting.FogEnd = 120
+    end)
+end)
+
+-- Anti-Lag
+farmingTab:AddButton("Anti-Lag (Performance)", function()
+    pcall(function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 1e9
+        Lighting.Brightness = 0
+        for _, o in ipairs(Workspace:GetDescendants()) do
+            if o:IsA("ParticleEmitter") then o.Enabled = false end
+            if o:IsA("Decal") or o:IsA("Texture") then o.Transparency = 1 end
+        end
+    end)
+end)
+
+-- Position Lock
+local lockConn
+farmingTab:AddButton("Lock Position", function(en)
+    getgenv().PositionLocked = en
+    local hrp = getHRP()
+    if not hrp then return end
+
+    if en then
+        local pos = hrp.Position
+        hrp.Anchored = true
+        if lockConn then lockConn:Disconnect() end
+        lockConn = RunService.Heartbeat:Connect(function()
+            if getgenv().PositionLocked and hrp and hrp.Parent then
+                hrp.CFrame = CFrame.new(pos)
+            end
+        end)
+    else
+        if hrp then hrp.Anchored = false end
+        if lockConn then lockConn:Disconnect() lockConn = nil end
+    end
+end)
+
+-- Change Time of Day Dropdown
+local timeDropdown = farmingTab:AddDropdown("change time", function(selection)
+    local lighting = game:GetService("Lighting")
+    -- Reset
+    lighting.Brightness = 2
+    lighting.FogEnd = 100000
+    lighting.Ambient = Color3.fromRGB(127,127,127)
+
+    if selection == "Morning" then
+        lighting.ClockTime = 6
+        lighting.Brightness = 2
+        lighting.Ambient = Color3.fromRGB(200, 200, 255)
+    elseif selection == "Noon" then
+        lighting.ClockTime = 12
+        lighting.Brightness = 3
+        lighting.Ambient = Color3.fromRGB(255, 255, 255)
+    elseif selection == "Afternoon" then
+        lighting.ClockTime = 16
+        lighting.Brightness = 2.5
+        lighting.Ambient = Color3.fromRGB(255, 220, 180)
+    elseif selection == "Sunset" then
+        lighting.ClockTime = 18
+        lighting.Brightness = 2
+        lighting.Ambient = Color3.fromRGB(255, 150, 100)
+        lighting.FogEnd = 500
+    elseif selection == "Nigth" then
+        lighting.ClockTime = 20
+        lighting.Brightness = 1.5
+        lighting.Ambient = Color3.fromRGB(100, 100, 150)
+        lighting.FogEnd = 800
+    elseif selection == "Midnight" then
+        lighting.ClockTime = 0
+        lighting.Brightness = 1
+        lighting.Ambient = Color3.fromRGB(50, 50, 100)
+        lighting.FogEnd = 400
+    elseif selection == "Dawn" then
+        lighting.ClockTime = 4
+        lighting.Brightness = 1.8
+        lighting.Ambient = Color3.fromRGB(180, 180, 220)
+    elseif selection == "Early Morning" then
+        lighting.ClockTime = 2
+        lighting.Brightness = 1.2
+        lighting.Ambient = Color3.fromRGB(100, 120, 180)
+    end
+end)
+timeDropdown:Add("Night")
+timeDropdown:Add("Day")
+timeDropdown:Add("Midnight")
+timeDropdown:Add("Morning")
+timeDropdown:Add("Noon")
+timeDropdown:Add("Afternoon")
+timeDropdown:Add("Sunset")
+timeDropdown:Add("Nigth")
+timeDropdown:Add("Dawn")
+timeDropdown:Add("Early Morning")
+
+-- Initialize variable for external reference
+local fastRebirth = false
+
+-- Add "Fast Rebirth" switch
+farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
+    fastRebirth = p79
+
+    if p79 then
+        spawn(function()
+            local _ReplicatedStorage = game:GetService('ReplicatedStorage')
+            local _LocalPlayer = game:GetService('Players').LocalPlayer
+
+            local function u91(_)
+                local _petsFolder = _LocalPlayer.petsFolder
+                local v83, v84, v85 = pairs(_petsFolder:GetChildren())
+
+                while true do
+                    local v86
+                    v85, v86 = v83(v84, v85)
+                    if v85 == nil then break end
+                    if v86:IsA('Folder') then
+                        local v87, v88, v89 = pairs(v86:GetChildren())
+                        while true do
+                            local v90
+                            v89, v90 = v87(v88, v89)
+                            if v89 == nil then break end
+                            _ReplicatedStorage.rEvents.equipPetEvent:FireServer('unequipPet', v90)
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+
+            local function v97(p92)
+                u91()
+                task.wait(0.01)
+                local v93, v94, v95 = pairs(_LocalPlayer.petsFolder.Unique:GetChildren())
+                while true do
+                    local v96
+                    v95, v96 = v93(v94, v95)
+                    if v95 == nil then break end
+                    if v96.Name == p92 then
+                        _ReplicatedStorage.rEvents.equipPetEvent:FireServer('equipPet', v96)
+                    end
+                end
+            end
+
+            local function v105(p99)
+                local v100 = workspace.machinesFolder:FindFirstChild(p99)
+                if not v100 then
+                    local v101, v102, v103 = pairs(workspace:GetChildren())
+                    while true do
+                        local v104
+                        v103, v104 = v101(v102, v103)
+                        if v103 == nil then break end
+                        if v104:IsA('Folder') and v104.Name:find('machines') then
+                            v100 = v104:FindFirstChild(p99)
+                            if v100 then break end
+                        end
+                    end
+                end
+                return v100
+            end
+
+            local function v107()
+                local _VirtualInputManager = game:GetService('VirtualInputManager')
+                _VirtualInputManager:SendKeyEvent(true, 'E', false, game)
+                task.wait(0.1)
+                _VirtualInputManager:SendKeyEvent(false, 'E', false, game)
+            end
+
+            while fastRebirth do
+                local v108 = 10000 + 5000 * _LocalPlayer.leaderstats.Rebirths.Value
+                if _LocalPlayer.ultimatesFolder:FindFirstChild('Golden Rebirth') then
+                    local _Value = _LocalPlayer.ultimatesFolder['Golden Rebirth'].Value
+                    v108 = math.floor(v108 * (1 - _Value * 0.1))
+                end
+
+                u91()
+                task.wait(0.1)
+                v97('Swift Samurai')
+
+                while _LocalPlayer.leaderstats.Strength.Value < v108 do
+                    for _ = 1, 15 do
+                        _LocalPlayer.muscleEvent:FireServer('rep')
+                    end
+                    task.wait()
+                end
+
+                u91()
+                task.wait(0.1)
+                v97('Tribal Overlord')
+
+                local _JungleBarLift = v105('Jungle Bar Lift')
+                if _JungleBarLift and _JungleBarLift:FindFirstChild('interactSeat') then
+                    _LocalPlayer.Character.HumanoidRootPart.CFrame = _JungleBarLift.interactSeat.CFrame * CFrame.new(0, 3, 0)
+                    repeat
+                        task.wait(0.1)
+                        local _VirtualInputManager = game:GetService('VirtualInputManager')
+                        _VirtualInputManager:SendKeyEvent(true, 'E', false, game)
+                        task.wait(0.1)
+                        _VirtualInputManager:SendKeyEvent(false, 'E', false, game)
+                    until _LocalPlayer.Character.Humanoid.Sit
+                end
+
+                local _Value2 = _LocalPlayer.leaderstats.Rebirths.Value
+                repeat
+                    game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer('rebirthRequest')
+                    task.wait(0.1)
+                until _Value2 < _LocalPlayer.leaderstats.Rebirths.Value
+
+                task.wait()
+            end
+        end)
+    end
+end)
+
+-- Hide all frames
+farmingTab:AddSwitch("Hide All Frames", function(bool)
+    local rSto = game:GetService("ReplicatedStorage")
+    for _, obj in pairs(rSto:GetChildren()) do
+        if obj.Name:match("Frame$") then
+            obj.Visible = not bool
+        end
+    end
+end)
+
+-- Quick TPs
+farmingTab:AddButton("Jungle Squat Area", function() tpTo(Vector3.new(-8371.4, 6.8, 2858.9)) end)
+farmingTab:AddButton("Jungle Lift Area", function() tpTo(Vector3.new(-8652.9, 29.3, 2089.3)) end)
+
+farmingTab:AddSwitch("Auto Spin Wheel", function(bool)
+    _G.AutoSpinWheel = bool
+    if bool then
+        spawn(function()
+            while _G.AutoSpinWheel do
+                game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"])
+                task.wait(1)
+            end
+        end)
+    end
+end)
+
+-- Full Optimization
+farmingTab:AddButton("Full Optimization", function()
+    pcall(function()
+        for _, g in ipairs(LocalPlayer.PlayerGui:GetChildren()) do if g:IsA("ScreenGui") then g:Destroy() end end
+        for _, o in ipairs(Workspace:GetDescendants()) do
+            if o:IsA("ParticleEmitter") or o:IsA("PointLight") then o:Destroy() end
+        end
+        for _, s in ipairs(Lighting:GetChildren()) do
+            if s:IsA("Sky") then s:Destroy() end
+        end
+        local darkSky = Instance.new("Sky", Lighting)
+        for _, face in ipairs({"Bk", "Dn", "Ft", "Lf", "Rt", "Up"}) do
+            darkSky["Skybox" .. face] = "rbxassetid://0"
+        end
+        Lighting.Brightness = 0
+        Lighting.ClockTime = 0
+        Lighting.OutdoorAmbient = Color3.new()
+        Lighting.Ambient = Color3.new()
+        Lighting.FogEnd = 120
+    end)
+end)
+
+-- Anti-Lag
+farmingTab:AddButton("Anti-Lag (Performance)", function()
+    pcall(function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 1e9
+        Lighting.Brightness = 0
+        for _, o in ipairs(Workspace:GetDescendants()) do
+            if o:IsA("ParticleEmitter") then o.Enabled = false end
+            if o:IsA("Decal") or o:IsA("Texture") then o.Transparency = 1 end
+        end
+    end)
+end)
+
+-- Position Lock
+local lockConn
+farmingTab:AddButton("Lock Position", function(en)
+    getgenv().PositionLocked = en
+    local hrp = getHRP()
+    if not hrp then return end
+
+    if en then
+        local pos = hrp.Position
+        hrp.Anchored = true
+        if lockConn then lockConn:Disconnect() end
+        lockConn = RunService.Heartbeat:Connect(function()
+            if getgenv().PositionLocked and hrp and hrp.Parent then
+                hrp.CFrame = CFrame.new(pos)
+            end
+        end)
+    else
+        if hrp then hrp.Anchored = false end
+        if lockConn then lockConn:Disconnect() lockConn = nil end
+    end
+end)
+
+-- Change time of day dropdown
+local timeDropdown2 = farmingTab:AddDropdown("change time", function(selection)
+    local lighting = game:GetService("Lighting")
+    -- Reset
+    lighting.Brightness = 2
+    lighting.FogEnd = 100000
+    lighting.Ambient = Color3.fromRGB(127,127,127)
+
+    if selection == "Morning" then
+        lighting.ClockTime = 6
+        lighting.Brightness = 2
+        lighting.Ambient = Color3.fromRGB(200, 200, 255)
+    elseif selection == "Noon" then
+        lighting.ClockTime = 12
+        lighting.Brightness = 3
+        lighting.Ambient = Color3.fromRGB(255, 255, 255)
+    elseif selection == "Afternoon" then
+        lighting.ClockTime = 16
+        lighting.Brightness = 2.5
+        lighting.Ambient = Color3.fromRGB(255, 220, 180)
+    elseif selection == "Sunset" then
+        lighting.ClockTime = 18
+        lighting.Brightness = 2
+        lighting.Ambient = Color3.fromRGB(255, 150, 100)
+        lighting.FogEnd = 500
+    elseif selection == "Nigth" then
+        lighting.ClockTime = 20
+        lighting.Brightness = 1.5
+        lighting.Ambient = Color3.fromRGB(100, 100, 150)
+        lighting.FogEnd = 800
+    elseif selection == "Midnight" then
+        lighting.ClockTime = 0
+        lighting.Brightness = 1
+        lighting.Ambient = Color3.fromRGB(50, 50, 100)
+        lighting.FogEnd = 400
+    elseif selection == "Dawn" then
+        lighting.ClockTime = 4
+        lighting.Brightness = 1.8
+        lighting.Ambient = Color3.fromRGB(180, 180, 220)
+    elseif selection == "Early Morning" then
+        lighting.ClockTime = 2
+        lighting.Brightness = 1.2
+        lighting.Ambient = Color3.fromRGB(100, 120, 180)
+    end
+end)
+timeDropdown2:Add("Night")
+timeDropdown2:Add("Day")
+timeDropdown2:Add("Midnight")
+timeDropdown2:Add("Morning")
+timeDropdown2:Add("Noon")
+timeDropdown2:Add("Afternoon")
+timeDropdown2:Add("Sunset")
+timeDropdown2:Add("Nigth")
+timeDropdown2:Add("Dawn")
+timeDropdown2:Add("Early Morning")
+
+-- Kill Tab Features
+local Kill = window:AddTab("Kill") -- Corrected tab assignment
 
 -- Auto Good Karma
 Kill:AddSwitch("Auto Good Karma", function(state)
     AutoGoodKarma = state
     task.spawn(function()
         while AutoGoodKarma do
-            local char = LP.Character
+            local char = LocalPlayer.Character
             local rightHand = char and char:FindFirstChild("RightHand")
             local leftHand = char and char:FindFirstChild("LeftHand")
             if char and rightHand and leftHand then
                 for _, target in ipairs(Players:GetPlayers()) do
-                    if target ~= LP then
+                    if target ~= LocalPlayer then
                         local evilKarma = target:FindFirstChild("evilKarma")
                         local goodKarma = target:FindFirstChild("goodKarma")
                         if evilKarma and goodKarma and evilKarma:IsA("IntValue") and goodKarma:IsA("IntValue") then
@@ -796,12 +1346,12 @@ Kill:AddSwitch("Auto Bad Karma", function(state)
     AutoBadKarma = state
     task.spawn(function()
         while AutoBadKarma do
-            local char = LP.Character
+            local char = LocalPlayer.Character
             local rightHand = char and char:FindFirstChild("RightHand")
             local leftHand = char and char:FindFirstChild("LeftHand")
             if char and rightHand and leftHand then
                 for _, target in ipairs(Players:GetPlayers()) do
-                    if target ~= LP then
+                    if target ~= LocalPlayer then
                         local evilKarma = target:FindFirstChild("evilKarma")
                         local goodKarma = target:FindFirstChild("goodKarma")
                         if evilKarma and goodKarma and evilKarma:IsA("IntValue") and goodKarma:IsA("IntValue") then
@@ -828,12 +1378,12 @@ local playerWhitelist = {}
 Kill:AddSwitch("Auto Whitelist Friends", function(state)
     if state then
         for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LP and LP:IsFriendsWith(player.UserId) then
+            if player ~= LocalPlayer and LocalPlayer:IsFriendsWith(player.UserId) then
                 playerWhitelist[player.Name] = true
             end
         end
         Players.PlayerAdded:Connect(function(player)
-            if LP:IsFriendsWith(player.UserId) then
+            if LocalPlayer:IsFriendsWith(player.UserId) then
                 playerWhitelist[player.Name] = true
             end
         end)
@@ -863,16 +1413,16 @@ Kill:AddSwitch("Auto Kill", function(state)
     autoKill = state
     task.spawn(function()
         while autoKill do
-            local char = LP.Character or LP.CharacterAdded:Wait()
+            local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
             local rightHand = char and char:FindFirstChild("RightHand")
             local leftHand = char and char:FindFirstChild("LeftHand")
-            local punch = LP.Backpack:FindFirstChild("Punch")
+            local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
             if punch and not char:FindFirstChild("Punch") then
                 punch.Parent = char
             end
             if rightHand and leftHand then
                 for _, target in ipairs(Players:GetPlayers()) do
-                    if target ~= LP and not playerWhitelist[target.Name] then
+                    if target ~= LocalPlayer and not playerWhitelist[target.Name] then
                         local targetChar = target.Character
                         local rootPart = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
                         local humanoid = targetChar and targetChar:FindFirstChild("Humanoid")
@@ -910,8 +1460,8 @@ end)
 local function updateTargetDropdown()
     local options = {}
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LP then
-            options[#options + 1] = player.DisplayName
+        if player ~= LocalPlayer then
+            table.insert(options, player.DisplayName)
         end
     end
     targetDropdown:Clear()
@@ -920,7 +1470,6 @@ local function updateTargetDropdown()
     end
 end
 
--- Refresh player list dynamically
 Players.PlayerAdded:Connect(function()
     updateTargetDropdown()
 end)
@@ -939,17 +1488,17 @@ Kill:AddSwitch("Start Kill Target", function(state)
     killTargetActive = state
     task.spawn(function()
         while killTargetActive do
-            local char = LP.Character or LP.CharacterAdded:Wait()
+            local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
             local rightHand = char and char:FindFirstChild("RightHand")
             local leftHand = char and char:FindFirstChild("LeftHand")
-            local punch = LP.Backpack:FindFirstChild("Punch")
+            local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
             if punch and not char:FindFirstChild("Punch") then
                 punch.Parent = char
             end
             if rightHand and leftHand then
                 for _, name in ipairs(targetPlayerNames) do
                     local target = Players:FindFirstChild(name)
-                    if target and target ~= LP and target.Character then
+                    if target and target ~= LocalPlayer and target.Character then
                         local rootPart = target.Character:FindFirstChild("HumanoidRootPart")
                         if rootPart then
                             pcall(function()
@@ -977,26 +1526,26 @@ local viewDropdown = Kill:AddDropdown("Select View Target", function(value)
 end)
 
 for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LP then
+    if player ~= LocalPlayer then
         viewDropdown:Add(player.DisplayName)
         ViewDropdownItems[player.Name] = player.DisplayName
     end
 end
 
 Players.PlayerAdded:Connect(function(player)
-    if player ~= LP then
+    if player ~= LocalPlayer then
         viewDropdown:Add(player.DisplayName)
         ViewDropdownItems[player.Name] = player.DisplayName
     end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    if player ~= LP then
+    if player ~= LocalPlayer then
         ViewDropdownItems[player.Name] = nil
         -- Rebuild dropdown
         local options = {}
         for _, display in pairs(ViewDropdownItems) do
-            options[#options + 1] = display
+            table.insert(options, display)
         end
         viewDropdown:Clear()
         for _, displayName in ipairs(options) do
@@ -1007,7 +1556,7 @@ end)
 
 -- Follow selected player
 local function followPlayer(target)
-    local myChar = LP.Character
+    local myChar = LocalPlayer.Character
     local targetChar = target.Character
     if not (myChar and targetChar) then return end
     local myHRP = myChar:FindFirstChild("HumanoidRootPart")
@@ -1025,13 +1574,13 @@ Kill:AddSwitch("View Player", function(state)
     spying = state
     if not spying then
         local cam = workspace.CurrentCamera
-        cam.CameraSubject = LP.Character and LP.Character:FindFirstChild("Humanoid") or LP
+        cam.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") or LocalPlayer
         return
     end
     task.spawn(function()
         while spying do
             local target = Players:FindFirstChild(ViewTargetName)
-            if target and target ~= LP then
+            if target and target ~= LocalPlayer then
                 local humanoid = target.Character and target.Character:FindFirstChild("Humanoid")
                 if humanoid then
                     workspace.CurrentCamera.CameraSubject = humanoid
@@ -1042,7 +1591,6 @@ Kill:AddSwitch("View Player", function(state)
     end)
 end)
 
--- Button to stop following
 Kill:AddButton("Stop Following", function()
     spying = false
     print("Stopped following")
@@ -1063,7 +1611,7 @@ end)
 
 -- Remove punch animation
 Kill:AddButton("Remove Punch Anim", function()
-    local character = LP.Character
+    local character = LocalPlayer.Character
     if character and character:FindFirstChild("Humanoid") then
         local humanoid = character:FindFirstChild("Humanoid")
         if humanoid then
@@ -1078,7 +1626,7 @@ end)
 
 -- Auto Slam
 local autoSlamActive = false
-kill:AddSwitch("auto slams", function(state)
+Kill:AddSwitch("auto slams", function(state)
     autoSlamActive = state
     if state then
         task.spawn(function()
@@ -1101,7 +1649,7 @@ kill:AddSwitch("auto slams", function(state)
     end
 end)
 
-kill:AddButton("NaN Combo", function()
-    local args = {"changeSize", 0/0}
+Kill:AddButton("NaN Combo", function()
+    local args = {"changeSize", math.huge} -- Replaced 0/0 with math.huge for a large value
     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
 end)
