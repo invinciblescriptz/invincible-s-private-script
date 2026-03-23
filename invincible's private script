@@ -150,11 +150,9 @@ end
 -- Initialize tabs
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
-local FarmTab = window:AddTab("Farm Op")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local killerTab = window:AddTab("Killer")
-local miscTab = window:AddTab("Misc")
 local farmingTab = window:AddTab("Farming") -- Added missing Farming tab
 
 local toolsFolder = mainTab:AddFolder("Tools")
@@ -891,3 +889,279 @@ farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
         end)
     end
 end)
+
+local targetRebirthValue = 100 -- default
+local infiniteSwitch
+
+rebirthTab:AddTextBox("Rebirth Target", function(text)
+    local newValue = tonumber(text)
+    if newValue and newValue > 0 then
+        targetRebirthValue = newValue
+        updateStats()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Objetivo Actualizado",
+            Text = "Nuevo objetivo: " .. tostring(targetRebirthValue) .. " renacimientos",
+            Duration = 0
+        })
+    else
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Entrada Inválida",
+            Text = "Por favor ingresa un número válido mayor que 0",
+            Duration = 0
+        })
+    end
+end)
+
+local targetSwitch = rebirthTab:AddSwitch("Auto Rebirth Target", function(bool)
+    _G.targetRebirthActive = bool
+    if bool then
+        if _G.infiniteRebirthActive and infiniteSwitch then
+            infiniteSwitch:Set(false)
+            _G.infiniteRebirthActive = false
+        end
+        spawn(function()
+            while _G.targetRebirthActive and wait(0.1) do
+                local currentRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
+                if currentRebirths >= targetRebirthValue then
+                    targetSwitch:Set(false)
+                    _G.targetRebirthActive = false
+                    game:GetService("StarterGui"):SetCore("SendNotification", {
+                        Title = "¡Objetivo Alcanzado!",
+                        Text = "Has alcanzado " .. tostring(targetRebirthValue) .. " renacimientos",
+                        Duration = 5
+                    })
+                    break
+                end
+                game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            end
+        end)
+    end
+end)
+
+infiniteSwitch = rebirthTab:AddSwitch("Auto Rebirth (Infinite)", function(bool)
+    _G.infiniteRebirthActive = bool
+    if bool then
+        if _G.targetRebirthActive and targetSwitch then
+            targetSwitch:Set(false)
+            _G.targetRebirthActive = false
+        end
+        spawn(function()
+            while _G.infiniteRebirthActive and wait(0.1) do
+                game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            end
+        end)
+    end
+end)
+
+local sizeSwitch = rebirthTab:AddSwitch("Auto Size 1", function(bool)
+    _G.autoSizeActive = bool
+    if bool then
+        spawn(function()
+            while _G.autoSizeActive and wait() do
+                game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
+            end
+        end)
+    end
+end)
+
+local teleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", function(bool)
+    _G.teleportActive = bool
+    if bool then
+        spawn(function()
+            while _G.teleportActive and wait() do
+                if game.Players.LocalPlayer.Character then
+                    game.Players.LocalPlayer.Character:MoveTo(Vector3.new(-8646, 17, -5738))
+                end
+            end
+        end)
+    end
+end)
+
+local miscTab = MiscTab
+
+-- Misc 1 Folder
+local misc1Folder = AddFolder(miscTab, "Misc 1")
+
+misc1Folder:AddButton("Remove Portals", function()
+    for _, portal in pairs(game:GetDescendants()) do
+        if portal.Name == "RobloxForwardPortals" then
+            portal:Destroy()
+        end
+    end
+    if _G.AdRemovalConnection then
+        _G.AdRemovalConnection:Disconnect()
+    end
+    _G.AdRemovalConnection = game.DescendantAdded:Connect(function(descendant)
+        if descendant.Name == "RobloxForwardPortals" then
+            descendant:Destroy()
+        end
+    end)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Anuncios Eliminados",
+        Text = "Los anuncios de Roblox han sido eliminados",
+        Duration = 0
+    })
+end)
+
+local parts = {}
+local partSize = 2048
+local totalDistance = 50000
+local startPosition = Vector3.new(-2, -9.5, -2)
+local numberOfParts = math.ceil(totalDistance / partSize)
+
+local function createParts()
+    for x = 0, numberOfParts - 1 do
+        for z = 0, numberOfParts - 1 do
+            local newPartSide = Instance.new("Part")
+            newPartSide.Size = Vector3.new(partSize, 1, partSize)
+            newPartSide.Position = startPosition + Vector3.new(x * partSize, 0, z * partSize)
+            newPartSide.Anchored = true
+            newPartSide.Transparency = 1
+            newPartSide.CanCollide = true
+            newPartSide.Name = "Part_Side_" .. x .. "_" .. z
+            newPartSide.Parent = workspace
+            table.insert(parts, newPartSide)
+            
+            local newPartLeftRight = Instance.new("Part")
+            newPartLeftRight.Size = Vector3.new(partSize, 1, partSize)
+            newPartLeftRight.Position = startPosition + Vector3.new(-x * partSize, 0, z * partSize)
+            newPartLeftRight.Anchored = true
+            newPartLeftRight.Transparency = 1
+            newPartLeftRight.CanCollide = true
+            newPartLeftRight.Name = "Part_LeftRight_" .. x .. "_" .. z
+            newPartLeftRight.Parent = workspace
+            table.insert(parts, newPartLeftRight)
+            
+            local newPartUpLeft = Instance.new("Part")
+            newPartUpLeft.Size = Vector3.new(partSize, 1, partSize)
+            newPartUpLeft.Position = startPosition + Vector3.new(-x * partSize, 0, -z * partSize)
+            newPartUpLeft.Anchored = true
+            newPartUpLeft.Transparency = 1
+            newPartUpLeft.CanCollide = true
+            newPartUpLeft.Name = "Part_UpLeft_" .. x .. "_" .. z
+            newPartUpLeft.Parent = workspace
+            table.insert(parts, newPartUpLeft)
+            
+            local newPartUpRight = Instance.new("Part")
+            newPartUpRight.Size = Vector3.new(partSize, 1, partSize)
+            newPartUpRight.Position = startPosition + Vector3.new(x * partSize, 0, -z * partSize)
+            newPartUpRight.Anchored = true
+            newPartUpRight.Transparency = 1
+            newPartUpRight.CanCollide = true
+            newPartUpRight.Name = "Part_UpRight_" .. x .. "_" .. z
+            newPartUpRight.Parent = workspace
+            table.insert(parts, newPartUpRight)
+        end
+    end
+end
+
+local function makePartsWalkthrough()
+    for _, part in ipairs(parts) do
+        if part and part.Parent then
+            part.CanCollide = false
+        end
+    end
+end
+
+local function makePartsSolid()
+    for _, part in ipairs(parts) do
+        if part and part.Parent then
+            part.CanCollide = true
+        end
+    end
+end
+
+misc1Folder:AddSwitch("Walk on Water", function(bool)
+    if bool then
+        createParts()
+    else
+        makePartsWalkthrough()
+    end
+end)
+
+misc1Folder:AddSwitch("Auto Spin Wheel", function(bool)
+    _G.AutoSpinWheel = bool
+    if bool then
+        spawn(function()
+            while _G.AutoSpinWheel and wait(1) do
+                game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"])
+            end
+        end)
+    end
+end)
+
+misc1Folder:AddSwitch("Auto Claim Gifts", function(bool)
+    _G.AutoClaimGifts = bool
+    if bool then
+        spawn(function()
+            while _G.AutoClaimGifts and wait(1) do
+                for i = 1, 8 do
+                    game:GetService("ReplicatedStorage").rEvents.freeGiftClaimRemote:InvokeServer("claimGift", i)
+                end
+            end
+        end)
+    end
+end)
+
+local misc2Folder = AddFolder(miscTab, "Misc 2")
+
+misc2Folder:AddSwitch("No-Clip", function(bool)
+    _G.NoClip = bool
+    if bool then
+        local noclipLoop
+        noclipLoop = game:GetService("RunService").Stepped:Connect(function()
+            if _G.NoClip then
+                for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            else
+                noclipLoop:Disconnect()
+            end
+        end)
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "No-Clip Activado",
+            Text = "Ahora puedes atravesar objetos",
+            Duration = 0
+        })
+    end
+end)
+
+misc2Folder:AddSwitch("infinite jump", function(bool)
+    _G.InfiniteJump = bool
+    if bool then
+        local InfiniteJumpConnection
+        InfiniteJumpConnection = game:GetService("UserInputService").JumpRequest:Connect(function()
+            if _G.InfiniteJump then
+                game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+            else
+                InfiniteJumpConnection:Disconnect()
+            end
+        end)
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Salto Infinito Activado",
+            Text = "Ahora puedes saltar sin límites",
+            Duration = 0
+        })
+    end
+end)
+
+local timeDropdown = farmingTab:AddDropdown("Change Time", function(selection)
+    local lighting = game:GetService("Lighting")
+    if selection == "Night" then
+        lighting.ClockTime = 0
+    elseif selection == "Day" then
+        lighting.ClockTime = 12
+    elseif selection == "Midnight" then
+        lighting.ClockTime = 6
+    end
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Hora Cambiada",
+        Text = "La hora del día ha sido cambiada a: " .. selection,
+        Duration = 0
+    })
+end)
+timeDropdown:Add("Night")
+timeDropdown:Add("Day")
+timeDropdown:Add("Midnight")
