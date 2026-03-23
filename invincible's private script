@@ -152,14 +152,17 @@ toolsFolder:AddSwitch("Auto Pushups", function(s)
     states.AutoPushups = s
     if s then startAutoRep("Pushups", "AutoPushups") end
 end)
+
 toolsFolder:AddSwitch("Auto Weight", function(s)
     states.AutoWeight = s
     if s then startAutoRep("Weight", "AutoWeight") end
 end)
+
 toolsFolder:AddSwitch("Auto Handstands", function(s)
     states.AutoHandstands = s
     if s then startAutoRep("Handstands", "AutoHandstands") end
 end)
+
 toolsFolder:AddSwitch("Auto Punch (Fast)", function(s)
     states.FastPunch = s
     if s then
@@ -634,7 +637,6 @@ local autoTeleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", 
         else
             stopAutoTeleport()
         end
-        -- update button text if needed
     end
 })
 
@@ -643,7 +645,7 @@ local misc1Folder = miscTab:AddFolder("Misc 1")
 local misc2Folder = miscTab:AddFolder("Misc 2")
 
 misc1Folder:AddButton("Remove Portals", function()
-    for _, portal in pairs(game:GetDescendants()) do
+    for _, portal in pairs(workspace:GetDescendants()) do
         if portal.Name == "RobloxForwardPortals" then
             portal:Destroy()
         end
@@ -873,5 +875,108 @@ farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
                 task.wait()
             end
         end)
+    end
+end)
+
+farmingTab:AddButton("Jungle Squat", function()
+    local CharacterModel = LocalPlayer.Character
+    if CharacterModel and CharacterModel:FindFirstChild("HumanoidRootPart") then
+        CharacterModel.HumanoidRootPart.CFrame = CFrame.new(-8371.4336, 6.7981, 2858.8853)
+    end
+end)
+
+farmingTab:AddButton("Jungle lift", function()
+    local CharacterModel = LocalPlayer.Character
+    if CharacterModel and CharacterModel:FindFirstChild("HumanoidRootPart") then
+        CharacterModel.HumanoidRootPart.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
+    end
+end)
+
+local AutoEatEgg = false
+local AutoEatSwitch = farmingTab:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
+    AutoEatEgg = s
+    task.spawn(function()
+        while AutoEatEgg do
+            local Backpack = LocalPlayer:FindFirstChild("Backpack")
+            if Backpack then
+                local EggItem = Backpack:FindFirstChild("Protein Egg")
+                if EggItem then
+                    -- Auto eat logic can be added here if needed
+                end
+            end
+            task.wait(1800) -- 30 minutes
+        end
+    end)
+end)
+AutoEatSwitch:Set(false)
+
+farmingTab:AddButton("Anti Lag", function()
+    for _, DescendantObject in pairs(workspace:GetDescendants()) do
+        if DescendantObject:IsA("ParticleEmitter") then
+            DescendantObject.Enabled = false
+        end
+    end
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = 9e9
+    Lighting.Brightness = 0
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    for _, DecalObject in pairs(workspace:GetDescendants()) do
+        if DecalObject:IsA("Decal") then
+            DecalObject.Transparency = 1
+        end
+    end
+    for _, EffectObject in pairs(Lighting:GetChildren()) do
+        if EffectObject:IsA("BlurEffect") then
+            EffectObject.Enabled = false
+        end
+    end
+    game.StarterGui:SetCore("SendNotification", {
+        Text = "Full optimization applied!",
+        Title = "Anti Lag activado",
+        Duration = 5
+    })
+end)
+
+farmingTab:AddButton("Full Optimization", function()
+    for _, GuiObject in pairs(LocalPlayer:WaitForChild("PlayerGui"):GetChildren()) do
+        if GuiObject:IsA("ScreenGui") then
+            GuiObject:Destroy()
+        end
+    end
+    for _, ObjectInstance in pairs(workspace:GetDescendants()) do
+        if ObjectInstance:IsA("ParticleEmitter") or ObjectInstance:IsA("PointLight") then
+            ObjectInstance:Destroy()
+        end
+    end
+    -- Reset skybox
+    for _, Skybox in pairs(Lighting:GetChildren()) do
+        if Skybox:IsA("Sky") then
+            Skybox:Destroy()
+        end
+    end
+    local DarkSkybox = Instance.new("Sky")
+    DarkSkybox.Name = "DarkSky"
+    DarkSkybox.SkyboxBk = "rbxassetid://0"
+    DarkSkybox.SkyboxDn = "rbxassetid://0"
+    DarkSkybox.SkyboxFt = "rbxassetid://0"
+    DarkSkybox.SkyboxLf = "rbxassetid://0"
+    DarkSkybox.SkyboxRt = "rbxassetid://0"
+    DarkSkybox.SkyboxUp = "rbxassetid://0"
+    DarkSkybox.Parent = Lighting
+    Lighting.Brightness = 0
+    Lighting.ClockTime = 0
+    Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+    Lighting.Ambient = Color3.new(0, 0, 0)
+    Lighting.FogColor = Color3.new(0, 0, 0)
+    Lighting.FogEnd = 100
+end)
+
+farmingTab:AddSwitch('Hide Frame', function(p73)
+    local frames = { 'strengthFrame', 'durabilityFrame', 'agilityFrame' }
+    for _, frameName in ipairs(frames) do
+        local v78 = game:GetService('ReplicatedStorage'):FindFirstChild(frameName)
+        if v78 and v78:IsA('GuiObject') then
+            v78.Visible = not p73
+        end
     end
 end)
