@@ -21,9 +21,9 @@ local VirtualUser = game:GetService("VirtualUser")
 local Lighting = game:GetService("Lighting")
 
 local muscleEvent = LocalPlayer:WaitForChild("muscleEvent", 8)
-getgenv().NexusRunning = true
 
 -- Globals & states
+getgenv().NexusRunning = true
 local states = {
     AutoPushups = false,
     AutoWeight = false,
@@ -41,7 +41,15 @@ local states = {
 
 local targetRebirths = 1
 local selectedTarget = nil
-local jumpConn, antiAfkConn, lockConn, followTarget, following = nil, nil, nil, nil, false
+local jumpConn = nil
+local antiAfkConn = nil
+local lockConn = nil
+local followTarget = nil
+local following = false
+
+-- Rock farming globals
+getgenv().rockFarmActive = false
+getgenv().selectedRockDurability = 0
 
 -- Helper functions
 local function tpTo(pos)
@@ -424,13 +432,13 @@ task.spawn(function()
         end)
         task.wait(1.4)
     end
-    -- Cleanup
+    -- Cleanup labels
     for _, lbl in pairs(statLabels) do
         pcall(function() lbl:Destroy() end)
     end
 end)
 
--- Lock Position / Rebirth Control in Farming tab
+-- Lock Position / Rebirth Control Button in Farming tab
 local lockEnabled = false
 local function stopLock()
     if lockConn then lockConn:Disconnect() lockConn = nil end
@@ -464,8 +472,7 @@ local lockButton = farmingTab:AddButton("Lock Position", function()
     end
 end)
 
--- Auto-follow Player
-local followTarget, following = nil, false
+-- Auto-follow system
 local function followPlayer(target)
     local myChar = LocalPlayer.Character
     local targetChar = target.Character
@@ -478,14 +485,29 @@ local function followPlayer(target)
     end
 end
 
+local function startFollow()
+    if followTarget then
+        following = true
+        print("✅ Started following:", followTarget.Name)
+        task.spawn(function()
+            while following do
+                followPlayer(followTarget)
+                task.wait(0.01)
+            end
+        end)
+    end
+end
+
+local function stopFollow()
+    following = false
+end
+
 local followDropdown = killerTab:AddDropdown("Follow Player", function(selectedDisplayName)
     if selectedDisplayName and selectedDisplayName ~= "" then
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr.DisplayName == selectedDisplayName then
                 followTarget = plr
-                following = true
-                print("✅ Started following:", plr.Name)
-                followPlayer(plr)
+                startFollow()
                 break
             end
         end
@@ -498,6 +520,7 @@ for _, player in ipairs(Players:GetPlayers()) do
         followDropdown:Add(player.DisplayName)
     end
 end
+
 -- Update list when players join/leave
 Players.PlayerAdded:Connect(function(player)
     if player ~= LocalPlayer then
@@ -544,7 +567,7 @@ LocalPlayer.CharacterAdded:Connect(function()
     end
 end)
 
--- Auto Slam
+-- Auto Ground Slam
 local autoSlamActive = false
 killerTab:AddSwitch("auto slams", function(state)
     autoSlamActive = state
@@ -575,7 +598,7 @@ killerTab:AddButton("NaN Combo", function()
 end)
 
 -- Auto Rebirth towards target
-local targetRebirths = 10
+local targetRebirths = 10 -- set your target
 local function autoRebirth()
     task.spawn(function()
         while true do
@@ -584,16 +607,16 @@ local function autoRebirth()
         end
     end)
 end
-local autoRebirthToggle = rebirthTab:AddSwitch("Auto Rebirth (Infinite)", {
-    Default = false,
-    Callback = function(val)
-        if val then
-            autoRebirth()
-        end
+local function toggleAutoRebirth(val)
+    if val then
+        autoRebirth()
     end
+end
+local autoRebirthSwitch = rebirthTab:AddSwitch("Auto Rebirth (Infinite)", {
+    Default = false,
+    Callback = toggleAutoRebirth
 })
 
--- Auto Size 1
 local autoSizeSwitch = rebirthTab:AddSwitch("Auto Size 1", {
     Default = false,
     Callback = function(val)
@@ -609,7 +632,6 @@ local autoSizeSwitch = rebirthTab:AddSwitch("Auto Size 1", {
     end
 })
 
--- Auto Teleport to Muscle King
 local teleportSwitch
 teleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", {
     Default = false,
@@ -628,7 +650,7 @@ teleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", {
     end
 })
 
--- Misc Controls
+-- Misc Tab
 local misc1Folder = miscTab:AddFolder("Misc 1")
 local misc2Folder = miscTab:AddFolder("Misc 2")
 
@@ -651,16 +673,83 @@ misc1Folder:AddButton("Remove Portals", function()
     })
 end)
 
+local function createParts()
+    local parts = {}
+    local partSize = 2048
+    local totalDistance = 50000
+    local startPosition = Vector3.new(-2, -9.5, -2)
+    local numberOfParts = math.ceil(totalDistance / partSize)
+    for x = 0, numberOfParts - 1 do
+        for z = 0, numberOfParts - 1 do
+            local newPartSide = Instance.new("Part")
+            newPartSide.Size = Vector3.new(partSize, 1, partSize)
+            newPartSide.Position = startPosition + Vector3.new(x * partSize, 0, z * partSize)
+            newPartSide.Anchored = true
+            newPartSide.Transparency = 1
+            newPartSide.CanCollide = true
+            newPartSide.Name = "Part_Side_" .. x .. "_" .. z
+            newPartSide.Parent = workspace
+            table.insert(parts, newPartSide)
+            local newPartLeftRight = Instance.new("Part")
+            newPartLeftRight.Size = Vector3.new(partSize, 1, partSize)
+            newPartLeftRight.Position = startPosition + Vector3.new(-x * partSize, 0, z * partSize)
+            newPartLeftRight.Anchored = true
+            newPartLeftRight.Transparency = 1
+            newPartLeftRight.CanCollide = true
+            newPartLeftRight.Name = "Part_LeftRight_" .. x .. "_" .. z
+            newPartLeftRight.Parent = workspace
+            table.insert(parts, newPartLeftRight)
+            local newPartUpLeft = Instance.new("Part")
+            newPartUpLeft.Size = Vector3.new(partSize, 1, partSize)
+            newPartUpLeft.Position = startPosition + Vector3.new(-x * partSize, 0, -z * partSize)
+            newPartUpLeft.Anchored = true
+            newPartUpLeft.Transparency = 1
+            newPartUpLeft.CanCollide = true
+            newPartUpLeft.Name = "Part_UpLeft_" .. x .. "_" .. z
+            newPartUpLeft.Parent = workspace
+            table.insert(parts, newPartUpLeft)
+            local newPartUpRight = Instance.new("Part")
+            newPartUpRight.Size = Vector3.new(partSize, 1, partSize)
+            newPartUpRight.Position = startPosition + Vector3.new(x * partSize, 0, -z * partSize)
+            newPartUpRight.Anchored = true
+            newPartUpRight.Transparency = 1
+            newPartUpRight.CanCollide = true
+            newPartUpRight.Name = "Part_UpRight_" .. x .. "_" .. z
+            newPartUpRight.Parent = workspace
+            table.insert(parts, newPartUpRight)
+        end
+    end
+    return parts
+end
+
+local function makePartsWalkthrough(parts)
+    for _, part in ipairs(parts) do
+        if part and part.Parent then
+            part.CanCollide = false
+        end
+    end
+end
+
+local function makePartsSolid(parts)
+    for _, part in ipairs(parts) do
+        if part and part.Parent then
+            part.CanCollide = true
+        end
+    end
+end
+
+local parts = {}
+local createdParts = false
+
 misc1Folder:AddSwitch("Walk on Water", function(bool)
     if bool then
-        if not _G.waterParts then
-            _G.waterParts = createParts()
+        if not createdParts then
+            parts = createParts()
+            createdParts = true
         end
-        makePartsWalkthrough(_G.waterParts)
+        makePartsWalkthrough(parts)
     else
-        if _G.waterParts then
-            makePartsSolid(_G.waterParts)
-        end
+        makePartsSolid(parts)
     end
 end)
 
@@ -730,7 +819,6 @@ misc2Folder:AddSwitch("Infinite Jump", function(bool)
     end
 end)
 
--- Change Time of Day
 local timeDropdown = farmingTab:AddDropdown("Change Time", function(selection)
     local lighting = game:GetService("Lighting")
     if selection == "Night" then
