@@ -281,7 +281,7 @@ local rockFarmOptions = {
 for _, option in ipairs(rockFarmOptions) do
     local name, dur = option[1], option[2]
     rockFarmFolder:AddSwitch(name, function(s) setRockFarm(dur, s) end)
-end}
+end
 rockFarmFolder:AddButton("Stop All Rock Farming", function()
     getgenv().rockFarmActive = false
     getgenv().selectedRockDurability = 0
@@ -825,5 +825,3 @@ kill:AddButton("NaN Combo", function()
     local args = {"changeSize", 0/0} -- NaN
     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
 end)
-
--- END OF SCRIPT
