@@ -556,6 +556,11 @@ misc2Folder:AddSwitch("Infinite Jump", function(bool)
     end
 end)
 
+farmingTab:AddSwitch("Fast Strength)", function(state)
+    getgenv()._AutoRepFarmEnabled = state
+    warn("Fast Strength:", state and "ON" or "OFF")
+end)
+
 -- Add the switch for "Fast Rebirth"
 farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
     fastRebirth = p79
@@ -803,6 +808,78 @@ timeDropdown2:Add("Sunset")
 timeDropdown2:Add("Nigth")
 timeDropdown2:Add("Dawn")
 timeDropdown2:Add("Early Morning")
+
+-- 2️⃣ Switch: Eat Egg (60 Min)
+local autoEatEnabled = false
+local function eatProteinEggNew()
+    local player = game.Players.LocalPlayer
+    local backpack = player:WaitForChild("Backpack")
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    local egg = backpack:FindFirstChild("Protein Egg")
+    if egg then
+        egg.Parent = character
+        pcall(function()
+            egg:Activate()
+        end)
+        print("[AutoEgg] Protein Egg consumido.")
+    else
+        warn("[AutoEgg] No se encontró Protein Egg en Backpack.")
+    end
+end
+
+task.spawn(function()
+    while true do
+        if autoEatEnabled then
+            eatProteinEggNew()
+            task.wait(3600)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+farmingTab:AddSwitch("Eat Egg (60 Min)", function(state)
+    autoEatEnabled = state
+    print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
+end)
+
+
+-- 2️⃣ Switch: Eat Egg (30 Min)
+local autoEatEnabled = false
+local function eatProteinEggNew()
+    local player = game.Players.LocalPlayer
+    local backpack = player:WaitForChild("Backpack")
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    local egg = backpack:FindFirstChild("Protein Egg")
+    if egg then
+        egg.Parent = character
+        pcall(function()
+            egg:Activate()
+        end)
+        print("[AutoEgg] Protein Egg consumido.")
+    else
+        warn("[AutoEgg] No se encontró Protein Egg en Backpack.")
+    end
+end
+
+task.spawn(function()
+    while true do
+        if autoEatEnabled then
+            eatProteinEggNew()
+            task.wait(1800)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+farmingTab:AddSwitch("Eat Egg (30 Min)", function(state)
+    autoEatEnabled = state
+    print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
+end)
+
 
 local KillerTab = window:AddTab("Kill") -- Create the tab for killer features
 
