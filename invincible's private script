@@ -431,8 +431,6 @@ local lockButton = farmingTab:AddButton("Lock Position", function()
     end
 end)
 
-local KillerTab = window:AddTab("Kill") -- Create the tab for killer features
-
 -- Add features to "Kill" tab
 local Kill = KillerTab
 
