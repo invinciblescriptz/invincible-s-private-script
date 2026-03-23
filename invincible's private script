@@ -1,5 +1,14 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KyleXAkimbo/Gui/refs/heads/main/INV-UI"))()
+-- Load UI library with error handling
+local success, library = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/KyleXAkimbo/Gui/refs/heads/main/INV-UI"))()
+end)
 
+if not success or not library or not library.AddWindow then
+    warn("Failed to load UI library.")
+    return
+end
+
+-- Create the main window
 local window = library:AddWindow("Invincible Private Farming", {
     title_bar = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
     title_bar_transparency = 0.2,
@@ -617,13 +626,12 @@ misc2Folder:AddSwitch("Infinite Jump", function(bool)
     end
 end))
 
--- Initialize variables
+-- Initialize variables for Rebirth pack farming
 local fastRebirth = false
 
 -- Add Switch for Fast Rebirth (Pack Farm)
 farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
     fastRebirth = p79
-
     if p79 then
         spawn(function()
             local _ReplicatedStorage = game:GetService('ReplicatedStorage')
@@ -857,8 +865,6 @@ local timeDropdown = farmingTab:AddDropdown("change time", function(selection)
         Lighting.Ambient = Color3.fromRGB(100, 120, 180)
     end
 end, {"Morning", "Noon", "Afternoon", "Sunset", "Night", "Midnight", "Dawn", "Early Morning"})
-
--- END OF FIXED SCRIPT
 
 -- =========================
 -- Kill Tab Features
@@ -1198,7 +1204,7 @@ kill:AddSwitch("auto slams", function(state)
     end
 end)
 
-Kill:AddButton("NaN Combo", function()
+kill:AddButton("NaN Combo", function()
     local args = {"changeSize", 0/0}
     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
 end)
