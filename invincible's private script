@@ -326,27 +326,20 @@ task.spawn(function()
     end
 end)
 
-killerTab:AddSwitch("Kill All Players (Aura)", function(state)
-    getgenv().killAura = state
-    if state then
-        killAuraToggle = true
-        killAuraConnection = task.spawn(function()
-            while killAuraToggle do
-                pcall(function()
-                    for _, plr in pairs(Players:GetPlayers()) do
-                        if plr ~= LocalPlayer and plr.Character then
-                            killPlayer(plr)
-                        end
+-- Kill Aura (All Players)
+killerTab:AddSwitch("Kill Aura (All)", function(s)
+    states.KillAura = s
+    if s then
+        task.spawn(function()
+            while states.KillAura and getgenv().NexusRunning do
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer then
+                        killPlayer(plr)
                     end
-                end)
-                task.wait(0.08)
+                end
+                task.wait(0.14)
             end
         end)
-    else
-        killAuraToggle = false
-        if killAuraConnection then
-            -- This is a spawn; no need to cancel, just set flag
-        end
     end
 end)
 
@@ -882,130 +875,3 @@ farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
         end)
     end
 end)
-
-farmingTab:AddButton("Jungle Squat", function()
-    -- Assuming CharacterModel is the player's character
-    local CharacterModel = LocalPlayer.Character
-    if CharacterModel and CharacterModel:FindFirstChild("HumanoidRootPart") then
-        CharacterModel.HumanoidRootPart.CFrame = CFrame.new(-8371.4336, 6.7981, 2858.8853)
-    end
-end)
-
-farmingTab:AddButton("Jungle lift", function()
-    local CharacterModel = LocalPlayer.Character
-    if CharacterModel and CharacterModel:FindFirstChild("HumanoidRootPart") then
-        CharacterModel.HumanoidRootPart.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
-    end
-end)
-
-local AutoEatSwitch = farmingTab:AddSwitch("Auto Eat Egg 30 Minuts", function(s)
-    AutoEatEgg = s
-    task.spawn(function()
-        while AutoEatEgg do
-            local Backpack = LocalPlayer:FindFirstChild("Backpack")
-            if Backpack then
-                local EggItem = Backpack:FindFirstChild("Protein Egg")
-                if EggItem then
-                    -- Auto eat logic here if needed
-                end
-            end
-            task.wait(1800)
-        end
-    end)
-end)
-AutoEatSwitch:Set(false)
-
-farmingTab:AddButton("Anti Lag", function()
-    for _, DescendantObject in pairs(workspace:GetDescendants()) do
-        if DescendantObject:IsA("ParticleEmitter") then
-            DescendantObject.Enabled = false
-        end
-    end
-    Lighting.GlobalShadows = false
-    Lighting.FogEnd = 9e9
-    Lighting.Brightness = 0
-    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    for _, DecalObject in pairs(workspace:GetDescendants()) do
-        if DecalObject:IsA("Decal") then
-            DecalObject.Transparency = 1
-        end
-    end
-    for _, EffectObject in pairs(Lighting:GetChildren()) do
-        if EffectObject:IsA("BlurEffect") then
-            EffectObject.Enabled = false
-        end
-    end
-    game.StarterGui:SetCore("SendNotification", {
-        Text = "Full optimization applied!",
-        Title = "Anti Lag activado",
-        Duration = 5
-    })
-end)
-
-farmingTab:AddButton("Full Optimization", function()
-    for _, GuiObject in pairs(LocalPlayer:WaitForChild("PlayerGui"):GetChildren()) do
-        if GuiObject:IsA("ScreenGui") then
-            GuiObject:Destroy()
-        end
-    end
-    for _, ObjectInstance in pairs(workspace:GetDescendants()) do
-        if ObjectInstance:IsA("ParticleEmitter") or ObjectInstance:IsA("PointLight") then
-            ObjectInstance:Destroy()
-        end
-    end
-    -- Reset skybox
-    for _, Skybox in pairs(Lighting:GetChildren()) do
-        if Skybox:IsA("Sky") then
-            Skybox:Destroy()
-        end
-    end
-    local DarkSkybox = Instance.new("Sky")
-    DarkSkybox.Name = "DarkSky"
-    DarkSkybox.SkyboxBk = "rbxassetid://0"
-    DarkSkybox.SkyboxDn = "rbxassetid://0"
-    DarkSkybox.SkyboxFt = "rbxassetid://0"
-    DarkSkybox.SkyboxLf = "rbxassetid://0"
-    DarkSkybox.SkyboxRt = "rbxassetid://0"
-    DarkSkybox.SkyboxUp = "rbxassetid://0"
-    DarkSkybox.Parent = Lighting
-    Lighting.Brightness = 0
-    Lighting.ClockTime = 0
-    Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
-    Lighting.Ambient = Color3.new(0, 0, 0)
-    Lighting.FogColor = Color3.new(0, 0, 0)
-    Lighting.FogEnd = 100
-end)
-
-farmingTab:AddSwitch('Hide Frame', function(p73)
-    local frames = { 'strengthFrame', 'durabilityFrame', 'agilityFrame' }
-    for _, frameName in ipairs(frames) do
-        local v78 = game:GetService('ReplicatedStorage'):FindFirstChild(frameName)
-        if v78 and v78:IsA('GuiObject') then
-            v78.Visible = not p73
-        end
-    end
-end)
-
-killerTab:AddSwitch("auto kill)", function(state)
-    getgenv().killAura = state
-    if state then
-        killAuraToggle = true
-        killAuraConnection = task.spawn(function()
-            while killAuraToggle do
-                pcall(function()
-                    for _, plr in pairs(Players:GetPlayers()) do
-                        if plr ~= LocalPlayer and plr.Character then
-                            killPlayer(plr)
-                        end
-                    end
-                end)
-                task.wait(0.08)
-            end
-        end)
-    else
-        killAuraToggle = false
-        if killAuraConnection then
-            -- This is a spawn; no need to cancel, just set flag
-        end
-    end
-end
