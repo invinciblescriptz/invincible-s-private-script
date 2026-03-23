@@ -120,26 +120,11 @@ local function toggleAntiAfk(state)
     end
 end
 
--- Kill Player
-local function killPlayer(targetPlayer)
-    pcall(function()
-        local myChar = LocalPlayer.Character
-        local tChar = targetPlayer.Character
-        if not myChar or not tChar then return end
-        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-        local tHRP = tChar:FindFirstChild("HumanoidRootPart")
-        if myHRP and tHRP then
-            myHRP.CFrame = tHRP.CFrame * CFrame.new(0, -25, 0)
-        end
-    end)
-end
-
 -- Tabs
 local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
-local killerTab = window:AddTab("Killer")
 local farmingTab = window:AddTab("Farming")
 local miscTab = window:AddTab("Misc")
 
@@ -323,58 +308,6 @@ task.spawn(function()
             end
         end)
         task.wait(0.18)
-    end
-end)
-
--- Kill Aura (All Players)
-killerTab:AddSwitch("Kill Aura (All)", function(s)
-    states.KillAura = s
-    if s then
-        task.spawn(function()
-            while states.KillAura and getgenv().NexusRunning do
-                for _, plr in pairs(Players:GetPlayers()) do
-                    if plr ~= LocalPlayer then
-                        killPlayer(plr)
-                    end
-                end
-                task.wait(0.14)
-            end
-        end)
-    end
-end)
-
-local playerDropdown = killerTab:AddDropdown("Select Target", function(val)
-    selectedTarget = val and val:match("^([^|]+)") or nil
-end)
-
-killerTab:AddSwitch("Auto Kill Selected", function(s)
-    states.AutoKillSelected = s
-    if s then
-        task.spawn(function()
-            while states.AutoKillSelected and getgenv().NexusRunning do
-                local plr = Players:FindFirstChild(selectedTarget)
-                if plr and plr.Character then
-                    killPlayer(plr)
-                end
-                task.wait(0.14)
-            end
-        end)
-    end
-end)
-
--- Update Player List in Dropdown
-task.spawn(function()
-    while getgenv().NexusRunning do
-        local opts = {}
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                table.insert(opts, plr.Name .. " | " .. (plr.DisplayName or plr.Name))
-            end
-        end
-        if playerDropdown then
-            playerDropdown:SetValues(opts)
-        end
-        task.wait(5.5)
     end
 end)
 
