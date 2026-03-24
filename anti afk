@@ -1,0 +1,47 @@
+import windpy as wind
+import time
+import threading
+
+# Initialize Wind GUI
+app = wind.Wind()
+
+# Global variables
+anti_afk_active = False
+start_time = None
+timer_thread = None
+
+# Function to perform anti-AFK action
+def anti_afk_action():
+    # For example, move mouse slightly or send a keystroke
+    # Here, we'll just print a message
+    print("Anti-AFK action performed.")
+
+def timer_function():
+    global start_time
+    start_time = time.time()
+    while anti_afk_active:
+        anti_afk_action()
+        time.sleep(60)  # Perform action every 60 seconds
+
+# Button callback
+def toggle_anti_afk():
+    global anti_afk_active, timer_thread
+    if not anti_afk_active:
+        anti_afk_active = True
+        timer_thread = threading.Thread(target=timer_function)
+        timer_thread.start()
+        start_button.text = "Stop Anti-AFK"
+        print("Anti-AFK started.")
+    else:
+        anti_afk_active = False
+        if timer_thread:
+            timer_thread.join()
+        start_button.text = "Start Anti-AFK"
+        elapsed = time.time() - start_time if start_time else 0
+        print(f"Anti-AFK stopped. Duration: {int(elapsed)} seconds.")
+
+# Create GUI elements
+start_button = app.create_button("Start Anti-AFK", toggle_anti_afk)
+
+# Run the GUI
+app.run()
