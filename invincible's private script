@@ -567,7 +567,7 @@ local function stopAntiAFK()
     end
 end
 
-exampleTab:AddSwitch("Anti-AFK", false, function(state)
+misc2Folder:AddButton("Anti-AFK", false, function(state)
     print("Anti-AFK switch toggled:", state)
     if state then
         -- When toggled ON
