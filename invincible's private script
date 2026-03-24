@@ -511,6 +511,30 @@ misc1Folder:AddSwitch("Auto Claim Gifts", function(bool)
     end
 end)
 
+local switch_case = "run_script" -- change this to select the action
+
+local options = {
+    run_script = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/anti%20afk"))()
+    end,
+    -- You can add more cases here
+    -- example: say_hello = function() print("Hello!") end,
+}
+
+local misc2Folder = game:GetService("Workspace"):FindFirstChild("misc2Folder")
+if misc2Folder then
+    if options[switch_case] then
+        -- Execute the function within misc2Folder context
+        -- For example, you might want to parent new objects there, or just run code
+        -- If the function involves creating objects, you can pass misc2Folder as a parameter
+        options[switch_case]()
+    else
+        print("No such case: " .. switch_case)
+    end
+else
+    print("misc2Folder not found in Workspace")
+end
+
 misc2Folder:AddSwitch("No-Clip", function(bool)
     _G.NoClip = bool
     if bool then
