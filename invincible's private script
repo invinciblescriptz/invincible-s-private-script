@@ -528,20 +528,35 @@ local function performAntiAFK()
     camera.CFrame = originalCFrame
 end
 
+local antiAFKActive = false
+local timerConnection
+local startTime = 0
+local timerLabel -- to hold the label object for updating
+
+local function performAntiAFK()
+    local camera = workspace.CurrentCamera
+    local originalCFrame = camera.CFrame
+    camera.CFrame = camera.CFrame * CFrame.new(0, 0.1, 0)
+    wait(0.1)
+    camera.CFrame = originalCFrame
+end
+
 local function startAntiAFK()
     startTime = os.clock()
-    timerLabel:Set("Anti-AFK Timer: 0s")
+    if timerLabel then
+        timerLabel:Set("Anti-AFK Timer: 0s")
+    end
     local start = os.clock()
 
     timerConnection = game:GetService("RunService").Heartbeat:Connect(function()
-        -- Every 300 seconds (5 minutes), perform anti-AFK action
         if os.clock() - start >= 300 then
             performAntiAFK()
             start = os.clock()
         end
-        -- Update timer label
         local elapsed = math.floor(os.clock() - start)
-        timerLabel:Set("Anti-AFK Timer: " .. elapsed .. "s")
+        if timerLabel then
+            timerLabel:Set("Anti-AFK Timer: " .. elapsed .. "s")
+        end
     end)
 end
 
@@ -552,13 +567,15 @@ local function stopAntiAFK()
     end
 end
 
-misc2Folder:AddSwitch("Anti-AFK", false, function(state)
+exampleTab:AddSwitch("Anti-AFK", false, function(state)
+    print("Anti-AFK switch toggled:", state)
     if state then
         -- When toggled ON
         antiAFKActive = true
         startAntiAFK()
-        -- Create or get existing label for timer
+        -- Create label if it doesn't exist
         if not timerLabel then
+            print("Creating timer label")
             timerLabel = farmingTab:AddLabel("Anti-AFK Timer: 0s")
         end
     else
