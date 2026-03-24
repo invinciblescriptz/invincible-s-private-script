@@ -1,72 +1,66 @@
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 
 local LocalPlayer = Players.LocalPlayer
 
--- Create main GUI
+-- Create GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "MyFeatureUI"
 gui.ResetOnSpawn = false
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 160, 0, 100)
-frame.Position = UDim2.new(0.5, -80, 0.5, -80)
+frame.Size = UDim2.new(0, 180, 0, 100)
+frame.Position = UDim2.new(0.5, -90, 0.5, -90)
 frame.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
 frame.BorderSizePixel = 0
 frame.Parent = gui
 
 -- Make draggable
-local function makeDraggable(f)
-	local dragging = false
-	local dragStart, startPos
+local dragging = false
+local dragStart, startPos
 
-	f.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			dragStart = input.Position
-			startPos = f.Position
-		end
-	end)
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
+end)
 
-	UserInputService.InputChanged:Connect(function(input)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-			local delta = input.Position - dragStart
-			f.Position = UDim2.new(
-				startPos.X.Scale, startPos.X.Offset + delta.X,
-				startPos.Y.Scale, startPos.Y.Offset + delta.Y
-			)
-		end
-	end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+end)
 
-	-- Stop dragging when mouse button released
-	UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
-		end
-	end)
-end
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
 
-makeDraggable(frame)
-
--- Timer label
+-- Timer Label (made a bit bigger for longer text)
 local timerLabel = Instance.new("TextLabel")
-timerLabel.Size = UDim2.new(1, -10, 0, 40)
-timerLabel.Position = UDim2.new(0, 5, 0, 5)
+timerLabel.Size = UDim2.new(1, -20, 0, 50)
+timerLabel.Position = UDim2.new(0, 10, 0, 10)
 timerLabel.BackgroundTransparency = 1
 timerLabel.TextColor3 = Color3.new(1, 1, 1)
-timerLabel.TextSize = 20
+timerLabel.TextSize = 22
 timerLabel.Font = Enum.Font.SourceSansBold
 timerLabel.Text = "AFK Timer: 0s"
 timerLabel.Parent = frame
 
--- Optional: Add a toggle button (recommended)
+-- Toggle Button
 local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(1, -10, 0, 40)
-toggleButton.Position = UDim2.new(0, 5, 0, 55)
-toggleButton.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+toggleButton.Size = UDim2.new(1, -20, 0, 45)
+toggleButton.Position = UDim2.new(0, 10, 0, 70)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
 toggleButton.TextColor3 = Color3.new(1, 1, 1)
 toggleButton.TextSize = 18
 toggleButton.Font = Enum.Font.SourceSansBold
@@ -76,35 +70,53 @@ toggleButton.Parent = frame
 -- Variables
 local afkTime = 0
 local isActive = true
-local lastUpdate = tick()
 
--- Proper Anti-AFK (most reliable method)
+-- Best Anti-AFK method
 LocalPlayer.Idled:Connect(function()
 	if isActive then
-		VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-		wait(0.1)
-		VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+		VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+		task.wait(0.1)
+		VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 	end
 end)
 
--- Main loop for accurate timer
+-- Function to format time nicely (1s → 1m 23s → 2h 5m 12s → 1d 3h 45m)
+local function formatTime(seconds)
+	local days = math.floor(seconds / 86400)
+	seconds = seconds % 86400
+	local hours = math.floor(seconds / 3600)
+	seconds = seconds % 3600
+	local minutes = math.floor(seconds / 60)
+	seconds = math.floor(seconds % 60)
+
+	if days > 0 then
+		return string.format("%dd %dh %dm %ds", days, hours, minutes, seconds)
+	elseif hours > 0 then
+		return string.format("%dh %dm %ds", hours, minutes, seconds)
+	elseif minutes > 0 then
+		return string.format("%dm %ds", minutes, seconds)
+	else
+		return string.format("%ds", seconds)
+	end
+end
+
+-- Main timer loop
 RunService.Heartbeat:Connect(function(deltaTime)
 	if isActive then
 		afkTime += deltaTime
-		
-		local seconds = math.floor(afkTime)
-		timerLabel.Text = "AFK Timer: " .. seconds .. "s"
+		timerLabel.Text = "AFK Timer: " .. formatTime(afkTime)
 	else
 		afkTime = 0
 		timerLabel.Text = "AFK Timer: 0s"
 	end
 end)
 
--- Toggle button functionality
+-- Toggle functionality
 toggleButton.MouseButton1Click:Connect(function()
 	isActive = not isActive
+	
 	if isActive then
-		toggleButton.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+		toggleButton.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
 		toggleButton.Text = "AFK Protection: ON"
 	else
 		toggleButton.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
