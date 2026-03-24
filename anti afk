@@ -44,13 +44,13 @@ end
 
 makeDraggable(frame)
 
--- Add a label for Timer
+-- Add a larger timer label
 local timerLabel = Instance.new("TextLabel", frame)
-timerLabel.Size = UDim2.new(1, -10, 0, 30)
+timerLabel.Size = UDim2.new(1, -10, 0, 40) -- Make it bigger
 timerLabel.Position = UDim2.new(0, 5, 0, 5)
 timerLabel.BackgroundTransparency = 1
 timerLabel.TextColor3 = Color3.new(1, 1, 1)
-timerLabel.TextSize = 14
+timerLabel.TextSize = 20 -- Larger text size
 timerLabel.Font = Enum.Font.SourceSansBold
 timerLabel.Text = "AFK Timer: 0s"
 
@@ -66,29 +66,20 @@ local function simulateActivity()
     UserInputService:SetKeyUp(Enum.KeyCode.Space, true)
 end
 
--- Optional: Allow toggling with click, but default is on
-frame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isActive = not isActive
-        if isActive then
-            afkTime = 0 -- Reset timer when activated
-        end
-    end
-end)
-
 -- Main loop to update timer and simulate activity
 RunService.Heartbeat:Connect(function()
     if isActive then
         afkTime = afkTime + RunService.Heartbeat -- Increment based on heartbeat
 
-        -- Every 5 seconds, simulate activity
-        if math.floor(afkTime) % 5 == 0 then
-            simulateActivity()
+        -- Every second, update the timer label
+        local seconds = math.floor(afkTime)
+        if seconds ~= math.floor(afkTime - RunService.Heartbeat) then
+            timerLabel.Text = "AFK Timer: " .. seconds .. "s"
         end
 
-        -- Update timer label every second
-        if math.floor(afkTime) ~= math.floor(afkTime - RunService.Heartbeat) then
-            timerLabel.Text = "AFK Timer: " .. math.floor(afkTime) .. "s"
+        -- Every 5 seconds, simulate activity
+        if seconds % 5 == 0 then
+            simulateActivity()
         end
     else
         -- When turned off, reset timer display
