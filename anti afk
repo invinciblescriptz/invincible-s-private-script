@@ -1,25 +1,32 @@
 -- Load Wind GUI library
-local WindGui = loadstring(game:HttpGet("https://raw.githubusercontent.com/wind-libs/wind/main/wind.lua"))()
+local Wind = loadstring(game:HttpGet("https://raw.githubusercontent.com/wind-libs/wind/main/wind.lua"))()
 
-local window = WindGui:Window("Anti-AFK with Timer")
-local toggle = false
+local window = Wind:Window("Anti-AFK with Timer")
+
+local toggleAntiAFK = false
 local timerDuration = 60 -- default timer in seconds
 local timerLabel
 
+-- Function to start Anti-AFK
 local function startAntiAFK()
-    toggle = true
-    while toggle do
-        -- Prevent AFK by simulating user input
-        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-        game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-        wait(30) -- send input every 30 seconds
-    end
+    toggleAntiAFK = true
+    spawn(function()
+        while toggleAntiAFK do
+            -- Simulate key press to prevent AFK
+            game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+            wait(0.1)
+            game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+            wait(30) -- wait 30 seconds before next input
+        end
+    end)
 end
 
+-- Function to stop Anti-AFK
 local function stopAntiAFK()
-    toggle = false
+    toggleAntiAFK = false
 end
 
+-- Timer update function
 local function updateTimer()
     local remaining = timerDuration
     while remaining > 0 do
@@ -30,17 +37,21 @@ local function updateTimer()
     timerLabel.Text = "Time's up!"
 end
 
-local startButton = window:Button("Start Anti-AFK", startAntiAFK)
-local stopButton = window:Button("Stop Anti-AFK", stopAntiAFK)
+-- Button to start Anti-AFK
+local startBtn = window:Button("Start Anti-AFK", startAntiAFK)
+-- Button to stop Anti-AFK
+local stopBtn = window:Button("Stop Anti-AFK", stopAntiAFK)
 
+-- Slider to set timer
 local timerSlider = window:Slider("Set Timer (seconds)", 10, 600, function(value)
     timerDuration = value
 end)
 
+-- Label to display timer
 timerLabel = window:Label("Timer: 0s")
 
+-- Button to run timer
 local function runTimer()
     updateTimer()
 end
-
-local runTimerButton = window:Button("Start Timer", runTimer)
+local startTimerBtn = window:Button("Start Timer", runTimer)
