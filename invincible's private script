@@ -514,107 +514,69 @@ misc1Folder:AddSwitch("Auto Claim Gifts", function(bool)
     end
 end)
 
--- -- Setup a dummy GUI framework for demonstration:
+-- Create ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
-local misc2Folder = {}
-local farmingTab = {}
+-- Create Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 50)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Parent = ScreenGui
 
--- Dummy method to simulate AddSwitch
-function misc2Folder:AddSwitch(name, default, callback)
-    local toggleState = default
-    local button = Instance.new("TextButton")
-    button.Parent = ScreenGui
-    button.Size = UDim2.new(0, 200, 0, 50)
-    button.Position = UDim2.new(0, 10, 0, 10)
-    button.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.Text = name .. " (OFF)"
-    button.MouseButton1Click:Connect(function()
-        toggleState = not toggleState
-        callback(toggleState)
-        button.Text = name .. " (" .. (toggleState and "ON" or "OFF") .. ")"
-      end)
-    return {
-        Set = function(self, text)
-            button.Text = text
-        end
-    }
-end
+-- Create Label
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(0, 100, 0, 50)
+label.Position = UDim2.new(0, 10, 0, 0)
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.Text = "Anti-AFK"
+label.Font = Enum.Font.SourceSansBold
+label.TextSize = 20
+label.Parent = frame
 
--- Dummy method to simulate AddLabel
-function farmingTab:AddLabel(text)
-    local label = Instance.new("TextLabel")
-    label.Parent = ScreenGui
-    label.Size = UDim2.new(0, 300, 0, 50)
-    label.Position = UDim2.new(0, 10, 0, 70)
-    label.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.Text = text
-    return {
-        Set = function(self, newText)
-            label.Text = newText
-        end
-    }
-end
+-- Create Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 80, 0, 50)
+toggleButton.Position = UDim2.new(0, 110, 0, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 18
+toggleButton.Parent = frame
 
--- Actual anti-AFK script
-local antiAFKActive = false
-local timerConnection
-local timerLabel -- label for updating
+-- State variable
+local antiAFKEnabled = false
+local antiAFKConnection = nil
 
-local function performAntiAFK()
-    local camera = workspace.CurrentCamera
-    local originalCFrame = camera.CFrame
-    camera.CFrame = camera.CFrame * CFrame.new(0, 0.1, 0)
-    wait(0.1)
-    camera.CFrame = originalCFrame
-end
-
-local function startAntiAFK()
-    local startTime = os.clock()
-    if timerLabel then
-        timerLabel:Set("Anti-AFK Timer: 0s")
-    end
-    local start = os.clock()
-
-    timerConnection = game:GetService("RunService").Heartbeat:Connect(function()
-        if os.clock() - start >= 300 then
-            performAntiAFK()
-            start = os.clock()
-        end
-        local elapsed = math.floor(os.clock() - startTime)
-        if timerLabel then
-            timerLabel:Set("Anti-AFK Timer: " .. elapsed .. "s")
-        end
-    end)
-end
-
-local function stopAntiAFK()
-    if timerConnection then
-        timerConnection:Disconnect()
-        timerConnection = nil
-    end
-end
-
--- Use AddSwitch to toggle Anti-AFK
-misc2Folder:AddSwitch("Anti-AFK", false, function(state)
-    print("Anti-AFK toggled:", state)
-    if state then
-        -- Turn ON
-        antiAFKActive = true
-        startAntiAFK()
-        if not timerLabel then
-            print("Creating label")
-            timerLabel = farmingTab:AddLabel("Anti-AFK Timer: 0s")
-        end
+-- Function to toggle anti-AFK
+local function toggleAntiAFK()
+    antiAFKEnabled = not antiAFKEnabled
+    if antiAFKEnabled then
+        -- Change button text
+        toggleButton.Text = "ON"
+        -- Connect to Idled event
+        local player = game:GetService("Players").LocalPlayer
+        antiAFKConnection = player.Idled:Connect(function()
+            pcall(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new(0,0))
+            end)
+        end)
     else
-        -- Turn OFF
-        antiAFKActive = false
-        stopAntiAFK()
+        -- Change button text
+        toggleButton.Text = "OFF"
+        -- Disconnect event
+        if antiAFKConnection then
+            antiAFKConnection:Disconnect()
+            antiAFKConnection = nil
+        end
     end
-end)
+end
+
+-- Button click event
+toggleButton.MouseButton1Click:Connect(toggleAntiAFK)
 
 misc2Folder:AddSwitch("No-Clip", function(bool)
     _G.NoClip = bool
