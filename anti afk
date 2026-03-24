@@ -1,85 +1,53 @@
-local RunService = game:GetService("RunService")
-
--- Create ScreenGui
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.CoreGui -- or game.Players.LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.Name = "AntiAFKGui"
-
--- Create Frame (draggable window)
-local Frame = Instance.new("Frame")
-Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 250, 0, 100)
-Frame.Position = UDim2.new(0.5, -125, 0.5, -50)
-Frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-Frame.Active = true
-Frame.Draggable = true -- makes it draggable in Roblox
-
--- Title Label
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Parent = Frame
-TitleLabel.Size = UDim2.new(1, 0, 0, 20)
-TitleLabel.Position = UDim2.new(0, 0, 0, 0)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "Anti-AFK"
-TitleLabel.TextColor3 = Color3.new(1, 1, 1)
-TitleLabel.TextScaled = true
-
--- Timer Label
-local TimerLabel = Instance.new("TextLabel")
-TimerLabel.Parent = Frame
-TimerLabel.Size = UDim2.new(1, 0, 0, 30)
-TimerLabel.Position = UDim2.new(0, 0, 0, 25)
-TimerLabel.BackgroundTransparency = 1
-TimerLabel.TextColor3 = Color3.new(1, 1, 1)
-TimerLabel.Text = "Duration: 0s"
-TimerLabel.TextScaled = true
-
--- Button to toggle anti-AFK
-local Button = Instance.new("TextButton")
-Button.Parent = Frame
-Button.Size = UDim2.new(1, 0, 0, 30)
-Button.Position = UDim2.new(0, 0, 0, 60)
-Button.Text = "Start"
-Button.TextScaled = true
-
-local isActive = false
-local startTime = 0
-local elapsedSeconds = 0
+local antiAFKActive = false
 local timerConnection
+local startTime = 0
+local timerLabel -- to hold the label object for updating
 
 local function performAntiAFK()
-    print("Performing anti-AFK action")
-    -- Insert anti-AFK actions here (move mouse, press keys, etc.)
+    -- Move camera slightly to simulate activity
+    local camera = workspace.CurrentCamera
+    local originalCFrame = camera.CFrame
+    camera.CFrame = camera.CFrame * CFrame.new(0, 0.1, 0)
+    wait(0.1)
+    camera.CFrame = originalCFrame
 end
 
-local function updateTimer()
-    local start = startTime
-    while isActive do
-        elapsedSeconds = math.floor(os.time() - start)
-        TimerLabel.Text = "Duration: " .. elapsedSeconds .. "s"
-        wait(1)
-    end
-end
+local function startAntiAFK()
+    startTime = os.clock()
+    timerLabel:Set("Anti-AFK Timer: 0s")
+    local start = os.clock()
 
-local function toggleAntiAFK()
-    if not isActive then
-        isActive = true
-        startTime = os.time()
-        Button.Text = "Stop"
-        -- Start timer update in a separate thread
-        coroutine.wrap(updateTimer)()
-        -- Start anti-AFK actions periodically
-        -- Using RunService for periodic actions
-        timerConnection = RunService.Heartbeat:Connect(function()
+    timerConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        -- Every 300 seconds (5 minutes), perform anti-AFK action
+        if os.clock() - start >= 300 then
             performAntiAFK()
-        end)
-    else
-        isActive = false
-        if timerConnection then
-            timerConnection:Disconnect()
+            start = os.clock()
         end
-        Button.Text = "Start"
+        -- Update timer label
+        local elapsed = math.floor(os.clock() - start)
+        timerLabel:Set("Anti-AFK Timer: " .. elapsed .. "s")
+    end)
+end
+
+local function stopAntiAFK()
+    if timerConnection then
+        timerConnection:Disconnect()
+        timerConnection = nil
     end
 end
 
-Button.MouseButton1Click:Connect(toggleAntiAFK)
+exampleTab:AddSwitch("Anti-AFK", false, function(state)
+    if state then
+        -- When toggled ON
+        antiAFKActive = true
+        startAntiAFK()
+        -- Create or get existing label for timer
+        if not timerLabel then
+            timerLabel = farmingTab:AddLabel("Anti-AFK Timer: 0s")
+        end
+    else
+        -- When toggled OFF
+        antiAFKActive = false
+        stopAntiAFK()
+    end
+end)
