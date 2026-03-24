@@ -1757,3 +1757,6 @@ end)
 for _, option in ipairs(timeOptions) do
     timeDropdown:Add(option)
 end
+
+mainTab:AddButton("anti afk", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/anti%20afk"))()
