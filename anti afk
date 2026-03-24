@@ -39,13 +39,6 @@ local function stopAntiAFK()
     end
 end
 
--- Add the toggle switch for Anti-AFK
-farmingTab:AddSwitch("Anti-AFK", false, function(state)
-    if state then
-        states.AntiAFK = true
-        startAntiAFK()
-    else
-        states.AntiAFK = false
-        stopAntiAFK()
-    end
-end)
+-- Set Anti-AFK to always be active on script run
+states.AntiAFK = true
+startAntiAFK()
