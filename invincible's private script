@@ -553,11 +553,6 @@ misc2Folder:AddSwitch("Infinite Jump", function(bool)
     end
 end)
 
-farmingTab:AddSwitch("OP strength", function(state)
-    getgenv()._AutoRepFarmEnabled = state
-    warn("Fast Strength", state and "ON" or "OFF")
-end)
-
 -- ⏩ Configuración avanzada
 local function getPing()
     local success, ping = pcall(function()
@@ -583,90 +578,114 @@ local lastProteinEggTime = 0
 local lastRockTime = 0
 local RockRef = workspace:FindFirstChild(ROCK_NAME)
 
--- Switch for "Fast Rebirth"
+-- Add the switch for "Fast Rebirth"
 farmingTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
     fastRebirth = p79
 
     if p79 then
         spawn(function()
-            local function unequipPets()
-                local petsFolder = LocalPlayer.petsFolder
-                for _, folder in pairs(petsFolder:GetChildren()) do
-                    if folder:IsA("Folder") then
-                        for _, pet in pairs(folder:GetChildren()) do
-                            game:GetService("ReplicatedStorage").rEvents.equipPetEvent:FireServer('unequipPet', pet)
+            local _ReplicatedStorage = game:GetService('ReplicatedStorage')
+            local _LocalPlayer = game:GetService('Players').LocalPlayer
+
+            local function u91(_)
+                local _petsFolder = _LocalPlayer.petsFolder
+                local v83, v84, v85 = pairs(_petsFolder:GetChildren())
+
+                while true do
+                    local v86
+                    v85, v86 = v83(v84, v85)
+                    if v85 == nil then break end
+                    if v86:IsA('Folder') then
+                        local v87, v88, v89 = pairs(v86:GetChildren())
+                        while true do
+                            local v90
+                            v89, v90 = v87(v88, v89)
+                            if v89 == nil then break end
+                            _ReplicatedStorage.rEvents.equipPetEvent:FireServer('unequipPet', v90)
                         end
                     end
                 end
                 task.wait(0.1)
             end
 
-            local function equipPetByName(petName)
-                unequipPets()
+            local function v97(p92)
+                u91()
                 task.wait(0.01)
-                for _, pet in pairs(LocalPlayer.petsFolder.Unique:GetChildren()) do
-                    if pet.Name == petName then
-                        game:GetService("ReplicatedStorage").rEvents.equipPetEvent:FireServer('equipPet', pet)
+                local v93, v94, v95 = pairs(_LocalPlayer.petsFolder.Unique:GetChildren())
+                while true do
+                    local v96
+                    v95, v96 = v93(v94, v95)
+                    if v95 == nil then break end
+                    if v96.Name == p92 then
+                        _ReplicatedStorage.rEvents.equipPetEvent:FireServer('equipPet', v96)
                     end
                 end
             end
 
-            local function getObjectByName(name)
-                local obj = workspace.machinesFolder:FindFirstChild(name)
-                if not obj then
-                    for _, v in pairs(workspace:GetChildren()) do
-                        if v:IsA("Folder") and v.Name:find('machines') then
-                            obj = v:FindFirstChild(name)
-                            if obj then break end
+            local function v105(p99)
+                local v100 = workspace.machinesFolder:FindFirstChild(p99)
+                if not v100 then
+                    local v101, v102, v103 = pairs(workspace:GetChildren())
+                    while true do
+                        local v104
+                        v103, v104 = v101(v102, v103)
+                        if v103 == nil then break end
+                        if v104:IsA('Folder') and v104.Name:find('machines') then
+                            v100 = v104:FindFirstChild(p99)
+                            if v100 then break end
                         end
                     end
                 end
-                return obj
+                return v100
             end
 
-            local function simulateKeyPress(key)
+            local function v107()
                 local _VirtualInputManager = game:GetService('VirtualInputManager')
-                _VirtualInputManager:SendKeyEvent(true, key, false, game)
+                _VirtualInputManager:SendKeyEvent(true, 'E', false, game)
                 task.wait(0.1)
-                _VirtualInputManager:SendKeyEvent(false, key, false, game)
+                _VirtualInputManager:SendKeyEvent(false, 'E', false, game)
             end
 
             while fastRebirth do
-                local rebirthCount = 10000 + 5000 * (LocalPlayer.leaderstats.Rebirths.Value)
-                if LocalPlayer.ultimatesFolder:FindFirstChild('Golden Rebirth') then
-                    local goldRebirthVal = LocalPlayer.ultimatesFolder['Golden Rebirth'].Value
-                    rebirthCount = math.floor(rebirthCount * (1 - goldRebirthVal * 0.1))
+                local v108 = 10000 + 5000 * _LocalPlayer.leaderstats.Rebirths.Value
+                if _LocalPlayer.ultimatesFolder:FindFirstChild('Golden Rebirth') then
+                    local _Value = _LocalPlayer.ultimatesFolder['Golden Rebirth'].Value
+                    v108 = math.floor(v108 * (1 - _Value * 0.1))
                 end
 
-                unequipPets()
+                u91()
                 task.wait(0.1)
-                equipPetByName('Swift Samurai')
+                v97('Swift Samurai')
 
-                while LocalPlayer.leaderstats.Strength.Value < rebirthCount do
+                while _LocalPlayer.leaderstats.Strength.Value < v108 do
                     for _ = 1, 15 do
-                        LocalPlayer.muscleEvent:FireServer('rep')
+                        _LocalPlayer.muscleEvent:FireServer('rep')
                     end
                     task.wait()
                 end
 
-                unequipPets()
+                u91()
                 task.wait(0.1)
-                equipPetByName('Tribal Overlord')
+                v97('Tribal Overlord')
 
-                local jungleLift = getObjectByName('Jungle Bar Lift')
-                if jungleLift and jungleLift:FindFirstChild('interactSeat') then
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = jungleLift.interactSeat.CFrame * CFrame.new(0,3,0)
+                local _JungleBarLift = v105('Jungle Bar Lift')
+                if _JungleBarLift and _JungleBarLift:FindFirstChild('interactSeat') then
+                    _LocalPlayer.Character.HumanoidRootPart.CFrame = _JungleBarLift.interactSeat.CFrame * CFrame.new(0, 3, 0)
                     repeat
-                        simulateKeyPress('E')
                         task.wait(0.1)
-                    until LocalPlayer.Character.Humanoid.Sit
+                        local _VirtualInputManager = game:GetService('VirtualInputManager')
+                        _VirtualInputManager:SendKeyEvent(true, 'E', false, game)
+                        task.wait(0.1)
+                        _VirtualInputManager:SendKeyEvent(false, 'E', false, game)
+                    until _LocalPlayer.Character.Humanoid.Sit
                 end
 
-                local rebirthVal = LocalPlayer.leaderstats.Rebirths.Value
+                local _Value2 = _LocalPlayer.leaderstats.Rebirths.Value
                 repeat
                     game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer('rebirthRequest')
                     task.wait(0.1)
-                until rebirthVal > LocalPlayer.leaderstats.Rebirths.Value
+                until _Value2 < _LocalPlayer.leaderstats.Rebirths.Value
+
                 task.wait()
             end
         end)
