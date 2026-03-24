@@ -903,60 +903,6 @@ task.spawn(function()
     end
 end)
 
-local antiAFKActive = false
-local timerConnection
-local startTime = 0
-local timerLabel -- to hold the label object for updating
-
-local function performAntiAFK()
-    -- Move camera slightly to simulate activity
-    local camera = workspace.CurrentCamera
-    local originalCFrame = camera.CFrame
-    camera.CFrame = camera.CFrame * CFrame.new(0, 0.1, 0)
-    wait(0.1)
-    camera.CFrame = originalCFrame
-end
-
-local function startAntiAFK()
-    startTime = os.clock()
-    timerLabel:Set("Anti-AFK Timer: 0s")
-    local start = os.clock()
-
-    timerConnection = game:GetService("RunService").Heartbeat:Connect(function()
-        -- Every 300 seconds (5 minutes), perform anti-AFK action
-        if os.clock() - start >= 300 then
-            performAntiAFK()
-            start = os.clock()
-        end
-        -- Update timer label
-        local elapsed = math.floor(os.clock() - start)
-        timerLabel:Set("Anti-AFK Timer: " .. elapsed .. "s")
-    end)
-end
-
-local function stopAntiAFK()
-    if timerConnection then
-        timerConnection:Disconnect()
-        timerConnection = nil
-    end
-end
-
-farmingTab:AddSwitch("Anti-AFK", false, function(state)
-    if state then
-        -- When toggled ON
-        antiAFKActive = true
-        startAntiAFK()
-        -- Create or get existing label for timer
-        if not timerLabel then
-            timerLabel = farmingTab:AddLabel("Anti-AFK Timer: 0s")
-        end
-    else
-        -- When toggled OFF
-        antiAFKActive = false
-        stopAntiAFK()
-    end
-end)
-
 farmingTab:AddSwitch("Eat Egg (30 Min)", function(state)
     autoEatEnabled = state
     print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
@@ -1312,4 +1258,56 @@ end)
 killerTab:AddButton("NaN Combo", function()
     local args = {"changeSize", 0/0}
     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
+end)
+
+local function performAntiAFK()
+    local cam = Workspace.CurrentCamera
+    local originalCFrame = cam.CFrame
+    cam.CFrame = cam.CFrame * CFrame.new(0, 0.1, 0)
+    wait(0.1)
+    cam.CFrame = originalCFrame
+end
+
+local function startAntiAFK()
+    -- Create label if doesn't exist
+    if not timerLabel then
+        timerLabel = farmingTab:AddLabel("Anti-AFK Timer: 0s")
+        timerLabel.TextSize = 14
+    end
+    timerLabel.Text = "Anti-AFK Timer: 0s"
+    local startTime = os.clock()
+
+    -- Start updating every frame
+    antiAfkConn = RunService.Heartbeat:Connect(function()
+        if not states.AntiAFK then return end
+        if os.clock() - startTime >= 300 then -- 5 min
+            performAntiAFK()
+            startTime = os.clock()
+        end
+        local elapsed = math.floor(os.clock() - startTime)
+        if timerLabel then
+            timerLabel.Text = "Anti-AFK Timer: " .. elapsed .. "s"
+        end
+    end)
+end
+
+local function stopAntiAFK()
+    if antiAfkConn then
+        antiAfkConn:Disconnect()
+        antiAfkConn = nil
+    end
+    if timerLabel then
+        timerLabel.Text = "Anti-AFK Timer: 0s"
+    end
+end
+
+-- Add the toggle switch for Anti-AFK
+misc2Folder:AddSwitch("Anti-AFK", false, function(state)
+    if state then
+        states.AntiAFK = true
+        startAntiAFK()
+    else
+        states.AntiAFK = false
+        stopAntiAFK()
+    end
 end)
