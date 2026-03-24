@@ -4,40 +4,53 @@ local WindUI = require(game:GetService("ReplicatedStorage"):WaitForChild("WindUI
 
 local function createDraggableAntiAFKGUI()
     local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    
+    -- Create the ScreenGui
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "DraggableAntiAFKGUI"
     screenGui.ResetOnSpawn = false
-    screenGui.Parent = player:WaitForChild("PlayerGui")
+    screenGui.Parent = playerGui
     
     local windUI = WindUI.new(screenGui)
     
-    -- Create a small, draggable frame
+    -- Create the draggable frame
     local frame = windUI:Create("Frame", {
         Size = UDim2.new(0, 150, 0, 30),
         Position = UDim2.new(0.5, -75, 0, 10),
         BackgroundColor3 = Color3.fromRGB(30, 30, 30),
         BorderSizePixel = 0,
     })
+    frame.Parent = screenGui
     
-    -- Make the frame draggable
+    -- Variables for dragging
     local isDragging = false
     local dragStartPos
     local startPos
     
+    -- Mouse input to start dragging
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             isDragging = true
             dragStartPos = input.Position
             startPos = frame.Position
+            -- Capture input to ensure proper detection
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    isDragging = false
+                end
+            end)
         end
     end)
     
+    -- Stop dragging
     frame.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             isDragging = false
         end
     end)
     
+    -- Handle dragging movement
     frame.InputChanged:Connect(function(input)
         if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = input.Position - dragStartPos
@@ -45,7 +58,7 @@ local function createDraggableAntiAFKGUI()
         end
     end)
     
-    -- Label: "AFK"
+    -- Add the "AFK" label
     local label = windUI:Create("TextLabel", {
         Size = UDim2.new(1, 0, 1, 0),
         Text = "AFK",
@@ -58,12 +71,12 @@ local function createDraggableAntiAFKGUI()
     })
     label.Parent = frame
     
-    -- Optional: Add a "Disable" button
+    -- Add a "Disable" button to close the GUI
     local disableButton = windUI:Create("TextButton", {
         Size = UDim2.new(0, 30, 0, 30),
         Position = UDim2.new(1, -30, 0, 0),
         Text = "X",
-        TextColor3 = Color3.new(1,1,1),
+        TextColor3 = Color3.new(1, 1, 1),
         BackgroundColor3 = Color3.fromRGB(200, 0, 0),
         Font = Enum.Font.SourceSans,
         TextSize = 12,
