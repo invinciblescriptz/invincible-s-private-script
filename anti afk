@@ -1,38 +1,46 @@
-local WindUI = require(game.ReplicatedStorage:WaitForChild("WindUI")) -- Adjust the path as needed
-local RunService = game:GetService("RunService")
+-- Load Wind GUI library
+local WindGui = loadstring(game:HttpGet("https://raw.githubusercontent.com/wind-libs/wind/main/wind.lua"))()
 
-local antiAFKFrame = WindUI:CreateFrame({
-    Size = UDim2.new(0, 200, 0, 50),
-    Position = UDim2.new(0.5, -100, 0, 10),
-    BackgroundColor3 = Color3.new(0, 0, 0),
-    BorderSizePixel = 0,
-    Transparency = 0.5,
-})
+local window = WindGui:Window("Anti-AFK with Timer")
+local toggle = false
+local timerDuration = 60 -- default timer in seconds
+local timerLabel
 
-local timerLabel = WindUI:CreateLabel({
-    Parent = antiAFKFrame,
-    Text = "AFK Timer: 0s",
-    Size = UDim2.new(1, 0, 1, 0),
-    TextColor3 = Color3.new(1, 1, 1),
-    TextScaled = true,
-})
-
-local afkTime = 0
-local lastActivityTime = tick()
-
--- Function to reset timer on user activity
-local function resetTimer()
-    lastActivityTime = tick()
+local function startAntiAFK()
+    toggle = true
+    while toggle do
+        -- Prevent AFK by simulating user input
+        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+        game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+        wait(30) -- send input every 30 seconds
+    end
 end
 
--- Detect user input
-game:GetService("UserInputService").InputBegan:Connect(function()
-    resetTimer()
+local function stopAntiAFK()
+    toggle = false
+end
+
+local function updateTimer()
+    local remaining = timerDuration
+    while remaining > 0 do
+        timerLabel.Text = "Timer: " .. remaining .. "s"
+        wait(1)
+        remaining = remaining - 1
+    end
+    timerLabel.Text = "Time's up!"
+end
+
+local startButton = window:Button("Start Anti-AFK", startAntiAFK)
+local stopButton = window:Button("Stop Anti-AFK", stopAntiAFK)
+
+local timerSlider = window:Slider("Set Timer (seconds)", 10, 600, function(value)
+    timerDuration = value
 end)
 
--- Update loop
-RunService.Heartbeat:Connect(function()
-    local elapsed = tick() - lastActivityTime
-    afkTime = math.floor(elapsed)
-    timerLabel.Text = "AFK Timer: " .. afkTime .. "s"
-end)
+timerLabel = window:Label("Timer: 0s")
+
+local function runTimer()
+    updateTimer()
+end
+
+local runTimerButton = window:Button("Start Timer", runTimer)
