@@ -514,10 +514,56 @@ misc1Folder:AddSwitch("Auto Claim Gifts", function(bool)
     end
 end)
 
+-- Assuming you have a main GUI setup like this:
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local misc2Folder = {} -- replace this with your actual folder or GUI container
+local farmingTab = {} -- replace with your actual tab object
+
+-- For demonstration, let's create dummy AddSwitch and AddLabel functions:
+function misc2Folder:AddSwitch(name, default, callback)
+    -- Your actual GUI code here, e.g., create a toggle button
+    local toggle = Instance.new("TextButton")
+    toggle.Parent = ScreenGui
+    toggle.Text = name
+    toggle.Size = UDim2.new(0, 200, 0, 50)
+    toggle.Position = UDim2.new(0, 10, 0, 10)
+    toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    
+    local state = default
+    toggle.MouseButton1Click:Connect(function()
+        state = not state
+        callback(state)
+        toggle.Text = name .. " (" .. (state and "ON" or "OFF") .. ")"
+    end)
+    return {
+        Set = function(self, text)
+            toggle.Text = text
+        end
+    }
+end
+
+function farmingTab:AddLabel(text)
+    local label = Instance.new("TextLabel")
+    label.Parent = ScreenGui
+    label.Size = UDim2.new(0, 300, 0, 50)
+    label.Position = UDim2.new(0, 10, 0, 70)
+    label.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.Text = text
+    return {
+        Set = function(self, newText)
+            label.Text = newText
+        end
+    }
+end
+
+-- Now, your actual anti-AFK script:
+
 local antiAFKActive = false
 local timerConnection
-local startTime = 0
-local timerLabel -- to hold the label object for updating
+local timerLabel -- will hold the label object for updating
 
 local function performAntiAFK()
     local camera = workspace.CurrentCamera
@@ -528,10 +574,10 @@ local function performAntiAFK()
 end
 
 local function startAntiAFK()
-    startTime = os.clock()
     if timerLabel then
         timerLabel:Set("Anti-AFK Timer: 0s")
     end
+    local startTime = os.clock()
     local start = os.clock()
 
     timerConnection = game:GetService("RunService").Heartbeat:Connect(function()
@@ -539,7 +585,7 @@ local function startAntiAFK()
             performAntiAFK()
             start = os.clock()
         end
-        local elapsed = math.floor(os.clock() - start)
+        local elapsed = math.floor(os.clock() - startTime)
         if timerLabel then
             timerLabel:Set("Anti-AFK Timer: " .. elapsed .. "s")
         end
@@ -553,20 +599,19 @@ local function stopAntiAFK()
     end
 end
 
--- Changed from AddButton to AddSwitch
+-- Use AddSwitch to toggle Anti-AFK
 misc2Folder:AddSwitch("Anti-AFK", false, function(state)
-    print("Anti-AFK switch toggled:", state)
+    print("Anti-AFK toggled:", state)
     if state then
-        -- When toggled ON
+        -- Toggle ON
         antiAFKActive = true
         startAntiAFK()
-        -- Create label if it doesn't exist
         if not timerLabel then
             print("Creating timer label")
             timerLabel = farmingTab:AddLabel("Anti-AFK Timer: 0s")
         end
     else
-        -- When toggled OFF
+        -- Toggle OFF
         antiAFKActive = false
         stopAntiAFK()
     end
