@@ -1,4 +1,4 @@
--- Load Wind UI (assuming you have it already included in your game)
+-- Load Wind UI (assuming you have the URL correct and Wind UI is accessible)
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/your-repo/wind-ui/main/main.lua"))()
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -12,45 +12,59 @@ local Window = WindUI:CreateWindow({
 local MainTab = Window:CreateTab("Main")
 local AntiAfkSection = MainTab:CreateSection("Anti-AFK & Timer")
 
--- Create a label to display timer
+-- Create timer display label
 local TimerLabel = Instance.new("TextLabel")
-TimerLabel.Parent = AntiAfkSection:CreateButton("Start Timer")
-TimerLabel.Size = UDim2.new(0, 200, 0, 50)
+TimerLabel.Parent = AntiAfkSection
+TimerLabel.Size = UDim2.new(0, 250, 0, 50)
 TimerLabel.Position = UDim2.new(0, 10, 0, 50)
-TimerLabel.Text = "Time Elapsed: 0s"
 TimerLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 TimerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TimerLabel.TextScaled = true
+TimerLabel.Text = "Time Elapsed: 0s"
 
-local startTime = os.time()
-local elapsedTime = 0
+local startTime = 0
 local timerRunning = false
+local timerConnection
 
--- Function to update the timer
-local function updateTimer()
-    while timerRunning do
-        wait(1)
-        elapsedTime = os.time() - startTime
-        TimerLabel.Text = "Time Elapsed: " .. elapsedTime .. "s"
-    end
+-- Function to start timer
+local function startTimer()
+    startTime = os.time()
+    timerRunning = true
+    -- Update timer every second
+    timerConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        if timerRunning then
+            local elapsed = os.time() - startTime
+            TimerLabel.Text = "Time Elapsed: " .. elapsed .. "s"
+        end
+    end)
 end
 
--- Button to start the timer
+-- Button to start timer
 local startButton = AntiAfkSection:CreateButton("Start Timer")
 startButton.MouseButton1Click:Connect(function()
     if not timerRunning then
-        startTime = os.time()
-        elapsedTime = 0
-        timerRunning = true
-        coroutine.wrap(updateTimer)()
+        startTimer()
     end
 end)
 
--- Anti-AFK Functionality
+-- Anti-AFK mechanism
 local VirtualUser = game:GetService("VirtualUser")
 game:GetService("Players").LocalPlayer.Idled:Connect(function()
     VirtualUser:CaptureController()
     VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-    wait(0.1)
+    wait(0.2)
     VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
+
+-- Optional: Add a button to stop timer and disconnect Heartbeat
+local stopButton = AntiAfkSection:CreateButton("Stop Timer")
+stopButton.MouseButton1Click:Connect(function()
+    if timerRunning then
+        timerRunning = false
+        if timerConnection then
+            timerConnection:Disconnect()
+            timerConnection = nil
+        end
+        TimerLabel.Text = "Timer Stopped"
+    end
 end)
