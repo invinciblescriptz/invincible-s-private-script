@@ -1,44 +1,56 @@
-local function performAntiAFK()
-    local cam = Workspace.CurrentCamera
-    local originalCFrame = cam.CFrame
-    cam.CFrame = cam.CFrame * CFrame.new(0, 0.1, 0)
+-- Load Wind UI (assuming you have it already included in your game)
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/your-repo/wind-ui/main/main.lua"))()
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+
+local Window = WindUI:CreateWindow({
+    Name = "Anti-AFK with Timer",
+    FolderToSave = nil
+})
+
+local MainTab = Window:CreateTab("Main")
+local AntiAfkSection = MainTab:CreateSection("Anti-AFK & Timer")
+
+-- Create a label to display timer
+local TimerLabel = Instance.new("TextLabel")
+TimerLabel.Parent = AntiAfkSection:CreateButton("Start Timer")
+TimerLabel.Size = UDim2.new(0, 200, 0, 50)
+TimerLabel.Position = UDim2.new(0, 10, 0, 50)
+TimerLabel.Text = "Time Elapsed: 0s"
+TimerLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TimerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TimerLabel.TextScaled = true
+
+local startTime = os.time()
+local elapsedTime = 0
+local timerRunning = false
+
+-- Function to update the timer
+local function updateTimer()
+    while timerRunning do
+        wait(1)
+        elapsedTime = os.time() - startTime
+        TimerLabel.Text = "Time Elapsed: " .. elapsedTime .. "s"
+    end
+end
+
+-- Button to start the timer
+local startButton = AntiAfkSection:CreateButton("Start Timer")
+startButton.MouseButton1Click:Connect(function()
+    if not timerRunning then
+        startTime = os.time()
+        elapsedTime = 0
+        timerRunning = true
+        coroutine.wrap(updateTimer)()
+    end
+end)
+
+-- Anti-AFK Functionality
+local VirtualUser = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
     wait(0.1)
-    cam.CFrame = originalCFrame
-end
-
-local function startAntiAFK()
-    -- Create label if doesn't exist
-    if not timerLabel then
-        timerLabel = farmingTab:AddLabel("Anti-AFK Timer: 0s")
-        timerLabel.TextSize = 14
-    end
-    timerLabel.Text = "Anti-AFK Timer: 0s"
-    local startTime = os.clock()
-
-    -- Start updating every frame
-    antiAfkConn = RunService.Heartbeat:Connect(function()
-        if not states.AntiAFK then return end
-        if os.clock() - startTime >= 300 then -- 5 min
-            performAntiAFK()
-            startTime = os.clock()
-        end
-        local elapsed = math.floor(os.clock() - startTime)
-        if timerLabel then
-            timerLabel.Text = "Anti-AFK Timer: " .. elapsed .. "s"
-        end
-    end)
-end
-
-local function stopAntiAFK()
-    if antiAfkConn then
-        antiAfkConn:Disconnect()
-        antiAfkConn = nil
-    end
-    if timerLabel then
-        timerLabel.Text = "Anti-AFK Timer: 0s"
-    end
-end
-
--- Set Anti-AFK to always be active on script run
-states.AntiAFK = true
-startAntiAFK()
+    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
