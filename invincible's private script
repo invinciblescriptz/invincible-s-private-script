@@ -511,6 +511,9 @@ misc1Folder:AddSwitch("Auto Claim Gifts", function(bool)
     end
 end)
 
+misc2Folder:AddButton("anti afk", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/anti%20afk"))()
+
 misc2Folder:AddSwitch("No-Clip", function(bool)
     _G.NoClip = bool
     if bool then
