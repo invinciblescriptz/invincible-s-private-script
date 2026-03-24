@@ -1,47 +1,40 @@
-import windpy as wind
-import time
-import threading
+local ScreenGui = Instance.new("ScreenGui")
+local Button = Instance.new("TextButton")
 
-# Initialize Wind GUI
-app = wind.Wind()
+ScreenGui.Parent = game.CoreGui -- or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Name = "AntiAFKGui"
 
-# Global variables
-anti_afk_active = False
-start_time = None
-timer_thread = None
+Button.Parent = ScreenGui
+Button.Size = UDim2.new(0, 200, 0, 50)
+Button.Position = UDim2.new(0.5, -100, 0.5, -25)
+Button.Text = "Start Anti-AFK"
 
-# Function to perform anti-AFK action
-def anti_afk_action():
-    # For example, move mouse slightly or send a keystroke
-    # Here, we'll just print a message
-    print("Anti-AFK action performed.")
+local isActive = false
+local startTime = 0
+local connection
 
-def timer_function():
-    global start_time
-    start_time = time.time()
-    while anti_afk_active:
-        anti_afk_action()
-        time.sleep(60)  # Perform action every 60 seconds
+local function performAntiAFK()
+    print("Anti-AFK action performed")
+    -- Add your actual anti-AFK actions here
+end
 
-# Button callback
-def toggle_anti_afk():
-    global anti_afk_active, timer_thread
-    if not anti_afk_active:
-        anti_afk_active = True
-        timer_thread = threading.Thread(target=timer_function)
-        timer_thread.start()
-        start_button.text = "Stop Anti-AFK"
-        print("Anti-AFK started.")
-    else:
-        anti_afk_active = False
-        if timer_thread:
-            timer_thread.join()
-        start_button.text = "Start Anti-AFK"
-        elapsed = time.time() - start_time if start_time else 0
-        print(f"Anti-AFK stopped. Duration: {int(elapsed)} seconds.")
+local function toggleAntiAFK()
+    if not isActive then
+        isActive = true
+        startTime = os.time()
+        connection = game:GetService("RunService").Heartbeat:Connect(function()
+            performAntiAFK()
+        end)
+        Button.Text = "Stop Anti-AFK"
+    else
+        isActive = false
+        if connection then
+            connection:Disconnect()
+        end
+        local duration = os.time() - startTime
+        print("Stopped. Duration: " .. duration .. " seconds.")
+        Button.Text = "Start Anti-AFK"
+    end
+end
 
-# Create GUI elements
-start_button = app.create_button("Start Anti-AFK", toggle_anti_afk)
-
-# Run the GUI
-app.run()
+Button.MouseButton1Click:Connect(toggleAntiAFK)
