@@ -514,6 +514,60 @@ misc1Folder:AddSwitch("Auto Claim Gifts", function(bool)
     end
 end)
 
+local antiAFKActive = false
+local timerConnection
+local startTime = 0
+local timerLabel -- to hold the label object for updating
+
+local function performAntiAFK()
+    -- Move camera slightly to simulate activity
+    local camera = workspace.CurrentCamera
+    local originalCFrame = camera.CFrame
+    camera.CFrame = camera.CFrame * CFrame.new(0, 0.1, 0)
+    wait(0.1)
+    camera.CFrame = originalCFrame
+end
+
+local function startAntiAFK()
+    startTime = os.clock()
+    timerLabel:Set("Anti-AFK Timer: 0s")
+    local start = os.clock()
+
+    timerConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        -- Every 300 seconds (5 minutes), perform anti-AFK action
+        if os.clock() - start >= 300 then
+            performAntiAFK()
+            start = os.clock()
+        end
+        -- Update timer label
+        local elapsed = math.floor(os.clock() - start)
+        timerLabel:Set("Anti-AFK Timer: " .. elapsed .. "s")
+    end)
+end
+
+local function stopAntiAFK()
+    if timerConnection then
+        timerConnection:Disconnect()
+        timerConnection = nil
+    end
+end
+
+misc2Folder:AddSwitch("Anti-AFK", false, function(state)
+    if state then
+        -- When toggled ON
+        antiAFKActive = true
+        startAntiAFK()
+        -- Create or get existing label for timer
+        if not timerLabel then
+            timerLabel = farmingTab:AddLabel("Anti-AFK Timer: 0s")
+        end
+    else
+        -- When toggled OFF
+        antiAFKActive = false
+        stopAntiAFK()
+    end
+end)
+
 misc2Folder:AddSwitch("No-Clip", function(bool)
     _G.NoClip = bool
     if bool then
@@ -1653,7 +1707,7 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 -- 📌 Botón para dejar de seguir
-Killer:AddButton("Dejar de Seguir", function()
+Killer:AddButton("stop following", function()
     following = false
     followTarget = nil
     print("⛔ Stopped following")
@@ -1745,63 +1799,3 @@ Killer:AddButton("Touch Me!", function()
     end
 end)
 
-
-
-local Lighting = game:GetService("Lighting")
-
--- Tabla para registrar los tiempos disponibles
-local timeOptions = {
-    "Morning",
-    "Noon",
-    "Afternoon",
-    "Sunset",
-    "Night",
-    "Midnight",
-    "Dawn",
-    "Early Morning"
-}
-
--- Dropdown
-local timeDropdown = Killer:AddDropdown("change time", function(selection)
-    -- Reset antes de aplicar
-    Lighting.Brightness = 2
-    Lighting.FogEnd = 100000
-    Lighting.Ambient = Color3.fromRGB(127,127,127)
-
-    if selection == "Morning" then
-        Lighting.ClockTime = 6
-        Lighting.Brightness = 2
-        Lighting.Ambient = Color3.fromRGB(200, 200, 255)
-    elseif selection == "Noon" then
-        Lighting.ClockTime = 12
-        Lighting.Brightness = 3
-        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-    elseif selection == "Afternoon" then
-        Lighting.ClockTime = 16
-        Lighting.Brightness = 2.5
-        Lighting.Ambient = Color3.fromRGB(255, 220, 180)
-    elseif selection == "Sunset" then
-        Lighting.ClockTime = 18
-        Lighting.Brightness = 2
-        Lighting.Ambient = Color3.fromRGB(255, 150, 100)
-        Lighting.FogEnd = 500
-    elseif selection == "Nigth" then
-        Lighting.ClockTime = 20
-        Lighting.Brightness = 1.5
-        Lighting.Ambient = Color3.fromRGB(100, 100, 150)
-        Lighting.FogEnd = 800
-    elseif selection == "Midnight" then
-        Lighting.ClockTime = 0
-        Lighting.Brightness = 1
-        Lighting.Ambient = Color3.fromRGB(50, 50, 100)
-        Lighting.FogEnd = 400
-    elseif selection == "Dawn" then
-        Lighting.ClockTime = 4
-        Lighting.Brightness = 1.8
-        Lighting.Ambient = Color3.fromRGB(180, 180, 220)
-    elseif selection == "Early Morning" then
-        Lighting.ClockTime = 2
-        Lighting.Brightness = 1.2
-        Lighting.Ambient = Color3.fromRGB(100, 120, 180)
-    end
-end) 
