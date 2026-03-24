@@ -56,19 +56,17 @@ timerLabel.Text = "AFK Timer: 0s"
 
 -- Anti-AFK variables
 local afkTime = 0
-local isActive = false -- To control whether anti-AFK is on
+local isActive = true -- Auto turn on
 
 -- Function to simulate activity
 local function simulateActivity()
     -- Simulate a small movement or input to prevent AFK
-    -- For example, jump or move the camera slightly
-    -- Here, we'll just send a small input
     UserInputService:SetKeyDown(Enum.KeyCode.Space, true)
     wait(0.1)
     UserInputService:SetKeyUp(Enum.KeyCode.Space, true)
 end
 
--- Toggle AFK prevention on/off by clicking the frame
+-- Optional: Allow toggling with click, but default is on
 frame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         isActive = not isActive
@@ -83,7 +81,7 @@ RunService.Heartbeat:Connect(function()
     if isActive then
         afkTime = afkTime + RunService.Heartbeat -- Increment based on heartbeat
 
-        -- Every few seconds, simulate activity
+        -- Every 5 seconds, simulate activity
         if math.floor(afkTime) % 5 == 0 then
             simulateActivity()
         end
