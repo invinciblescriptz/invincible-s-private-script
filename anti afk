@@ -1,57 +1,99 @@
--- Load Wind GUI library
-local Wind = loadstring(game:HttpGet("https://raw.githubusercontent.com/wind-libs/wind/main/wind.lua"))()
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
 
-local window = Wind:Window("Anti-AFK with Timer")
+-- Create main GUI
+local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+gui.Name = "MyFeatureUI"
 
-local toggleAntiAFK = false
-local timerDuration = 60 -- default timer in seconds
-local timerLabel
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 160, 0, 160)
+frame.Position = UDim2.new(0.5, -80, 0.5, -80) -- Centered
+frame.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
+frame.BorderSizePixel = 0
 
--- Function to start Anti-AFK
-local function startAntiAFK()
-    toggleAntiAFK = true
-    spawn(function()
-        while toggleAntiAFK do
-            -- Simulate key press to prevent AFK
-            game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-            wait(0.1)
-            game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-            wait(30) -- wait 30 seconds before next input
+-- Make draggable
+local function makeDraggable(f)
+    local dragging = false
+    local dragStart, startPos
+    f.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = f.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            f.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
 
--- Function to stop Anti-AFK
-local function stopAntiAFK()
-    toggleAntiAFK = false
+makeDraggable(frame)
+
+-- Add a label for Timer
+local timerLabel = Instance.new("TextLabel", frame)
+timerLabel.Size = UDim2.new(1, -10, 0, 30)
+timerLabel.Position = UDim2.new(0, 5, 0, 5)
+timerLabel.BackgroundTransparency = 1
+timerLabel.TextColor3 = Color3.new(1, 1, 1)
+timerLabel.TextSize = 14
+timerLabel.Font = Enum.Font.SourceSansBold
+timerLabel.Text = "AFK Timer: 0s"
+
+-- Anti-AFK variables
+local afkTime = 0
+local isActive = false -- To control whether anti-AFK is on
+
+-- Function to simulate activity
+local function simulateActivity()
+    -- Simulate a small movement or input to prevent AFK
+    -- For example, jump or move the camera slightly
+    -- Here, we'll just send a small input
+    UserInputService:SetKeyDown(Enum.KeyCode.Space, true)
+    wait(0.1)
+    UserInputService:SetKeyUp(Enum.KeyCode.Space, true)
 end
 
--- Timer update function
-local function updateTimer()
-    local remaining = timerDuration
-    while remaining > 0 do
-        timerLabel.Text = "Timer: " .. remaining .. "s"
-        wait(1)
-        remaining = remaining - 1
+-- Toggle AFK prevention on/off by clicking the frame
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isActive = not isActive
+        if isActive then
+            afkTime = 0 -- Reset timer when activated
+        end
     end
-    timerLabel.Text = "Time's up!"
-end
-
--- Button to start Anti-AFK
-local startBtn = window:Button("Start Anti-AFK", startAntiAFK)
--- Button to stop Anti-AFK
-local stopBtn = window:Button("Stop Anti-AFK", stopAntiAFK)
-
--- Slider to set timer
-local timerSlider = window:Slider("Set Timer (seconds)", 10, 600, function(value)
-    timerDuration = value
 end)
 
--- Label to display timer
-timerLabel = window:Label("Timer: 0s")
+-- Main loop to update timer and simulate activity
+RunService.Heartbeat:Connect(function()
+    if isActive then
+        afkTime = afkTime + RunService.Heartbeat -- Increment based on heartbeat
 
--- Button to run timer
-local function runTimer()
-    updateTimer()
-end
-local startTimerBtn = window:Button("Start Timer", runTimer)
+        -- Every few seconds, simulate activity
+        if math.floor(afkTime) % 5 == 0 then
+            simulateActivity()
+        end
+
+        -- Update timer label every second
+        if math.floor(afkTime) ~= math.floor(afkTime - RunService.Heartbeat) then
+            timerLabel.Text = "AFK Timer: " .. math.floor(afkTime) .. "s"
+        end
+    else
+        -- When turned off, reset timer display
+        timerLabel.Text = "AFK Timer: 0s"
+    end
+end)
