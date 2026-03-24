@@ -1,78 +1,63 @@
--- Place this script inside StarterPlayerScripts
+-- Create ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
-local WindUI = require(game:GetService("ReplicatedStorage"):WaitForChild("WindUI")) -- Adjust if needed
+-- Create Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 50)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Parent = ScreenGui
 
-local function createDraggableAntiAFKGUI()
-    local player = game.Players.LocalPlayer
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "DraggableAntiAFKGUI"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = player:WaitForChild("PlayerGui")
-    
-    local windUI = WindUI.new(screenGui)
-    
-    -- Create a small, draggable frame
-    local frame = windUI:Create("Frame", {
-        Size = UDim2.new(0, 150, 0, 30),
-        Position = UDim2.new(0.5, -75, 0, 10),
-        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-        BorderSizePixel = 0,
-    })
-    
-    -- Make the frame draggable
-    local isDragging = false
-    local dragStartPos
-    local startPos
-    
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isDragging = true
-            dragStartPos = input.Position
-            startPos = frame.Position
+-- Create Label
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(0, 100, 0, 50)
+label.Position = UDim2.new(0, 10, 0, 0)
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.Text = "Anti-AFK"
+label.Font = Enum.Font.SourceSansBold
+label.TextSize = 20
+label.Parent = frame
+
+-- Create Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 80, 0, 50)
+toggleButton.Position = UDim2.new(0, 110, 0, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 18
+toggleButton.Parent = frame
+
+-- State variable
+local antiAFKEnabled = false
+local antiAFKConnection = nil
+
+-- Function to toggle anti-AFK
+local function toggleAntiAFK()
+    antiAFKEnabled = not antiAFKEnabled
+    if antiAFKEnabled then
+        -- Change button text
+        toggleButton.Text = "ON"
+        -- Connect to Idled event
+        local player = game:GetService("Players").LocalPlayer
+        antiAFKConnection = player.Idled:Connect(function()
+            pcall(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new(0,0))
+            end)
+        end)
+    else
+        -- Change button text
+        toggleButton.Text = "OFF"
+        -- Disconnect event
+        if antiAFKConnection then
+            antiAFKConnection:Disconnect()
+            antiAFKConnection = nil
         end
-    end)
-    
-    frame.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isDragging = false
-        end
-    end)
-    
-    frame.InputChanged:Connect(function(input)
-        if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - dragStartPos
-            frame.Position = startPos + UDim2.new(0, delta.X, 0, delta.Y)
-        end
-    end)
-    
-    -- Label: "AFK"
-    local label = windUI:Create("TextLabel", {
-        Size = UDim2.new(1, 0, 1, 0),
-        Text = "AFK",
-        TextColor3 = Color3.new(1, 1, 1),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.SourceSansBold,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Center,
-        TextYAlignment = Enum.TextYAlignment.Center,
-    })
-    label.Parent = frame
-    
-    -- Optional: Add a "Disable" button
-    local disableButton = windUI:Create("TextButton", {
-        Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -30, 0, 0),
-        Text = "X",
-        TextColor3 = Color3.new(1,1,1),
-        BackgroundColor3 = Color3.fromRGB(200, 0, 0),
-        Font = Enum.Font.SourceSans,
-        TextSize = 12,
-    })
-    disableButton.Parent = frame
-    
-    disableButton.MouseButton1Click:Connect(function()
-        screenGui:Destroy()
-    end)
+    end
 end
 
-createDraggableAntiAFKGUI()
+-- Button click event
+toggleButton.MouseButton1Click:Connect(toggleAntiAFK)
