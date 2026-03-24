@@ -557,9 +557,6 @@ end)
 -- OP Farm Script (Separated)
 -- ==========================
 
-local AutoFarm = window:AddTab("Farm OP")
-AutoFarm:Show()
-
 -- Initial state
 getgenv()._AutoRepFarmEnabled = false
 
