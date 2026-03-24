@@ -11,13 +11,13 @@ gui.ResetOnSpawn = false
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 180, 0, 100)
-frame.Position = UDim2.new(0.5, -90, 0.5, -90)
+frame.Size = UDim2.new(0, 160, 0, 80)
+frame.Position = UDim2.new(0.5, -90, 0.5, -60)
 frame.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
 frame.BorderSizePixel = 0
 frame.Parent = gui
 
--- Make draggable
+-- Make the frame draggable
 local dragging = false
 local dragStart, startPos
 
@@ -45,7 +45,7 @@ game:GetService("UserInputService").InputEnded:Connect(function(input)
 	end
 end)
 
--- Timer Label (made a bit bigger for longer text)
+-- Timer Label
 local timerLabel = Instance.new("TextLabel")
 timerLabel.Size = UDim2.new(1, -20, 0, 50)
 timerLabel.Position = UDim2.new(0, 10, 0, 10)
@@ -56,31 +56,17 @@ timerLabel.Font = Enum.Font.SourceSansBold
 timerLabel.Text = "AFK Timer: 0s"
 timerLabel.Parent = frame
 
--- Toggle Button
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(1, -20, 0, 45)
-toggleButton.Position = UDim2.new(0, 10, 0, 70)
-toggleButton.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
-toggleButton.TextColor3 = Color3.new(1, 1, 1)
-toggleButton.TextSize = 22
-toggleButton.Font = Enum.Font.SourceSansBold
-toggleButton.Text = "AFK Protection: ON"
-toggleButton.Parent = frame
-
 -- Variables
 local afkTime = 0
-local isActive = true
 
--- Best Anti-AFK method
+-- Anti-AFK - Automatically ON
 LocalPlayer.Idled:Connect(function()
-	if isActive then
-		VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-		task.wait(0.1)
-		VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-	end
+	VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+	task.wait(0.1)
+	VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
 end)
 
--- Function to format time nicely (1s → 1m 23s → 2h 5m 12s → 1d 3h 45m)
+-- Format time: 12s → 5m 23s → 2h 14m 7s → 1d 3h 45m 12s
 local function formatTime(seconds)
 	local days = math.floor(seconds / 86400)
 	seconds = seconds % 86400
@@ -102,24 +88,8 @@ end
 
 -- Main timer loop
 RunService.Heartbeat:Connect(function(deltaTime)
-	if isActive then
-		afkTime += deltaTime
-		timerLabel.Text = "AFK Timer: " .. formatTime(afkTime)
-	else
-		afkTime = 0
-		timerLabel.Text = "AFK Timer: 0s"
-	end
+	afkTime += deltaTime
+	timerLabel.Text = "AFK Timer: " .. formatTime(afkTime)
 end)
 
--- Toggle functionality
-toggleButton.MouseButton1Click:Connect(function()
-	isActive = not isActive
-	
-	if isActive then
-		toggleButton.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
-		toggleButton.Text = "AFK Protection: ON"
-	else
-		toggleButton.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
-		toggleButton.Text = "AFK Protection: OFF"
-	end
-end)
+print("Anti-AFK + Timer loaded successfully (always active)")
