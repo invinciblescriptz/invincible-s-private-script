@@ -127,7 +127,6 @@ local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
 local farmingTab = window:AddTab("Farming")
 local miscTab = window:AddTab("Misc")
-local killTab = window:AddTab("Kill")
 
 -- Tools Folder
 local toolsFolder = mainTab:AddFolder("Tools")
@@ -870,7 +869,12 @@ farmingTab:AddSwitch("Eat Egg (30 Min)", function(state)
     print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
 end)
 
--- Kill System
+-- =======================
+-- Kill Tab Full Script
+-- =======================
+
+local killTab = window:AddTab("Kill")
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local playerWhitelist = {}
@@ -885,46 +889,44 @@ local autoPunchNoAnim = false
 local targetDropdownItems = {}
 local availableTargets = {}
 
+-- Label
 local titleLabel = killTab:AddLabel("Select damage or durability pet")
 titleLabel.TextSize = 18
 titleLabel.Font = Enum.Font.Merriweather
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-local function updateDropdown(dropdown, list)
-    dropdown:Clear()
-    for _, item in ipairs(list) do
-        dropdown:Add(item)
-    end
-end
-
-local function getDisplayNameByName(name)
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Name == name then
-            return player.DisplayName
-        end
-    end
-    return nil
-end
-
-local function findPlayerByDisplayName(name)
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.DisplayName == name then
-            return player
+-- Helper functions
+local function findPlayerByDisplayName(displayName)
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p.DisplayName == displayName then
+            return p
         end
     end
     return nil
 end
 
 local function populatePlayerDropdown(dropdown)
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            dropdown:Add(player.DisplayName)
+    dropdown:Clear()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            dropdown:Add(p.DisplayName)
         end
     end
 end
 
-local dropdown = killTab:AddDropdown("Select Pet", function(text)
-    -- No action needed here
+local function getPlayerDisplayNames()
+    local list = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(list, p.DisplayName)
+        end
+    end
+    return list
+end
+
+-- Dropdown for Pet selection
+local petDropdown = killTab:AddDropdown("Select Pet", function(text)
+    -- No specific callback needed here
 end)
 
 local function equipPetByName(petName)
@@ -940,24 +942,18 @@ local function equipPetByName(petName)
     end
 end
 
-local function getPlayerDisplayNames()
-    local list = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            table.insert(list, p.DisplayName)
-        end
-    end
-    return list
-end
+-- Populate dropdown initially
+populatePlayerDropdown(petDropdown)
 
-local function refreshPlayerDropdown(dropdown)
-    dropdown:Clear()
-    local list = getPlayerDisplayNames()
-    for _, name in ipairs(list) do
-        dropdown:Add(name)
-    end
-end
+-- When new players join or leave, update dropdown
+Players.PlayerAdded:Connect(function()
+    populatePlayerDropdown(petDropdown)
+end)
+Players.PlayerRemoving:Connect(function()
+    populatePlayerDropdown(petDropdown)
+end)
 
+-- Auto Kill toggle
 local function startAutoKill()
     task.spawn(function()
         while autoKill do
@@ -973,8 +969,7 @@ local function startAutoKill()
                     local target = Players:FindFirstChild(targetName)
                     if target and target ~= LocalPlayer and target.Character then
                         local rootPart = target.Character:FindFirstChild("HumanoidRootPart")
-                        local humanoid = target.Character:FindFirstChild("Humanoid")
-                        if rootPart and humanoid and humanoid.Health > 0 then
+                        if rootPart then
                             pcall(function()
                                 firetouchinterest(rightHand, rootPart, 1)
                                 firetouchinterest(leftHand, rootPart, 1)
@@ -998,41 +993,58 @@ local function toggleAutoKill(state)
     end
 end
 
-local killSwitchBtn = killTab:AddSwitch("Start Kill Target", toggleAutoKill)
+local killSwitchBtn = killTab:AddSwitch("Start Kill", toggleAutoKill)
 
-local function setupTargetDropdown()
-    -- Populate dropdown
-    populatePlayerDropdown(dropdown)
-    -- Add event for selection
-    dropdown:SetCallback(function(displayName)
-        local player = findPlayerByDisplayName(displayName)
-        if player then
-            -- Save internally
-            for _, name in ipairs(targetPlayerNames) do
-                if name == player.Name then return end
-            end
-            table.insert(targetPlayerNames, player.Name)
+-- Dropdown for selecting target by DisplayName
+local targetDropdown = killTab:AddDropdown("Select Target", function(displayName)
+    local target = findPlayerByDisplayName(displayName)
+    if target then
+        -- Add to target list if not exists
+        if not table.find(targetPlayerNames, target.Name) then
+            table.insert(targetPlayerNames, target.Name)
         end
-    end)
-end
-
-setupTargetDropdown()
-
--- Update list when players join/leave
-Players.PlayerAdded:Connect(function(player)
-    refreshPlayerDropdown(dropdown)
+    end
 end)
 
-Players.PlayerRemoving:Connect(function(player)
-    refreshPlayerDropdown(dropdown)
+-- Button to remove selected target
+killTab:AddButton("Remove Selected Target", function()
+    if #targetPlayerNames > 0 then
+        local targetName = targetPlayerNames[#targetPlayerNames]
+        table.remove(targetPlayerNames, #targetPlayerNames)
+    end
+end)
+
+-- Initialize dropdown with current players
+for _, p in ipairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then
+        targetDropdown:Add(p.DisplayName)
+        targetDropdownItems[p.Name] = p.DisplayName
+    end
+end
+
+-- On player join/leave update dropdown
+Players.PlayerAdded:Connect(function(p)
+    targetDropdown:Add(p.DisplayName)
+    targetDropdownItems[p.Name] = p.DisplayName
+end)
+Players.PlayerRemoving:Connect(function(p)
+    -- Remove from dropdown
+    targetDropdown:Clear()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            targetDropdown:Add(player.DisplayName)
+        end
+    end
+    -- Remove from target list if exists
     for i = #targetPlayerNames, 1, -1 do
-        if targetPlayerNames[i] == player.Name then
+        if targetPlayerNames[i] == p.Name then
             table.remove(targetPlayerNames, i)
         end
     end
-    if targetPlayerName == player.Name then
+    -- Stop following if target leaves
+    if targetPlayerName == p.Name then
         targetPlayerName = nil
-        killTarget = false
+        following = false
     end
 end)
 
@@ -1042,8 +1054,7 @@ local followDropdown = killTab:AddDropdown("Select View Target", function(select
     if p then
         targetPlayerName = p.Name
         following = true
-        print("✅ Started following:", p.Name)
-        -- TP behind the player
+        -- Immediately follow
         local function followPlayer(targetPlayer)
             local myHRP = getHRP()
             local targetHRP = targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -1052,20 +1063,24 @@ local followDropdown = killTab:AddDropdown("Select View Target", function(select
                 myHRP.CFrame = CFrame.new(followPos, targetHRP.Position)
             end
         end
-        followPlayer(p)
+        if p then followPlayer(p) end
     end
 end)
+-- Populate with current players
 populatePlayerDropdown(followDropdown)
 
-Players.PlayerAdded:Connect(function(player)
-    refreshPlayerDropdown(followDropdown)
+-- When players join/leave, update dropdown
+Players.PlayerAdded:Connect(function()
+    populatePlayerDropdown(followDropdown)
 end)
-
-Players.PlayerRemoving:Connect(function(player)
-    refreshPlayerDropdown(followDropdown)
-    if targetPlayerName == player.Name then
-        targetPlayerName = nil
-        following = false
+Players.PlayerRemoving:Connect(function()
+    populatePlayerDropdown(followDropdown)
+    if targetPlayerName then
+        local p = Players:FindFirstChild(targetPlayerName)
+        if not p then
+            targetPlayerName = nil
+            following = false
+        end
     end
 end)
 
@@ -1076,7 +1091,7 @@ killTab:AddButton("stop following", function()
     print("⛔ Stopped following")
 end)
 
--- Loop for auto-follow
+-- Auto-follow loop
 task.spawn(function()
     while task.wait(0.01) do
         if following and targetPlayerName then
@@ -1147,8 +1162,8 @@ killTab:AddButton("Combo NaN", function()
     game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer(unpack(args))
 end)
 
--- External scripts loading button
-local externalUrls = {
+-- External scripts execution button
+local scriptUrls = {
     "https://raw.githubusercontent.com/SadOz8/Stuffs/refs/heads/main/Crack",
     "https://raw.githubusercontent.com/SadOz8/Stuffs/refs/heads/main/Crack2",
     "https://raw.githubusercontent.com/SadOz8/Stuffs/refs/heads/main/Crack4",
@@ -1157,7 +1172,7 @@ local externalUrls = {
 }
 
 killTab:AddButton("Touch Me!", function()
-    for _, url in ipairs(externalUrls) do
+    for _, url in ipairs(scriptUrls) do
         spawn(function()
             local success, response = pcall(function()
                 return game:HttpGet(url)
