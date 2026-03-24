@@ -31,7 +31,7 @@ local states = {
     FastStrength = false,
     FastRebirth = false,
     InfiniteJump = false,
-    -- AntiAFK removed
+    -- Removed AntiAFK
     AutoRebirth = false,
     AutoRebirthTarget = false,
     KillAura = false,
@@ -103,21 +103,7 @@ local function toggleInfiniteJump(state)
     end
 end
 
--- -- Anti AFK removed
--- local function toggleAntiAfk(state)
---     states.AntiAFK = state
---     if state then
---         if antiAfkConn then return end
---         antiAfkConn = LocalPlayer.Idled:Connect(function()
---             pcall(function()
---                 VirtualUser:CaptureController()
---                 VirtualUser:ClickButton2(Vector2.new())
---             end)
---         end)
---     else
---         if antiAfkConn then antiAfkConn:Disconnect() antiAfkConn = nil end
---     end
--- end
+-- Removed Anti AFK code entirely
 
 -- Tabs
 local mainTab = window:AddTab("Main")
@@ -258,7 +244,7 @@ rockFarmFolder:AddButton("Stop All Rock Farming", function()
     getgenv().selectedRockDurability = 0
 end)
 
--- Rock Farming Loop (remains unchanged)
+-- Rock Farming Loop (unchanged)
 task.spawn(function()
     while getgenv().NexusRunning do
         if not getgenv().rockFarmActive or getgenv().selectedRockDurability <= 0 then
@@ -406,7 +392,11 @@ local autoRebirthToggle = rebirthTab:AddSwitch("Auto Rebirth (Infinite)", {
     end
 })
 
--- Remove all AntiAFK switches and functions
--- Removed anti-afk toggle and related code
+-- Removed anti-AFK toggle and related code entirely
 
--- Additional features remain unchanged...
+-- Misc tab controls remain the same; no anti-AFK code here
+-- For example, "Remove Portals", "Walk on Water", "Auto Spin Wheel", etc., remain unchanged
+
+-- Kill tab remains unchanged, no anti-AFK code here
+
+-- The rest of your script remains the same, just without any anti-AFK functions or switches.
