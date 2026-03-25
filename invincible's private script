@@ -800,11 +800,6 @@ farmingTab:AddButton("Lock Position", function()
     setPositionLock(not isLocked)
 end)
 
-farmingTab:AddButton("Lock Position", function()
-    -- Toggle lock state
-    setPositionLock(not getgenv().PositionLocked)
-end)
-
 -- Change time of day dropdown
 local timeDropdown = farmingTab:AddDropdown("Change Time", function(selection)
     local lighting = game:GetService("Lighting")
