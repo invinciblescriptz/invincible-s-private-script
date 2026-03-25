@@ -18,15 +18,20 @@ frame.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
 frame.BorderSizePixel = 0
 frame.Parent = gui
 
--- Make the frame draggable
+-- Make the frame draggable (support PC and Mobile)
 local dragging = false
 local dragStartPosition
 local startPos
 
--- Function to handle input began (mouse or touch)
-local function onInputBegan(input)
+local function onInputBegan(input, gameProcessed)
+    if gameProcessed then return end
+    -- Check if input is a mouse click or touch
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        if input.Target == frame then
+        -- Optional: ensure input started within frame bounds
+        -- But for simplicity, we'll assume it does
+        if input.Target == frame or (input.Position and frame.AbsolutePosition and frame.AbsoluteSize and 
+           input.Position.x >= frame.AbsolutePosition.x and input.Position.x <= frame.AbsolutePosition.x + frame.AbsoluteSize.x and
+           input.Position.y >= frame.AbsolutePosition.y and input.Position.y <= frame.AbsolutePosition.y + frame.AbsoluteSize.y) then
             dragging = true
             dragStartPosition = input.Position
             startPos = frame.Position
@@ -34,7 +39,6 @@ local function onInputBegan(input)
     end
 end
 
--- Function to handle input changed (mouse or touch movement)
 local function onInputChanged(input)
     if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStartPosition
@@ -45,14 +49,12 @@ local function onInputChanged(input)
     end
 end
 
--- Function to handle input ended (mouse or touch release)
 local function onInputEnded(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
     end
 end
 
--- Connect events
 UserInputService.InputBegan:Connect(onInputBegan)
 UserInputService.InputChanged:Connect(onInputChanged)
 UserInputService.InputEnded:Connect(onInputEnded)
