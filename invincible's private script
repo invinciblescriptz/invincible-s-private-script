@@ -750,26 +750,48 @@ farmingTab:AddButton("Anti-Lag (Performance)", function()
 end)
 
 -- Position Lock
+local RunService = game:GetService("RunService")
+local getHRP = function()
+    -- Replace this with your method to get the HumanoidRootPart
+    local player = game.Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        return player.Character.HumanoidRootPart
+    end
+    return nil
+end
+
+local lockConn = nil -- Ensure this is a scoped variable
 local function setPositionLock(en)
     getgenv().PositionLocked = en
     local hrp = getHRP()
     if not hrp then return end
+
     if en then
         local pos = hrp.CFrame
         hrp.Anchored = true
-        if lockConn then lockConn:Disconnect() end
+        if lockConn then
+            lockConn:Disconnect()
+        end
         lockConn = RunService.Heartbeat:Connect(function()
             local r = getHRP()
-            if r then r.CFrame = pos end
+            if r then
+                r.CFrame = pos
+            end
         end)
     else
-        if hrp then hrp.Anchored = false end
-        if lockConn then lockConn:Disconnect() lockConn = nil end
+        if hrp then
+            hrp.Anchored = false
+        end
+        if lockConn then
+            lockConn:Disconnect()
+            lockConn = nil
+        end
     end
 end
 
-farmingTab:AddButton("Lock Position", function(en)
-    setPositionLock(en)
+farmingTab:AddButton("Lock Position", function()
+    -- Toggle lock state
+    setPositionLock(not getgenv().PositionLocked)
 end)
 
 -- Change time of day dropdown
