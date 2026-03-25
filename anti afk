@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -12,38 +13,49 @@ gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 160, 0, 80)
-frame.Position = UDim2.new(0.5, -90, 0.5, -60)
+frame.Position = UDim2.new(0.5, -80, 0.5, -40) -- Centered
 frame.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
 frame.BorderSizePixel = 0
 frame.Parent = gui
 
 -- Make the frame draggable
 local dragging = false
-local dragStart, startPos
+local dragStartPosition
+local startPos
 
-frame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = frame.Position
-	end
-end)
+-- Function to handle input began (mouse or touch)
+local function onInputBegan(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if input.Target == frame then
+            dragging = true
+            dragStartPosition = input.Position
+            startPos = frame.Position
+        end
+    end
+end
 
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		frame.Position = UDim2.new(
-			startPos.X.Scale, startPos.X.Offset + delta.X,
-			startPos.Y.Scale, startPos.Y.Offset + delta.Y
-		)
-	end
-end)
+-- Function to handle input changed (mouse or touch movement)
+local function onInputChanged(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStartPosition
+        frame.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end
 
-game:GetService("UserInputService").InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
-	end
-end)
+-- Function to handle input ended (mouse or touch release)
+local function onInputEnded(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end
+
+-- Connect events
+UserInputService.InputBegan:Connect(onInputBegan)
+UserInputService.InputChanged:Connect(onInputChanged)
+UserInputService.InputEnded:Connect(onInputEnded)
 
 -- Timer Label
 local timerLabel = Instance.new("TextLabel")
@@ -61,35 +73,35 @@ local afkTime = 0
 
 -- Anti-AFK - Automatically ON
 LocalPlayer.Idled:Connect(function()
-	VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-	task.wait(0.1)
-	VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    task.wait(0.1)
+    VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
 end)
 
--- Format time: 12s → 5m 23s → 2h 14m 7s → 1d 3h 45m 12s
+-- Format time function
 local function formatTime(seconds)
-	local days = math.floor(seconds / 86400)
-	seconds = seconds % 86400
-	local hours = math.floor(seconds / 3600)
-	seconds = seconds % 3600
-	local minutes = math.floor(seconds / 60)
-	seconds = math.floor(seconds % 60)
+    local days = math.floor(seconds / 86400)
+    seconds = seconds % 86400
+    local hours = math.floor(seconds / 3600)
+    seconds = seconds % 3600
+    local minutes = math.floor(seconds / 60)
+    seconds = math.floor(seconds % 60)
 
-	if days > 0 then
-		return string.format("%dd %dh %dm %ds", days, hours, minutes, seconds)
-	elseif hours > 0 then
-		return string.format("%dh %dm %ds", hours, minutes, seconds)
-	elseif minutes > 0 then
-		return string.format("%dm %ds", minutes, seconds)
-	else
-		return string.format("%ds", seconds)
-	end
+    if days > 0 then
+        return string.format("%dd %dh %dm %ds", days, hours, minutes, seconds)
+    elseif hours > 0 then
+        return string.format("%dh %dm %ds", hours, minutes, seconds)
+    elseif minutes > 0 then
+        return string.format("%dm %ds", minutes, seconds)
+    else
+        return string.format("%ds", seconds)
+    end
 end
 
 -- Main timer loop
 RunService.Heartbeat:Connect(function(deltaTime)
-	afkTime += deltaTime
-	timerLabel.Text = "AFK Timer: " .. formatTime(afkTime)
+    afkTime = afkTime + deltaTime
+    timerLabel.Text = "AFK Timer: " .. formatTime(afkTime)
 end)
 
 print("Anti-AFK + Timer loaded successfully (always active)")
