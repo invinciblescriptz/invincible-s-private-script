@@ -18,30 +18,39 @@ frame.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
 frame.BorderSizePixel = 0
 frame.Parent = gui
 
--- Make the frame draggable (support PC and Mobile)
+-- Variables for dragging
 local dragging = false
 local dragStartPosition
 local startPos
 
+-- Helper function to check if a point is within the frame bounds
+local function isPointInsideFrame(point)
+    local absolutePosition = frame.AbsolutePosition
+    local absoluteSize = frame.AbsoluteSize
+    return point.X >= absolutePosition.X and point.X <= absolutePosition.X + absoluteSize.X
+       and point.Y >= absolutePosition.Y and point.Y <= absolutePosition.Y + absoluteSize.Y
+end
+
+-- Handle input began
 local function onInputBegan(input, gameProcessed)
     if gameProcessed then return end
-    -- Check if input is a mouse click or touch
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        -- Optional: ensure input started within frame bounds
-        -- But for simplicity, we'll assume it does
-        if input.Target == frame or (input.Position and frame.AbsolutePosition and frame.AbsoluteSize and 
-           input.Position.x >= frame.AbsolutePosition.x and input.Position.x <= frame.AbsolutePosition.x + frame.AbsoluteSize.x and
-           input.Position.y >= frame.AbsolutePosition.y and input.Position.y <= frame.AbsolutePosition.y + frame.AbsoluteSize.y) then
+        -- For touch, check if the touch started inside the frame
+        local position = Vector2.new(input.Position.X, input.Position.Y)
+        if isPointInsideFrame(position) then
             dragging = true
-            dragStartPosition = input.Position
+            dragStartPosition = position
             startPos = frame.Position
         end
     end
 end
 
+-- Handle input changed
 local function onInputChanged(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStartPosition
+    if not dragging then return end
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        local currentPosition = Vector2.new(input.Position.X, input.Position.Y)
+        local delta = currentPosition - dragStartPosition
         frame.Position = UDim2.new(
             startPos.X.Scale, startPos.X.Offset + delta.X,
             startPos.Y.Scale, startPos.Y.Offset + delta.Y
@@ -49,6 +58,7 @@ local function onInputChanged(input)
     end
 end
 
+-- Handle input ended
 local function onInputEnded(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
@@ -73,14 +83,14 @@ timerLabel.Parent = frame
 -- Variables
 local afkTime = 0
 
--- Anti-AFK - Automatically ON
+-- Anti-AFK
 LocalPlayer.Idled:Connect(function()
     VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
     task.wait(0.1)
     VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
 end)
 
--- Format time function
+-- Format time
 local function formatTime(seconds)
     local days = math.floor(seconds / 86400)
     seconds = seconds % 86400
