@@ -749,35 +749,41 @@ farmingTab:AddButton("Anti-Lag (Performance)", function()
     end)
 end)
 
--- Position Lock
 local RunService = game:GetService("RunService")
-local getHRP = function()
-    -- Replace this with your method to get the HumanoidRootPart
-    local player = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local lockConn = nil
+local isLocked = false
+local storedCFrame = nil
+
+local function getHRP()
     if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         return player.Character.HumanoidRootPart
     end
     return nil
 end
 
-local lockConn = nil -- Ensure this is a scoped variable
 local function setPositionLock(en)
-    getgenv().PositionLocked = en
     local hrp = getHRP()
     if not hrp then return end
 
     if en then
-        local pos = hrp.CFrame
+        -- Store current position
+        storedCFrame = hrp.CFrame
         hrp.Anchored = true
+        -- Disconnect previous connection if exists
         if lockConn then
             lockConn:Disconnect()
         end
+        -- Connect to Heartbeat to keep position
         lockConn = RunService.Heartbeat:Connect(function()
             local r = getHRP()
             if r then
-                r.CFrame = pos
+                r.CFrame = storedCFrame
             end
         end)
+        isLocked = true
     else
         if hrp then
             hrp.Anchored = false
@@ -786,8 +792,13 @@ local function setPositionLock(en)
             lockConn:Disconnect()
             lockConn = nil
         end
+        isLocked = false
     end
 end
+
+farmingTab:AddButton("Lock Position", function()
+    setPositionLock(not isLocked)
+end)
 
 farmingTab:AddButton("Lock Position", function()
     -- Toggle lock state
