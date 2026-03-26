@@ -2184,21 +2184,16 @@ local ancientJungleRockSwitch = mobileFolder:AddSwitch("Farm Ancient Jungle Rock
     end
 end)
 
--- ===== BRAWL FARMING - 2 Auto Join + 1 Auto Win =====
+-- Create the tab first (IMPORTANT!)
+local miscTab = window:AddTab("Misc")   -- Change "Misc" to any name you want
+
+-- ===== BRAWL FARMING =====
 local brawlFolder = miscTab:AddFolder("Brawl Farming")
 
--- Two different Auto Join methods (you can enable both)
-brawlFolder:AddToggle("Auto Join Method 1 (Remote)", {
+brawlFolder:AddToggle("Auto Join Brawl", {
     default = false,
     callback = function(state)
-        getgenv().AutoJoinMethod1 = state
-    end
-})
-
-brawlFolder:AddToggle("Auto Join Method 2 (Click/Fallback)", {
-    default = false,
-    callback = function(state)
-        getgenv().AutoJoinMethod2 = state
+        getgenv().AutoJoinBrawl = state
     end
 })
 
@@ -2211,49 +2206,42 @@ brawlFolder:AddToggle("Auto Win Brawl (Aggressive)", {
 
 local statusLabel = brawlFolder:AddLabel("Brawl Status: Idle")
 
--- Main Loop
+-- Main Loop (put this at the very bottom of your script)
 spawn(function()
     while true do
-        task.wait(0.55)
+        task.wait(0.65)
 
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then 
-            if getgenv().AutoJoinMethod1 or getgenv().AutoJoinMethod2 or getgenv().AutoWinBrawl then
-                statusLabel:Set("Brawl Status: Waiting for character...")
-            end
-            continue 
-        end
-
-        local root = char.HumanoidRootPart
-
-        local isJoining = getgenv().AutoJoinMethod1 or getgenv().AutoJoinMethod2
-
-        if not isJoining and not getgenv().AutoWinBrawl then
+        if not getgenv().AutoJoinBrawl and not getgenv().AutoWinBrawl then
             statusLabel:Set("Brawl Status: Idle")
             continue
         end
 
-        -- ==================== AUTO JOIN METHOD 1 (Remote - Most Reliable) ====================
-        if getgenv().AutoJoinMethod1 then
-            statusLabel:Set("Brawl Status: Joining via Remote...")
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+
+        local root = char.HumanoidRootPart
+
+        -- Auto Join
+        if getgenv().AutoJoinBrawl then
+            statusLabel:Set("Brawl Status: Trying to join...")
+
+            -- Main remote (currently used in many working scripts)
             pcall(function()
                 local args = { [1] = "joinBrawl" }
                 game:GetService("ReplicatedStorage").rEvents.brawlEvent:FireServer(unpack(args))
             end)
 
+            -- Backup
             pcall(function()
                 game:GetService("ReplicatedStorage").Remotes.BrawlEvent:FireServer("joinBrawl")
             end)
-        end
 
-        -- ==================== AUTO JOIN METHOD 2 (Click / Proximity) ====================
-        if getgenv().AutoJoinMethod2 then
-            statusLabel:Set("Brawl Status: Searching for Brawl Sign...")
+            -- Click fallback
             for _, obj in pairs(workspace:GetDescendants()) do
                 if not obj.Parent then continue end
-                local name = obj.Name:lower()
-                if name:find("brawl") or name:find("fight") or name:find("arena") or name:find("ring") then
+                local nameLower = obj.Name:lower()
+                if nameLower:find("brawl") or nameLower:find("fight") or nameLower:find("arena") or nameLower:find("ring") then
                     if obj:FindFirstChild("ClickDetector") then
                         pcall(function() fireclickdetector(obj.ClickDetector) end)
                     elseif obj:FindFirstChild("ProximityPrompt") then
@@ -2263,24 +2251,25 @@ spawn(function()
             end
         end
 
-        -- ==================== AUTO WIN BRAWL ====================
+        -- Auto Win
         if getgenv().AutoWinBrawl then
-            statusLabel:Set("Brawl Status: Farming Wins...")
+            statusLabel:Set("Brawl Status: Farming wins...")
 
             for _, enemy in ipairs(game.Players:GetPlayers()) do
                 if enemy == player then continue end
                 local eChar = enemy.Character
-                if eChar and eChar:FindFirstChild("HumanoidRootPart") then
+                if eChar and eChar:FindFirstChild("HumanoidRootPart") and eChar:FindFirstChild("Humanoid") then
+                    local eRoot = eChar.HumanoidRootPart
+
                     pcall(function()
-                        root.CFrame = eChar.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2.5) * CFrame.Angles(0, math.rad(180), 0)
+                        root.CFrame = eRoot.CFrame * CFrame.new(0, 0, 2.5) * CFrame.Angles(0, math.rad(180), 0)
                     end)
 
-                    -- Fast punch spam
                     for i = 1, 12 do
                         pcall(function()
                             game:GetService("ReplicatedStorage").Remotes.Punch:FireServer()
                         end)
-                        task.wait(0.04)
+                        task.wait(0.045)
                     end
                 end
             end
