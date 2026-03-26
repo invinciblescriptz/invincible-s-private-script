@@ -2203,15 +2203,10 @@ brawlFolder:AddSwitch("Auto Join Brawl", false, function(state)
                     return
                 end
                 
-                local brawlRemote = nil
-                
-                if rs:FindFirstChild("rEvents") then
-                    brawlRemote = rs.rEvents:FindFirstChild("brawlEvent")
-                end
+                local brawlRemote = rs:FindFirstChild("rEvents") and rs.rEvents:FindFirstChild("brawlEvent")
                 
                 if brawlRemote then
-                    local args = { [1] = "joinBrawl" }
-                    brawlRemote:FireServer(unpack(args))
+                    brawlRemote:FireServer("joinBrawl")
                     print("✅ Auto Join Brawl fired (rEvents.brawlEvent)")
                 else
                     print("⚠️ brawlEvent not found - tell me the exact game name")
@@ -2238,6 +2233,7 @@ brawlFolder:AddSwitch("Auto Win Brawl", false, function(state)
                 local closest = nil
                 local closestDist = 70
                 
+                -- Find the closest player
                 for _, plr in ipairs(game.Players:GetPlayers()) do
                     if plr ~= lp and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
                         local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
@@ -2249,32 +2245,25 @@ brawlFolder:AddSwitch("Auto Win Brawl", false, function(state)
                 end
                 
                 if closest and closest.Character and closest.Character:FindFirstChild("HumanoidRootPart") then
-                    -- Face target
-                    hrp.CFrame = CFrame.lookAt(hrp.Position, closest.Character.HumanoidRootPart.Position)
+                    -- Face the target
+                    hrp.CFrame = CFrame.new(hrp.Position, closest.Character.HumanoidRootPart.Position)
                     
                     local rs = game:GetService("ReplicatedStorage")
-                    local attacked = false
+                    -- Try to find the punch or attack remote
+                    local punchEvent = rs:FindFirstChild("rEvents") and rs.rEvents:FindFirstChild("Punch") or rs:FindFirstChild("rEvents") and rs.rEvents:FindFirstChild("Attack")
                     
-                    -- Most common attack in these games
-                    if rs:FindFirstChild("rEvents") then
-                        local punch = rs.rEvents:FindFirstChild("Punch") or rs.rEvents:FindFirstChild("Attack")
-                        if punch then
-                            punch:FireServer()
-                            attacked = true
+                    if punchEvent then
+                        punchEvent:FireServer()
+                        print("🗡️ Attacking: " .. closest.Name)
+                    else
+                        -- fallback: try generic remote
+                        local remote = rs:FindFirstChildOfClass("RemoteEvent")
+                        if remote then
+                            remote:FireServer()
+                            print("⚠️ Fired fallback remote")
+                        else
+                            print("⚠️ No punch/attack remote found")
                         end
-                    end
-                    
-                    -- Fallback
-                    if not attacked then
-                        local anyPunch = rs:FindFirstChild("Punch", true) or rs:FindFirstChild("Attack", true)
-                        if anyPunch and anyPunch:IsA("RemoteEvent") then
-                            anyPunch:FireServer()
-                            attacked = true
-                        end
-                    end
-                    
-                    if not attacked then
-                        print("⚠️ No punch/attack remote found")
                     end
                 end
             end)
