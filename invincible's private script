@@ -2186,56 +2186,95 @@ end)
 
 local brawlFolder = miscTab:AddFolder("Brawl Farming")
 
--- Auto Join Brawl
+-- ================== AUTO JOIN BRAWL ==================
 brawlFolder:AddSwitch("Auto Join Brawl", false, function(state)
     getgenv().AutoJoinBrawl = state
     
     spawn(function()
         while getgenv().AutoJoinBrawl do
-            task.wait(1.2)
+            task.wait(2.0)
             
             pcall(function()
-                -- Common working methods in 2026 scripts
                 local rs = game:GetService("ReplicatedStorage")
+                local player = game.Players.LocalPlayer
                 
-                if rs:FindFirstChild("Events") and rs.Events:FindFirstChild("joinBrawl") then
-                    rs.Events.joinBrawl:FireServer()
-                elseif rs:FindFirstChild("Remotes") and rs.Remotes:FindFirstChild("Brawl") then
-                    rs.Remotes.Brawl.Join:FireServer()
+                -- Skip if already in brawl
+                if player:FindFirstChild("InBrawl") or (player.PlayerGui and player.PlayerGui:FindFirstChild("BrawlGui")) then
+                    return
+                end
+                
+                local brawlRemote = nil
+                
+                if rs:FindFirstChild("rEvents") then
+                    brawlRemote = rs.rEvents:FindFirstChild("brawlEvent")
+                end
+                
+                if brawlRemote then
+                    local args = { [1] = "joinBrawl" }
+                    brawlRemote:FireServer(unpack(args))
+                    print("✅ Auto Join Brawl fired (rEvents.brawlEvent)")
                 else
-                    -- Alternative argument style used in many current scripts
-                    rs:FindFirstChild("joinBrawl", true):FireServer("joinBrawl")
+                    print("⚠️ brawlEvent not found - tell me the exact game name")
                 end
             end)
         end
     end)
 end)
 
--- Auto Win Brawl (basic kill aura style)
+-- ================== AUTO WIN BRAWL (Punch Aura) ==================
 brawlFolder:AddSwitch("Auto Win Brawl", false, function(state)
     getgenv().AutoWinBrawl = state
     
     spawn(function()
         while getgenv().AutoWinBrawl do
-            task.wait(0.25)
+            task.wait(0.12)   -- fast but not too spammy
             
             pcall(function()
                 local lp = game.Players.LocalPlayer
                 local char = lp.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") then return end
                 
+                local hrp = char.HumanoidRootPart
+                local closest = nil
+                local closestDist = 70
+                
                 for _, plr in ipairs(game.Players:GetPlayers()) do
                     if plr ~= lp and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                        local dist = (char.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).Magnitude
-                        
-                        if dist < 40 then  -- adjust distance if needed
-                            -- Most common punch remote in current scripts
-                            game:GetService("ReplicatedStorage").Events.Punch:FireServer()
-                            -- or try: rs.Remotes.Attack or rs:FindFirstChild("Punch", true)
-                            
-                            -- Face target
-                            char.HumanoidRootPart.CFrame = CFrame.lookAt(char.HumanoidRootPart.Position, plr.Character.HumanoidRootPart.Position)
+                        local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                        if dist < closestDist then
+                            closestDist = dist
+                            closest = plr
                         end
+                    end
+                end
+                
+                if closest and closest.Character and closest.Character:FindFirstChild("HumanoidRootPart") then
+                    -- Face target
+                    hrp.CFrame = CFrame.lookAt(hrp.Position, closest.Character.HumanoidRootPart.Position)
+                    
+                    local rs = game:GetService("ReplicatedStorage")
+                    local attacked = false
+                    
+                    -- Most common attack in these games
+                    if rs:FindFirstChild("rEvents") then
+                        local punch = rs.rEvents:FindFirstChild("Punch") or rs.rEvents:FindFirstChild("Attack")
+                        if punch then
+                            punch:FireServer()
+                            attacked = true
+                        end
+                    end
+                    
+                    -- Fallback
+                    if not attacked then
+                        local anyPunch = rs:FindFirstChild("Punch", true) or rs:FindFirstChild("Attack", true)
+                        if anyPunch and anyPunch:IsA("RemoteEvent") then
+                            anyPunch:FireServer()
+                            attacked = true
+                        end
+                    end
+                    
+                    if not attacked then
+                        print("⚠️ No punch/attack remote found")
                     end
                 end
             end)
