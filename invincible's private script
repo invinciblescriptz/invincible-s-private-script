@@ -2184,6 +2184,8 @@ local ancientJungleRockSwitch = mobileFolder:AddSwitch("Farm Ancient Jungle Rock
     end
 end)
 
+local miscTab = -- your existing UI tab setup
+
 local brawlFolder = miscTab:AddFolder("Brawl Farming")
 
 -- ================== AUTO JOIN BRAWL ==================
@@ -2195,22 +2197,32 @@ brawlFolder:AddSwitch("Auto Join Brawl", false, function(state)
             task.wait(2)
             local player = game.Players.LocalPlayer
             local rs = game:GetService("ReplicatedStorage")
-            -- Check if already in brawl
-            if player:FindFirstChild("InBrawl") or (player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("BrawlGui")) then
-                -- Already in brawl
-                task.wait(2)
-                continue
+            
+            -- Check if already in brawl (adjust as per game logic)
+            local inBrawl = false
+            if player:FindFirstChild("InBrawl") then
+                inBrawl = true
+            elseif player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("BrawlGui") then
+                inBrawl = true
             end
             
-            -- Find the brawl remote
-            local brawlRemote = rs:FindFirstChild("brawlEvent") or rs:FindFirstChild("BrawlEvent") or rs:FindFirstChild("Brawl") or rs:FindFirstChildOfClass("RemoteEvent")
-            if brawlRemote then
+            if inBrawl then
+                -- Already in brawl, wait and recheck
+                task.wait(2)
+            else
+                -- Find the remote event to join brawl
+                local brawlRemote = rs:FindFirstChild("brawlEvent") or rs:FindFirstChild("BrawlEvent") or rs:FindFirstChild("Brawl")
+                if not brawlRemote then
+                    print("⚠️ brawlRemote not found")
+                    task.wait(2)
+                    continue
+                end
+                
+                -- Fire join brawl
                 brawlRemote:FireServer("joinBrawl")
                 print("✅ Auto Join Brawl fired")
-            else
-                print("⚠️ brawlEvent not found")
+                task.wait(2)
             end
-            task.wait(2)
         end
     end)
 end)
@@ -2224,26 +2236,29 @@ brawlFolder:AddSwitch("Auto Win Brawl", false, function(state)
             task.wait(0.15)
             local lp = game.Players.LocalPlayer
             local chr = lp.Character
-            if not chr or not chr:FindFirstChild("HumanoidRootPart") then continue end
+            if not chr or not chr:FindFirstChild("HumanoidRootPart") then
+                continue
+            end
             
             local hrp = chr.HumanoidRootPart
-            local closest = nil
+            local closestPlayer = nil
             local closestDist = 70
             
+            -- Find the closest opponent
             for _, plr in ipairs(game.Players:GetPlayers()) do
                 if plr ~= lp and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
                     local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
                     if dist < closestDist then
                         closestDist = dist
-                        closest = plr
+                        closestPlayer = plr
                     end
                 end
             end
             
-            if closest and closest.Character then
-                -- Face the target
-                local targetHRP = closest.Character:FindFirstChild("HumanoidRootPart")
+            if closestPlayer and closestPlayer.Character then
+                local targetHRP = closestPlayer.Character:FindFirstChild("HumanoidRootPart")
                 if targetHRP then
+                    -- Face the target
                     hrp.CFrame = CFrame.new(hrp.Position, targetHRP.Position)
                     
                     -- Find attack remote
@@ -2252,9 +2267,9 @@ brawlFolder:AddSwitch("Auto Win Brawl", false, function(state)
                     
                     if attackRemote then
                         attackRemote:FireServer()
-                        print("🗡️ Attacking " .. closest.Name)
+                        print("🗡️ Attacking " .. closestPlayer.Name)
                     else
-                        -- fallback: find any remote
+                        -- Fallback: fire any remote event
                         for _, v in ipairs(rs:GetChildren()) do
                             if v:IsA("RemoteEvent") then
                                 v:FireServer()
