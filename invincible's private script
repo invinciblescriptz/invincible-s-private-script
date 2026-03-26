@@ -2184,9 +2184,6 @@ local ancientJungleRockSwitch = mobileFolder:AddSwitch("Farm Ancient Jungle Rock
     end
 end)
 
--- Create the tab first (IMPORTANT!)
-local miscTab = window:AddTab("Misc")   -- Change "Misc" to any name you want
-
 -- ===== BRAWL FARMING =====
 local brawlFolder = miscTab:AddFolder("Brawl Farming")
 
@@ -2206,7 +2203,7 @@ brawlFolder:AddToggle("Auto Win Brawl (Aggressive)", {
 
 local statusLabel = brawlFolder:AddLabel("Brawl Status: Idle")
 
--- Main Loop (put this at the very bottom of your script)
+-- Main Loop - Put this at the VERY BOTTOM of your entire script
 spawn(function()
     while true do
         task.wait(0.65)
@@ -2222,22 +2219,22 @@ spawn(function()
 
         local root = char.HumanoidRootPart
 
-        -- Auto Join
+        -- ==================== AUTO JOIN ====================
         if getgenv().AutoJoinBrawl then
             statusLabel:Set("Brawl Status: Trying to join...")
 
-            -- Main remote (currently used in many working scripts)
+            -- Main remote
             pcall(function()
                 local args = { [1] = "joinBrawl" }
                 game:GetService("ReplicatedStorage").rEvents.brawlEvent:FireServer(unpack(args))
             end)
 
-            -- Backup
+            -- Backup remote
             pcall(function()
                 game:GetService("ReplicatedStorage").Remotes.BrawlEvent:FireServer("joinBrawl")
             end)
 
-            -- Click fallback
+            -- Click fallback (sign/NPC)
             for _, obj in pairs(workspace:GetDescendants()) do
                 if not obj.Parent then continue end
                 local nameLower = obj.Name:lower()
@@ -2251,7 +2248,7 @@ spawn(function()
             end
         end
 
-        -- Auto Win
+        -- ==================== AUTO WIN ====================
         if getgenv().AutoWinBrawl then
             statusLabel:Set("Brawl Status: Farming wins...")
 
