@@ -2184,92 +2184,61 @@ local ancientJungleRockSwitch = mobileFolder:AddSwitch("Farm Ancient Jungle Rock
     end
 end)
 
--- ===== BRAWL FARMING =====
 local brawlFolder = miscTab:AddFolder("Brawl Farming")
 
-brawlFolder:AddToggle("Auto Join Brawl", {
-    default = false,
-    callback = function(state)
-        getgenv().AutoJoinBrawl = state
-    end
-})
-
-brawlFolder:AddToggle("Auto Win Brawl (Aggressive)", {
-    default = false,
-    callback = function(state)
-        getgenv().AutoWinBrawl = state
-    end
-})
-
-local statusLabel = brawlFolder:AddLabel("Brawl Status: Idle")
-
--- Main Loop - Put this at the VERY BOTTOM of your entire script
-spawn(function()
-    while true do
-        task.wait(0.65)
-
-        if not getgenv().AutoJoinBrawl and not getgenv().AutoWinBrawl then
-            statusLabel:Set("Brawl Status: Idle")
-            continue
+-- Auto Join Brawl
+brawlFolder:AddSwitch("Auto Join Brawl", false, function(state)
+    getgenv().AutoJoinBrawl = state
+    
+    spawn(function()
+        while getgenv().AutoJoinBrawl do
+            task.wait(1.2)
+            
+            pcall(function()
+                -- Common working methods in 2026 scripts
+                local rs = game:GetService("ReplicatedStorage")
+                
+                if rs:FindFirstChild("Events") and rs.Events:FindFirstChild("joinBrawl") then
+                    rs.Events.joinBrawl:FireServer()
+                elseif rs:FindFirstChild("Remotes") and rs.Remotes:FindFirstChild("Brawl") then
+                    rs.Remotes.Brawl.Join:FireServer()
+                else
+                    -- Alternative argument style used in many current scripts
+                    rs:FindFirstChild("joinBrawl", true):FireServer("joinBrawl")
+                end
+            end)
         end
+    end)
+end)
 
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
-
-        local root = char.HumanoidRootPart
-
-        -- ==================== AUTO JOIN ====================
-        if getgenv().AutoJoinBrawl then
-            statusLabel:Set("Brawl Status: Trying to join...")
-
-            -- Main remote
+-- Auto Win Brawl (basic kill aura style)
+brawlFolder:AddSwitch("Auto Win Brawl", false, function(state)
+    getgenv().AutoWinBrawl = state
+    
+    spawn(function()
+        while getgenv().AutoWinBrawl do
+            task.wait(0.25)
+            
             pcall(function()
-                local args = { [1] = "joinBrawl" }
-                game:GetService("ReplicatedStorage").rEvents.brawlEvent:FireServer(unpack(args))
-            end)
-
-            -- Backup remote
-            pcall(function()
-                game:GetService("ReplicatedStorage").Remotes.BrawlEvent:FireServer("joinBrawl")
-            end)
-
-            -- Click fallback (sign/NPC)
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if not obj.Parent then continue end
-                local nameLower = obj.Name:lower()
-                if nameLower:find("brawl") or nameLower:find("fight") or nameLower:find("arena") or nameLower:find("ring") then
-                    if obj:FindFirstChild("ClickDetector") then
-                        pcall(function() fireclickdetector(obj.ClickDetector) end)
-                    elseif obj:FindFirstChild("ProximityPrompt") then
-                        pcall(function() fireproximityprompt(obj.ProximityPrompt, 0, true) end)
+                local lp = game.Players.LocalPlayer
+                local char = lp.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                
+                for _, plr in ipairs(game.Players:GetPlayers()) do
+                    if plr ~= lp and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                        local dist = (char.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                        
+                        if dist < 40 then  -- adjust distance if needed
+                            -- Most common punch remote in current scripts
+                            game:GetService("ReplicatedStorage").Events.Punch:FireServer()
+                            -- or try: rs.Remotes.Attack or rs:FindFirstChild("Punch", true)
+                            
+                            -- Face target
+                            char.HumanoidRootPart.CFrame = CFrame.lookAt(char.HumanoidRootPart.Position, plr.Character.HumanoidRootPart.Position)
+                        end
                     end
                 end
-            end
+            end)
         end
-
-        -- ==================== AUTO WIN ====================
-        if getgenv().AutoWinBrawl then
-            statusLabel:Set("Brawl Status: Farming wins...")
-
-            for _, enemy in ipairs(game.Players:GetPlayers()) do
-                if enemy == player then continue end
-                local eChar = enemy.Character
-                if eChar and eChar:FindFirstChild("HumanoidRootPart") and eChar:FindFirstChild("Humanoid") then
-                    local eRoot = eChar.HumanoidRootPart
-
-                    pcall(function()
-                        root.CFrame = eRoot.CFrame * CFrame.new(0, 0, 2.5) * CFrame.Angles(0, math.rad(180), 0)
-                    end)
-
-                    for i = 1, 12 do
-                        pcall(function()
-                            game:GetService("ReplicatedStorage").Remotes.Punch:FireServer()
-                        end)
-                        task.wait(0.045)
-                    end
-                end
-            end
-        end
-    end
+    end)
 end)
