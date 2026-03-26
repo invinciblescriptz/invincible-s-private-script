@@ -2183,3 +2183,96 @@ local ancientJungleRockSwitch = mobileFolder:AddSwitch("Farm Ancient Jungle Rock
         end)
     end
 end)
+
+-- Add this after your window creation (inside the miscTab or wherever you want)
+local brawlFolder = miscTab:AddFolder("Brawl Farming")
+
+-- Auto Join Brawl Toggle
+local autoJoinToggle = brawlFolder:AddToggle("Auto Join Brawl", {
+    default = false,
+    callback = function(state)
+        getgenv().AutoJoinBrawl = state
+    end
+})
+
+-- Auto Win Brawl Toggle (best with high strength + your existing kill aura / auto punch)
+local autoWinToggle = brawlFolder:AddToggle("Auto Win Brawl", {
+    default = false,
+    callback = function(state)
+        getgenv().AutoWinBrawl = state
+    end
+})
+
+-- Status label (fixed reference)
+local statusLabel = brawlFolder:AddLabel("Brawl Status: Idle")
+
+-- Main Brawl Loop (put this at the bottom of your script)
+spawn(function()
+    while true do
+        wait(0.8)  -- Slightly faster check
+
+        if not getgenv().AutoJoinBrawl and not getgenv().AutoWinBrawl then
+            statusLabel:Set("Brawl Status: Idle")
+            continue
+        end
+
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        if not character or not character:FindFirstChild("HumanoidRootPart") then 
+            continue 
+        end
+
+        local root = character.HumanoidRootPart
+
+        -- ====================== AUTO JOIN BRAWL ======================
+        if getgenv().AutoJoinBrawl then
+            statusLabel:Set("Brawl Status: Looking for Brawl...")
+
+            -- Search for brawl-related objects (NPC, sign, board, ring, etc.)
+            for _, v in pairs(workspace:GetDescendants()) do
+                local nameLower = v.Name:lower()
+                if nameLower:find("brawl") or nameLower:find("fight") or nameLower:find("arena") then
+                    if v:FindFirstChild("ClickDetector") then
+                        pcall(function() fireclickdetector(v.ClickDetector) end)
+                    elseif v:FindFirstChild("ProximityPrompt") then
+                        pcall(function() fireproximityprompt(v.ProximityPrompt, 0) end)
+                    end
+                end
+            end
+
+            -- Common remote attempt (uncomment and adjust if you find the exact path with Dex)
+            -- pcall(function()
+            --     game:GetService("ReplicatedStorage").Remotes.Brawl.Join:FireServer()
+            --     -- or .Brawl or .Fight or .EnterBrawl etc.
+            -- end)
+        end
+
+        -- ====================== AUTO WIN BRAWL ======================
+        if getgenv().AutoWinBrawl then
+            statusLabel:Set("Brawl Status: Farming Wins...")
+
+            for _, enemy in pairs(game.Players:GetPlayers()) do
+                if enemy ~= player and enemy.Character and enemy.Character:FindFirstChild("HumanoidRootPart") then
+                    local enemyRoot = enemy.Character.HumanoidRootPart
+
+                    -- Teleport close + face them (aggressive positioning)
+                    pcall(function()
+                        root.CFrame = enemyRoot.CFrame * CFrame.new(0, 0, 3) * CFrame.Angles(0, math.rad(180), 0)
+                    end)
+
+                    -- Spam punch / skill (adjust if you have a better remote or tool)
+                    for i = 1, 6 do
+                        pcall(function()
+                            -- Most common punch method in Muscle Legends
+                            game:GetService("ReplicatedStorage").Remotes.Punch:FireServer()
+                            -- Alternative: activate equipped tool
+                            -- local tool = character:FindFirstChildOfClass("Tool")
+                            -- if tool then tool:Activate() end
+                        end)
+                        task.wait(0.08)
+                    end
+                end
+            end
+        end
+    end
+end)
