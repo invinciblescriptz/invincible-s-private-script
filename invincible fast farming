@@ -8,28 +8,24 @@ local MainWindow = ScriptLibrary:AddWindow(string.format("Invincible | Fast Farm
 local FaststrengthTab = MainWindow:AddTab("Fast Farming")
 
 -- ==================== MUSCLE LEGENDS TIMER IN TAB ====================
-
-local Tab = FaststrengthTab   -- Changed from YourTabHere to FaststrengthTab
-
-local TimerSection = Tab:AddSection("⏱️  Fast Farm Timer")
+local TimerSection = FaststrengthTab:AddSection("⏱️  Fast Farm Timer")
 
 -- Header
 TimerSection:AddLabel("Infinite | Private | Farming").TextColor3 = Color3.fromRGB(100, 255, 100)
 
 -- Time display
-TimerSection:AddLabel("Time:")
 local TimerDisplay = TimerSection:AddLabel("0d 0h 00m 00s - Rebirthing")
 TimerDisplay.TextColor3 = Color3.fromRGB(0, 255, 100)
 TimerDisplay.TextSize = 18
 
 -- Stats
-local PaceDisplay     = TimerSection:AddLabel("Pace: 0 / Hour | 0 / Day | 0 / Week")
-local AvgPaceDisplay  = TimerSection:AddLabel("Average Pace: 0 / Hour | 0 / Day | 0 / Week")
-local StatsDisplay    = TimerSection:AddLabel("Rebirths: 0 | Gained: 0")
+local PaceDisplay = TimerSection:AddLabel("Pace: 0 / Hour | 0 / Day | 0 / Week")
+local AvgPaceDisplay = TimerSection:AddLabel("Average Pace: 0 / Hour | 0 / Day | 0 / Week")
+local StatsDisplay = TimerSection:AddLabel("Rebirths: 0 | Gained: 0")
 
 -- ==================== LIVE UPDATER ====================
 local startTime = tick()
-local rebirths = 4020000   -- example starting values
+local rebirths = 4020000 -- example starting values
 local gained = 6710
 
 local function formatTime(seconds)
@@ -42,26 +38,24 @@ end
 
 local function updateTimer()
     local elapsed = tick() - startTime
-    
-    -- Update timer
     TimerDisplay.Text = formatTime(elapsed)
-    
-    -- Fake pace for now (replace with real calculation from your farm)
+
+    -- Fake pace calculation (replace with real data)
     local pacePerHour = math.floor(8230 + math.random(-200, 200))
-    local pacePerDay  = math.floor(pacePerHour * 24)
+    local pacePerDay = math.floor(pacePerHour * 24)
     local pacePerWeek = math.floor(pacePerDay * 7)
-    
-    PaceDisplay.Text = string.format("Pace: %sK / Hour | %sK / Day | %sM / Week", 
-        (pacePerHour/1000), (pacePerDay/1000), (pacePerWeek/1000000))
-    
-    AvgPaceDisplay.Text = string.format("Average Pace: %sK / Hour | %sK / Day | %sM / Week", 
-        (pacePerHour/1000), (pacePerDay/1000 + 0.17), (pacePerWeek/1000000))
-    
-    StatsDisplay.Text = string.format("Rebirths: %s | Gained: %sK", 
-        string.format("%.2fM", rebirths/1000000), gained/1000)
+
+    PaceDisplay.Text = string.format("Pace: %.2fK / Hour | %.2fK / Day | %.2fM / Week",
+        pacePerHour / 1000, pacePerDay / 1000, pacePerWeek / 1000000)
+
+    AvgPaceDisplay.Text = string.format("Average Pace: %.2fK / Hour | %.2fK / Day | %.2fM / Week",
+        pacePerHour / 1000, pacePerDay / 1000 + 0.17, pacePerWeek / 1000000)
+
+    StatsDisplay.Text = string.format("Rebirths: %.2fM | Gained: %.2fK",
+        rebirths / 1000000, gained / 1000)
 end
 
--- Run updater every 1 second
+-- Run updater every second
 spawn(function()
     while wait(1) do
         if TimerDisplay and TimerDisplay.Parent then
@@ -191,7 +185,7 @@ if not getgenv()._AutoRepFarmLoop then
                     warn("[Auto Rep Farm] Ping alto (" .. math.floor(ping) .. "ms), pausando 5s...")
                     task.wait(5)
                 else
-                    -- Repeticiones
+                    -- Repetitions
                     if LocalPlayer:FindFirstChild("muscleEvent") then
                         for i = 1, REPS_PER_CYCLE do
                             LocalPlayer.muscleEvent:FireServer("rep")
@@ -265,15 +259,14 @@ FaststrengthTab:AddButton("Hide All Frames", function(bool)
     end
 end)
 
-
 local rebirthTab = MainWindow:AddTab("Fast Rebirths")
-
 rebirthTab:AddSwitch("Fast Rebirths", function(state)
     getgenv().AutoFarming = state
     if state then
         task.spawn(function()
             local a = ReplicatedStorage
             local c = LocalPlayer
+
             local function equipPetByName(name)
                 local folderPets = c:FindFirstChild("petsFolder")
                 if not folderPets then return end
@@ -287,6 +280,7 @@ rebirthTab:AddSwitch("Fast Rebirths", function(state)
                     end
                 end
             end
+
             local function unequipAllPets()
                 local f = c:FindFirstChild("petsFolder")
                 if not f then return end
@@ -299,6 +293,7 @@ rebirthTab:AddSwitch("Fast Rebirths", function(state)
                 end
                 task.wait(0.1)
             end
+
             local function getGoldenRebirthCount()
                 local g = c:FindFirstChild("ultimatesFolder")
                 if g and g:FindFirstChild("Golden Rebirth") then
@@ -306,6 +301,7 @@ rebirthTab:AddSwitch("Fast Rebirths", function(state)
                 end
                 return 0
             end
+
             local function getStrengthRequiredForRebirth()
                 local rebirths = c.leaderstats.Rebirths.Value
                 local baseStrength = 10000 + (5000 * rebirths)
@@ -315,6 +311,7 @@ rebirthTab:AddSwitch("Fast Rebirths", function(state)
                 end
                 return math.floor(baseStrength)
             end
+
             while getgenv().AutoFarming do
                 local requiredStrength = getStrengthRequiredForRebirth()
                 unequipAllPets()
@@ -359,11 +356,13 @@ rebirthTab:AddSwitch("Lock Position", function(Value)
 end)
 
 rebirthTab:AddButton("set size 1", function()
-    local args = {"changeSize", 1/1}
+    local args = {"changeSize", 1 / 1}
     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
 end)
 
-AddButton("Anti Lag", function()
+-- Anti Lag Button
+-- Note: Fixed typo in function name
+local function AntiLag()
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
             v.Enabled = false
@@ -383,6 +382,7 @@ AddButton("Anti Lag", function()
         elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
             v.Material = Enum.Material.SmoothPlastic
             if v.Parent and (v.Parent:FindFirstChild("Humanoid") or v.Parent.Parent:FindFirstChild("Humanoid")) then
+                -- do nothing
             else
                 v.Reflectance = 0
             end
@@ -400,11 +400,13 @@ AddButton("Anti Lag", function()
         Text = "Full optimization applied!",
         Duration = 5
     })
-end)
+end
 
-rebirthTab:AddButton("Spin Auto", function(state)
+FaststrengthTab:AddButton("Anti Lag", AntiLag)
+
+-- Spin Auto Button
+FaststrengthTab:AddButton("Spin Auto", function(state)
     _G.AutoSpinWheel = state
-    
     if state then
         spawn(function()
             while _G.AutoSpinWheel and task.wait(0.1) do
@@ -417,19 +419,16 @@ rebirthTab:AddButton("Spin Auto", function(state)
     end
 end)
 
-
-rebirthTab:AddButton("Jungle Lift", function()
+-- Jungle Lift Button
+FaststrengthTab:AddButton("Jungle Lift", function()
     local player = game.Players.LocalPlayer
     local char = player.Character or player.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
-
     hrp.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
     task.wait(0.2)
-
     local VirtualInputManager = game:GetService("VirtualInputManager")
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
     task.wait(0.05)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-
     print("[Jungle Lift] Teletransport ejecutado correctamente.")
 end)
