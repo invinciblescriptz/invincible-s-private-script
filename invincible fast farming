@@ -295,3 +295,6 @@ RebirthTab:AddButton("Jungle Lift", "Teleport + E", function()
     task.wait(0.05)
     game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
+
+-- Call show to make sure the window appears
+window:Show()
