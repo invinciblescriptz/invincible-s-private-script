@@ -177,6 +177,9 @@ end)
 local rebirthTab = window:AddTab("Fast Rebirth")
 
 -- ==================== Rebirth Features ====================
+-- Adding all features to the "Fast Rebirth" tab
+
+-- 1. Auto Rebirth Toggle
 rebirthTab:AddToggle("Fast Rebirths", "Auto rebirth loop", false, function(state)
     getgenv().AutoFarming = state
     if state then
@@ -256,6 +259,7 @@ end)
 
 rebirthTab:AddLabel("Use these for AFK Rebirthing")
 
+-- 2. Lock Position toggle
 rebirthTab:AddToggle("Lock Position", "Lock character position", false, function(state)
     if state then
         local pos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.CFrame
@@ -273,10 +277,12 @@ rebirthTab:AddToggle("Lock Position", "Lock character position", false, function
     end
 end)
 
+-- 3. Set Size Button
 rebirthTab:AddButton("Set Size 1", "Change size to 1", function()
     ReplicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
 end)
 
+-- 4. Anti Lag Button
 rebirthTab:AddButton("Anti Lag", "Optimize game", function()
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then v.Enabled = false end
@@ -289,6 +295,7 @@ rebirthTab:AddButton("Anti Lag", "Optimize game", function()
     game:GetService("StarterGui"):SetCore("SendNotification", {Title="Anti Lag", Text="Applied!", Duration=5})
 end)
 
+-- 5. Spin Auto (Fortune Wheel)
 rebirthTab:AddToggle("Spin Auto", "Auto fortune wheel", false, function(state)
     _G.AutoSpinWheel = state
     if state then
@@ -301,6 +308,7 @@ rebirthTab:AddToggle("Spin Auto", "Auto fortune wheel", false, function(state)
     end
 end)
 
+-- 6. Jungle Lift Teleport + E
 rebirthTab:AddButton("Jungle Lift", "Teleport + E", function()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
