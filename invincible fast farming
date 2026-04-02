@@ -1,15 +1,15 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
-print("Library loaded:", library)
+local ScriptLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/p4020854-hub/Lb/refs/heads/main/X", true))()
 
-local window = library:AddWindow("Invincible | Fast Farming |", {
-    main_color = Color3.fromRGB(0, 0, 0),
-    min_size = Vector2.new(660, 870),
-    can_resize = false,
+local window = ScriptLibrary:AddWindow(string.format("Genesis Hub | Hello %s", game.Players.LocalPlayer.DisplayName), {
+    ["min_size"] = Vector2.new(400, 870),
+    ["can_resize"] = true,
+    ["main_color"] = Color3.fromRGB(0, 0, 0)
 })
 
+-- ==================== Fast Farming Tab ====================
 local FastTab = window:AddTab("Fast Farming")
 
--- ==================== TIMER SECTION ====================
+-- TIMER SECTION
 local TimerSection = FastTab:AddSection("⏱️ Fast Farm Timer")
 TimerSection:AddLabel("Infinite | Private | Farming")
 local TimerLabel = TimerSection:AddLabel("Time: 0d 0h 00m 00s - Rebirthing")
@@ -38,15 +38,15 @@ end)
 
 FastTab:AddLabel("Fast Strength")
 
--- ==================== FAST FARMING TOGGLES & BUTTONS ====================
+-- ==================== Fast Farming Toggles & Buttons ====================
 FastTab:AddToggle("Fast Farming", "Auto reps + rock + egg", false, function(state)
     getgenv()._AutoRepFarmEnabled = state
     warn("[Auto Rep Farm]", state and "ON" or "OFF")
 end)
 
-local autoEatEnabled = false
+local autoEatEgg = false
 FastTab:AddToggle("Eat Egg (30 Min)", "Auto Protein Egg every 30 min", false, function(state)
-    autoEatEnabled = state
+    autoEatEgg = state
 end)
 
 FastTab:AddButton("Hide All Frames", "Hide ReplicatedStorage frames", function()
@@ -55,7 +55,7 @@ FastTab:AddButton("Hide All Frames", "Hide ReplicatedStorage frames", function()
     end
 end)
 
--- ==================== AUTO FARM FULL LOOP ====================
+-- ==================== Auto Farm Loop ====================
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local Stats = game:GetService("Stats")
@@ -81,7 +81,9 @@ local function getPing()
 end
 
 local function updateCharacterRefs()
-    if not LocalPlayer.Character then LocalPlayer.Character = LocalPlayer.CharacterAdded:Wait() end
+    if not LocalPlayer.Character then
+        LocalPlayer.Character = LocalPlayer.CharacterAdded:Wait()
+    end
     HumanoidRootPart = LocalPlayer.Character:WaitForChild("HumanoidRootPart", 5)
 end
 
@@ -110,7 +112,9 @@ local function eatProteinEgg()
 end
 
 local function hitRock()
-    if not RockRef or not RockRef.Parent then RockRef = workspace:FindFirstChild(ROCK_NAME) end
+    if not RockRef or not RockRef.Parent then
+        RockRef = workspace:FindFirstChild(ROCK_NAME)
+    end
     if RockRef and HumanoidRootPart then
         HumanoidRootPart.CFrame = RockRef.CFrame * CFrame.new(0, 0, -5)
         ReplicatedStorage.rEvents.hitEvent:FireServer("hit", RockRef)
@@ -154,7 +158,7 @@ end
 -- Separate Eat Egg Loop
 task.spawn(function()
     while true do
-        if autoEatEnabled then
+        if autoEatEgg then
             local bp = LocalPlayer:WaitForChild("Backpack")
             local egg = bp:FindFirstChild("Protein Egg") or bp:FindFirstChild("ProteinEgg")
             if egg then
@@ -168,15 +172,18 @@ task.spawn(function()
         end
     end
 end)
--- =====================
+
+-- ==================== Rebirth Tab ====================
 local rebirthTab = window:AddTab("Fast Rebirth")
--- ==================== REBIRTH TAB ====================
+
+-- ==================== Rebirth Features ====================
 rebirthTab:AddToggle("Fast Rebirths", "Auto rebirth loop", false, function(state)
     getgenv().AutoFarming = state
     if state then
         task.spawn(function()
             local a = ReplicatedStorage
             local c = LocalPlayer
+
             local function equipPetByName(name)
                 local folder = c:FindFirstChild("petsFolder")
                 if not folder then return end
@@ -214,7 +221,9 @@ rebirthTab:AddToggle("Fast Rebirths", "Auto rebirth loop", false, function(state
                 local rb = c.leaderstats.Rebirths.Value
                 local base = 10000 + (5000 * rb)
                 local golden = getGolden()
-                if golden >= 1 and golden <= 5 then base = base * (1 - golden * 0.1) end
+                if golden >= 1 and golden <= 5 then
+                    base = base * (1 - golden * 0.1)
+                end
                 return math.floor(base)
             end
 
@@ -224,7 +233,9 @@ rebirthTab:AddToggle("Fast Rebirths", "Auto rebirth loop", false, function(state
                 equipPetByName("Swift Samurai")
                 while c.leaderstats.Strength.Value < req and getgenv().AutoFarming do
                     for _ = 1, 10 do
-                        if c:FindFirstChild("muscleEvent") then c.muscleEvent:FireServer("rep") end
+                        if c:FindFirstChild("muscleEvent") then
+                            c.muscleEvent:FireServer("rep")
+                        end
                     end
                     task.wait()
                 end
