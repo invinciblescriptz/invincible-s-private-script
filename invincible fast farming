@@ -8,7 +8,7 @@ local window = library:AddWindow("Invincible | Fast Farming |", {
 print("Window created successfully.")
 
 local FastTab = window:AddTab("Fast Farming")
-local RebirthTab = window:AddTab("Fast Rebirths")
+local rebirthTab = window:AddTab("Fast Rebirth")
 
 print("Tabs added.")
 
@@ -179,7 +179,7 @@ task.spawn(function()
 end)
 
 -- ==================== REBIRTH TAB ====================
-RebirthTab:AddToggle("Fast Rebirths", "Auto rebirth loop", false, function(state)
+rebirthTab:AddToggle("Fast Rebirths", "Auto rebirth loop", false, function(state)
     getgenv().AutoFarming = state
     if state then
         task.spawn(function()
@@ -248,9 +248,9 @@ RebirthTab:AddToggle("Fast Rebirths", "Auto rebirth loop", false, function(state
     end
 end)
 
-RebirthTab:AddLabel("Use these for AFK Rebirthing")
+rebirthTab:AddLabel("Use these for AFK Rebirthing")
 
-RebirthTab:AddToggle("Lock Position", "Lock character position", false, function(state)
+rebirthTab:AddToggle("Lock Position", "Lock character position", false, function(state)
     if state then
         local pos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.CFrame
         if pos then
@@ -267,11 +267,11 @@ RebirthTab:AddToggle("Lock Position", "Lock character position", false, function
     end
 end)
 
-RebirthTab:AddButton("Set Size 1", "Change size to 1", function()
+rebirthTab:AddButton("Set Size 1", "Change size to 1", function()
     ReplicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
 end)
 
-RebirthTab:AddButton("Anti Lag", "Optimize game", function()
+rebirthTab:AddButton("Anti Lag", "Optimize game", function()
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then v.Enabled = false end
     end
@@ -283,7 +283,7 @@ RebirthTab:AddButton("Anti Lag", "Optimize game", function()
     game:GetService("StarterGui"):SetCore("SendNotification", {Title="Anti Lag", Text="Applied!", Duration=5})
 end)
 
-RebirthTab:AddToggle("Spin Auto", "Auto fortune wheel", false, function(state)
+rebirthTab:AddToggle("Spin Auto", "Auto fortune wheel", false, function(state)
     _G.AutoSpinWheel = state
     if state then
         spawn(function()
@@ -295,7 +295,7 @@ RebirthTab:AddToggle("Spin Auto", "Auto fortune wheel", false, function(state)
     end
 end)
 
-RebirthTab:AddButton("Jungle Lift", "Teleport + E", function()
+rebirthTab:AddButton("Jungle Lift", "Teleport + E", function()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
     hrp.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
