@@ -5,17 +5,24 @@ local window = library:AddWindow("Invincible | Fast Farming |", {
     can_resize = false,
 })
 
+print("Window created successfully.")
+
 local FastTab = window:AddTab("Fast Farming")
 local RebirthTab = window:AddTab("Fast Rebirths")
 
+print("Tabs added.")
+
 -- ==================== TIMER SECTION ====================
 local TimerSection = FastTab:AddSection("⏱️ Fast Farm Timer")
-TimerSection:AddLabel("Infinite | Private | Farming")
+print("Timer section added.")
 
+TimerSection:AddLabel("Infinite | Private | Farming")
 local TimerLabel = TimerSection:AddLabel("Time: 0d 0h 00m 00s - Rebirthing")
 local PaceLabel = TimerSection:AddLabel("Pace: 0K / Hour | 0K / Day | 0M / Week")
 local AvgPaceLabel = TimerSection:AddLabel("Average Pace: 0K / Hour | 0K / Day | 0.2F / Week")
 local StatsLabel = TimerSection:AddLabel("Rebirths: 0 | Gained: 0")
+
+print("Labels added to Timer section.")
 
 local startTime = tick()
 spawn(function()
@@ -37,6 +44,8 @@ spawn(function()
 end)
 
 FastTab:AddLabel("Fast Strength")
+print("Additional labels added.")
+
 
 -- ==================== FAST FARMING TOGGLES & BUTTONS ====================
 FastTab:AddToggle("Fast Farming", "Auto reps + rock + egg", false, function(state)
@@ -298,3 +307,4 @@ end)
 
 -- Call show to make sure the window appears
 window:Show()
+print("UI should be visible now.")
