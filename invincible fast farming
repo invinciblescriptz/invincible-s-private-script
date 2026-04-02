@@ -5,8 +5,8 @@ local window = library:AddWindow("Invincible | Fast Farming |", {
     can_resize = false,
 })
 
-local FastTab = Window:AddTab("Fast Farming")
-local RebirthTab = Window:AddTab("Fast Rebirths")
+local FastTab = window:AddTab("Fast Farming")
+local RebirthTab = window:AddTab("Fast Rebirths")
 
 -- ==================== TIMER SECTION ====================
 local TimerSection = FastTab:AddSection("⏱️ Fast Farm Timer")
@@ -14,7 +14,7 @@ TimerSection:AddLabel("Infinite | Private | Farming")
 
 local TimerLabel = TimerSection:AddLabel("Time: 0d 0h 00m 00s - Rebirthing")
 local PaceLabel = TimerSection:AddLabel("Pace: 0K / Hour | 0K / Day | 0M / Week")
-local AvgPaceLabel = TimerSection:AddLabel("Average Pace: 0K / Hour | 0K / Day | 0M / Week")
+local AvgPaceLabel = TimerSection:AddLabel("Average Pace: 0K / Hour | 0K / Day | 0.2F / Week")
 local StatsLabel = TimerSection:AddLabel("Rebirths: 0 | Gained: 0")
 
 local startTime = tick()
@@ -295,5 +295,3 @@ RebirthTab:AddButton("Jungle Lift", "Teleport + E", function()
     task.wait(0.05)
     game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
-
-print("✅ FULL SCRIPT LOADED - All buttons, switches and timer should now appear!")
