@@ -8,7 +8,6 @@ local window = library:AddWindow("Invincible | Fast Farming |", {
 })
 
 local FastTab = window:AddTab("Fast Farming")
-local rebirthTab = window:AddTab("Fast Rebirth")
 
 -- ==================== TIMER SECTION ====================
 local TimerSection = FastTab:AddSection("⏱️ Fast Farm Timer")
@@ -169,7 +168,8 @@ task.spawn(function()
         end
     end
 end)
-
+-- =====================
+local rebirthTab = window:AddTab("Fast Rebirth")
 -- ==================== REBIRTH TAB ====================
 rebirthTab:AddToggle("Fast Rebirths", "Auto rebirth loop", false, function(state)
     getgenv().AutoFarming = state
