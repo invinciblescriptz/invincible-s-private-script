@@ -1,5 +1,5 @@
 local ScriptLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/p4020854-hub/Lb/refs/heads/main/X", true))()
-local MainWindow = ScriptLibrary:AddWindow(string.format("Genesis Hub | Hello %s", LocalPlayer.DisplayName), {
+local MainWindow = ScriptLibrary:AddWindow(string.format("Invincible | Fast Farming | Hello %s", game.Players.LocalPlayer.DisplayName), {
     ["min_size"] = Vector2.new(400, 870),
     ["can_resize"] = true,
     ["main_color"] = Color3.fromRGB(0, 0, 0)
@@ -12,12 +12,13 @@ FaststrengthTab:AddSwitch("Fast Farming", function(state)
     warn("[Auto Rep Farm] Estado cambiado a:", state and "ON" or "OFF")
 end)
 
--- ✅ Configuración optimizada
+-- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local Stats = game:GetService("Stats")
 local LocalPlayer = Players.LocalPlayer
 
+-- Config
 local PET_NAME = "Swift Samurai"
 local ROCK_NAME = "Rock5M"
 local PROTEIN_EGG_NAME = "ProteinEgg"
@@ -27,11 +28,13 @@ local REP_DELAY = 0.01
 local ROCK_INTERVAL = 1
 local MAX_PING = 1100
 
+-- Variables
 local HumanoidRootPart
 local lastProteinEggTime = 0
 local lastRockTime = 0
 local RockRef = workspace:FindFirstChild(ROCK_NAME)
 
+-- Functions
 local function getPing()
     local success, ping = pcall(function()
         return Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
@@ -40,8 +43,10 @@ local function getPing()
 end
 
 local function updateCharacterRefs()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    HumanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
+    if not LocalPlayer.Character or not LocalPlayer.Character.Parent then
+        LocalPlayer.Character = LocalPlayer.CharacterAdded:Wait()
+    end
+    HumanoidRootPart = LocalPlayer.Character:WaitForChild("HumanoidRootPart", 5)
 end
 
 local function equipPet()
@@ -49,38 +54,61 @@ local function equipPet()
     if petsFolder and petsFolder:FindFirstChild("Unique") then
         for _, pet in pairs(petsFolder.Unique:GetChildren()) do
             if pet.Name == PET_NAME then
-                ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                if ReplicatedStorage:FindFirstChild("rEvents") and ReplicatedStorage.rEvents:FindFirstChild("equipPetEvent") then
+                    ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                    warn("Pet equipado:", pet.Name)
+                else
+                    warn("equipPetEvent no encontrado")
+                end
                 break
             end
         end
+    else
+        warn("Pets folder no encontrado")
     end
 end
 
 local function eatProteinEgg()
-    if LocalPlayer:FindFirstChild("Backpack") then
-        for _, item in pairs(LocalPlayer.Backpack:GetChildren()) do
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if backpack then
+        for _, item in pairs(backpack:GetChildren()) do
             if item.Name == PROTEIN_EGG_NAME then
-                ReplicatedStorage.rEvents.eatEvent:FireServer("eat", item)
+                if ReplicatedStorage:FindFirstChild("rEvents") and ReplicatedStorage.rEvents:FindFirstChild("eatEvent") then
+                    ReplicatedStorage.rEvents.eatEvent:FireServer("eat", item)
+                    warn("Egg comido")
+                else
+                    warn("eatEvent no encontrado")
+                end
                 break
             end
         end
+    else
+        warn("Backpack no encontrado")
     end
 end
 
 local function hitRock()
     if not RockRef or not RockRef.Parent then
         RockRef = workspace:FindFirstChild(ROCK_NAME)
+        if not RockRef then
+            warn("Roca no encontrada")
+            return
+        end
     end
-    if RockRef and HumanoidRootPart then
+    if HumanoidRootPart then
         HumanoidRootPart.CFrame = RockRef.CFrame * CFrame.new(0, 0, -5)
-        ReplicatedStorage.rEvents.hitEvent:FireServer("hit", RockRef)
+        if ReplicatedStorage:FindFirstChild("rEvents") and ReplicatedStorage.rEvents:FindFirstChild("hitEvent") then
+            ReplicatedStorage.rEvents.hitEvent:FireServer("hit", RockRef)
+            warn("Golpeando roca")
+        else
+            warn("hitEvent no encontrado")
+        end
     end
 end
 
--- ✅ Loop principal
+-- Main loop
 if not getgenv()._AutoRepFarmLoop then
     getgenv()._AutoRepFarmLoop = true
-
     task.spawn(function()
         updateCharacterRefs()
         equipPet()
@@ -91,20 +119,26 @@ if not getgenv()._AutoRepFarmLoop then
             if getgenv()._AutoRepFarmEnabled then
                 local ping = getPing()
                 if ping > MAX_PING then
-                    warn("[Auto Rep Farm] Ping alto ("..math.floor(ping).."ms), pausando 5s...")
+                    warn("[Auto Rep Farm] Ping alto (" .. math.floor(ping) .. "ms), pausando 5s...")
                     task.wait(5)
                 else
+                    -- Repeticiones
                     if LocalPlayer:FindFirstChild("muscleEvent") then
                         for i = 1, REPS_PER_CYCLE do
                             LocalPlayer.muscleEvent:FireServer("rep")
                         end
+                        warn("Repeticiones enviadas")
+                    else
+                        warn("muscleEvent no encontrado")
                     end
 
+                    -- Egg
                     if tick() - lastProteinEggTime >= PROTEIN_EGG_INTERVAL then
                         eatProteinEgg()
                         lastProteinEggTime = tick()
                     end
 
+                    -- Hit rock
                     if tick() - lastRockTime >= ROCK_INTERVAL then
                         hitRock()
                         lastRockTime = tick()
