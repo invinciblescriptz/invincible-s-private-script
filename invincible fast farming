@@ -1,19 +1,21 @@
--- ==================== KAVO UI LIBRARY ====================
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
+local window = library:AddWindow("Invincible | Fast Farming |", {
+    main_color = Color3.fromRGB(0, 0, 0),
+    min_size   = Vector2.new(660, 870),
+    can_resize = false,
+})
 
-local Window = Library.CreateLib("Invincible | Fast Farming | Hello " .. game.Players.LocalPlayer.DisplayName, "DarkTheme")
-
-local FastTab = Window:NewTab("Fast Farming")
-local RebirthTab = Window:NewTab("Fast Rebirths")
+local FastTab = Window:AddTab("Fast Farming")
+local RebirthTab = Window:AddTab("Fast Rebirths")
 
 -- ==================== TIMER SECTION ====================
-local TimerSection = FastTab:NewSection("⏱️ Fast Farm Timer")
-TimerSection:NewLabel("Infinite | Private | Farming")
+local TimerSection = FastTab:AddSection("⏱️ Fast Farm Timer")
+TimerSection:AddLabel("Infinite | Private | Farming")
 
-local TimerLabel = TimerSection:NewLabel("Time: 0d 0h 00m 00s - Rebirthing")
-local PaceLabel = TimerSection:NewLabel("Pace: 0K / Hour | 0K / Day | 0M / Week")
-local AvgPaceLabel = TimerSection:NewLabel("Average Pace: 0K / Hour | 0K / Day | 0M / Week")
-local StatsLabel = TimerSection:NewLabel("Rebirths: 0 | Gained: 0")
+local TimerLabel = TimerSection:AddLabel("Time: 0d 0h 00m 00s - Rebirthing")
+local PaceLabel = TimerSection:AddLabel("Pace: 0K / Hour | 0K / Day | 0M / Week")
+local AvgPaceLabel = TimerSection:AddLabel("Average Pace: 0K / Hour | 0K / Day | 0M / Week")
+local StatsLabel = TimerSection:AddLabel("Rebirths: 0 | Gained: 0")
 
 local startTime = tick()
 spawn(function()
@@ -34,20 +36,20 @@ spawn(function()
     end
 end)
 
-FastTab:NewLabel("Fast Strength")
+FastTab:AddLabel("Fast Strength")
 
 -- ==================== FAST FARMING TOGGLES & BUTTONS ====================
-FastTab:NewToggle("Fast Farming", "Auto reps + rock + egg", false, function(state)
+FastTab:AddToggle("Fast Farming", "Auto reps + rock + egg", false, function(state)
     getgenv()._AutoRepFarmEnabled = state
     warn("[Auto Rep Farm]", state and "ON" or "OFF")
 end)
 
 local autoEatEnabled = false
-FastTab:NewToggle("Eat Egg (30 Min)", "Auto Protein Egg every 30 min", false, function(state)
+FastTab:AddToggle("Eat Egg (30 Min)", "Auto Protein Egg every 30 min", false, function(state)
     autoEatEnabled = state
 end)
 
-FastTab:NewButton("Hide All Frames", "Hide ReplicatedStorage frames", function()
+FastTab:AddButton("Hide All Frames", "Hide ReplicatedStorage frames", function()
     for _, obj in pairs(game:GetService("ReplicatedStorage"):GetChildren()) do
         if obj.Name:match("Frame$") then obj.Visible = false end
     end
@@ -168,7 +170,7 @@ task.spawn(function()
 end)
 
 -- ==================== REBIRTH TAB ====================
-RebirthTab:NewToggle("Fast Rebirths", "Auto rebirth loop", false, function(state)
+RebirthTab:AddToggle("Fast Rebirths", "Auto rebirth loop", false, function(state)
     getgenv().AutoFarming = state
     if state then
         task.spawn(function()
@@ -237,9 +239,9 @@ RebirthTab:NewToggle("Fast Rebirths", "Auto rebirth loop", false, function(state
     end
 end)
 
-RebirthTab:NewLabel("Use these for AFK Rebirthing")
+RebirthTab:AddLabel("Use these for AFK Rebirthing")
 
-RebirthTab:NewToggle("Lock Position", "Lock character position", false, function(state)
+RebirthTab:AddToggle("Lock Position", "Lock character position", false, function(state)
     if state then
         local pos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.CFrame
         if pos then
@@ -256,11 +258,11 @@ RebirthTab:NewToggle("Lock Position", "Lock character position", false, function
     end
 end)
 
-RebirthTab:NewButton("Set Size 1", "Change size to 1", function()
+RebirthTab:AddButton("Set Size 1", "Change size to 1", function()
     ReplicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
 end)
 
-RebirthTab:NewButton("Anti Lag", "Optimize game", function()
+RebirthTab:AddButton("Anti Lag", "Optimize game", function()
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then v.Enabled = false end
     end
@@ -272,7 +274,7 @@ RebirthTab:NewButton("Anti Lag", "Optimize game", function()
     game:GetService("StarterGui"):SetCore("SendNotification", {Title="Anti Lag", Text="Applied!", Duration=5})
 end)
 
-RebirthTab:NewToggle("Spin Auto", "Auto fortune wheel", false, function(state)
+RebirthTab:AddToggle("Spin Auto", "Auto fortune wheel", false, function(state)
     _G.AutoSpinWheel = state
     if state then
         spawn(function()
@@ -284,7 +286,7 @@ RebirthTab:NewToggle("Spin Auto", "Auto fortune wheel", false, function(state)
     end
 end)
 
-RebirthTab:NewButton("Jungle Lift", "Teleport + E", function()
+RebirthTab:AddButton("Jungle Lift", "Teleport + E", function()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
     hrp.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
