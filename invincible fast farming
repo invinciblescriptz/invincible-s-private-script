@@ -7,6 +7,75 @@ local MainWindow = ScriptLibrary:AddWindow(string.format("Invincible | Fast Farm
 
 local FaststrengthTab = MainWindow:AddTab("Fast Farming")
 
+-- ==================== MUSCLE LEGENDS TIMER IN TAB ====================
+
+local Tab = FaststrengthTab   -- Changed from YourTabHere to FaststrengthTab
+
+local TimerSection = Tab:AddSection("⏱️  Fast Farm Timer")
+
+-- Header
+TimerSection:AddLabel("Infinite | Private | Farming").TextColor3 = Color3.fromRGB(100, 255, 100)
+
+-- Time display
+TimerSection:AddLabel("Time:")
+local TimerDisplay = TimerSection:AddLabel("0d 0h 00m 00s - Rebirthing")
+TimerDisplay.TextColor3 = Color3.fromRGB(0, 255, 100)
+TimerDisplay.TextSize = 18
+
+-- Stats
+local PaceDisplay     = TimerSection:AddLabel("Pace: 0 / Hour | 0 / Day | 0 / Week")
+local AvgPaceDisplay  = TimerSection:AddLabel("Average Pace: 0 / Hour | 0 / Day | 0 / Week")
+local StatsDisplay    = TimerSection:AddLabel("Rebirths: 0 | Gained: 0")
+
+-- ==================== LIVE UPDATER ====================
+local startTime = tick()
+local rebirths = 4020000   -- example starting values
+local gained = 6710
+
+local function formatTime(seconds)
+    local d = math.floor(seconds / 86400)
+    local h = math.floor((seconds % 86400) / 3600)
+    local m = math.floor((seconds % 3600) / 60)
+    local s = math.floor(seconds % 60)
+    return string.format("%dd %dh %02dm %02ds - Rebirthing", d, h, m, s)
+end
+
+local function updateTimer()
+    local elapsed = tick() - startTime
+    
+    -- Update timer
+    TimerDisplay.Text = formatTime(elapsed)
+    
+    -- Fake pace for now (replace with real calculation from your farm)
+    local pacePerHour = math.floor(8230 + math.random(-200, 200))
+    local pacePerDay  = math.floor(pacePerHour * 24)
+    local pacePerWeek = math.floor(pacePerDay * 7)
+    
+    PaceDisplay.Text = string.format("Pace: %sK / Hour | %sK / Day | %sM / Week", 
+        (pacePerHour/1000), (pacePerDay/1000), (pacePerWeek/1000000))
+    
+    AvgPaceDisplay.Text = string.format("Average Pace: %sK / Hour | %sK / Day | %sM / Week", 
+        (pacePerHour/1000), (pacePerDay/1000 + 0.17), (pacePerWeek/1000000))
+    
+    StatsDisplay.Text = string.format("Rebirths: %s | Gained: %sK", 
+        string.format("%.2fM", rebirths/1000000), gained/1000)
+end
+
+-- Run updater every 1 second
+spawn(function()
+    while wait(1) do
+        if TimerDisplay and TimerDisplay.Parent then
+            updateTimer()
+        else
+            break
+        end
+    end
+end)
+
+print("✅ Timer added to FaststrengthTab successfully!")
+
+FaststrengthTab:AddLabel("Fast strength").TextSize = 22
+
 FaststrengthTab:AddSwitch("Fast Farming", function(state)
     getgenv()._AutoRepFarmEnabled = state
     warn("[Auto Rep Farm] Estado cambiado a:", state and "ON" or "OFF")
@@ -153,15 +222,6 @@ if not getgenv()._AutoRepFarmLoop then
     end)
 end
 
-FaststrengthTab:AddSwitch("Hide All Frames", function(bool)
-    local rSto = game:GetService("ReplicatedStorage")
-    for _, obj in pairs(rSto:GetChildren()) do
-        if obj.Name:match("Frame$") then
-            obj.Visible = not bool
-        end
-    end
-end)
-
 local autoEatEnabled = false
 local function eatProteinEggNew()
     local player = game.Players.LocalPlayer
@@ -194,6 +254,15 @@ end)
 FaststrengthTab:AddSwitch("Eat Egg (30 Min)", function(state)
     autoEatEnabled = state
     print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
+end)
+
+FaststrengthTab:AddButton("Hide All Frames", function(bool)
+    local rSto = game:GetService("ReplicatedStorage")
+    for _, obj in pairs(rSto:GetChildren()) do
+        if obj.Name:match("Frame$") then
+            obj.Visible = not bool
+        end
+    end
 end)
 
 
