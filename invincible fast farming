@@ -5,7 +5,7 @@ local MainWindow = ScriptLibrary:AddWindow(string.format("Invincible | Fast Farm
     ["main_color"] = Color3.fromRGB(0, 0, 0)
 })
 
-local FaststrengthTab = MainWindow:AddTab("Fast Strength Farming")
+local FaststrengthTab = MainWindow:AddTab("Fast Farming")
 
 FaststrengthTab:AddSwitch("Fast Farming", function(state)
     getgenv()._AutoRepFarmEnabled = state
@@ -152,3 +152,215 @@ if not getgenv()._AutoRepFarmLoop then
         end
     end)
 end
+
+FaststrengthTab:AddSwitch("Hide All Frames", function(bool)
+    local rSto = game:GetService("ReplicatedStorage")
+    for _, obj in pairs(rSto:GetChildren()) do
+        if obj.Name:match("Frame$") then
+            obj.Visible = not bool
+        end
+    end
+end)
+
+local autoEatEnabled = false
+local function eatProteinEggNew()
+    local player = game.Players.LocalPlayer
+    local backpack = player:WaitForChild("Backpack")
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    local egg = backpack:FindFirstChild("Protein Egg")
+    if egg then
+        egg.Parent = character
+        pcall(function()
+            egg:Activate()
+        end)
+        print("[AutoEgg] Protein Egg consumido.")
+    else
+        warn("[AutoEgg] No se encontró Protein Egg en Backpack.")
+    end
+end
+
+task.spawn(function()
+    while true do
+        if autoEatEnabled then
+            eatProteinEggNew()
+            task.wait(1800)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+FaststrengthTab:AddSwitch("Eat Egg (30 Min)", function(state)
+    autoEatEnabled = state
+    print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
+end)
+
+
+local rebirthTab = MainWindow:AddTab("Fast Rebirths")
+
+rebirthTab:AddSwitch("Fast Rebirths", function(state)
+    getgenv().AutoFarming = state
+    if state then
+        task.spawn(function()
+            local a = ReplicatedStorage
+            local c = LocalPlayer
+            local function equipPetByName(name)
+                local folderPets = c:FindFirstChild("petsFolder")
+                if not folderPets then return end
+                for _, folder in pairs(folderPets:GetChildren()) do
+                    if folder:IsA("Folder") then
+                        for _, pet in pairs(folder:GetChildren()) do
+                            if pet.Name == name then
+                                a.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                            end
+                        end
+                    end
+                end
+            end
+            local function unequipAllPets()
+                local f = c:FindFirstChild("petsFolder")
+                if not f then return end
+                for _, folder in pairs(f:GetChildren()) do
+                    if folder:IsA("Folder") then
+                        for _, pet in pairs(folder:GetChildren()) do
+                            a.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+            local function getGoldenRebirthCount()
+                local g = c:FindFirstChild("ultimatesFolder")
+                if g and g:FindFirstChild("Golden Rebirth") then
+                    return g["Golden Rebirth"].Value
+                end
+                return 0
+            end
+            local function getStrengthRequiredForRebirth()
+                local rebirths = c.leaderstats.Rebirths.Value
+                local baseStrength = 10000 + (5000 * rebirths)
+                local golden = getGoldenRebirthCount()
+                if golden >= 1 and golden <= 5 then
+                    baseStrength = baseStrength * (1 - golden * 0.1)
+                end
+                return math.floor(baseStrength)
+            end
+            while getgenv().AutoFarming do
+                local requiredStrength = getStrengthRequiredForRebirth()
+                unequipAllPets()
+                equipPetByName("Swift Samurai")
+                while c.leaderstats.Strength.Value < requiredStrength and getgenv().AutoFarming do
+                    for _ = 1, 10 do
+                        c.muscleEvent:FireServer("rep")
+                    end
+                    task.wait()
+                end
+                if getgenv().AutoFarming then
+                    unequipAllPets()
+                    equipPetByName("Tribal Overlord")
+                    local oldRebirths = c.leaderstats.Rebirths.Value
+                    repeat
+                        a.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                        task.wait(0.1)
+                    until c.leaderstats.Rebirths.Value > oldRebirths or not getgenv().AutoFarming
+                end
+                task.wait()
+            end
+        end)
+    end
+end)
+
+rebirthTab:AddLabel("use these for afk rebirthing").TextSize = 22
+
+rebirthTab:AddSwitch("Lock Position", function(Value)
+    if Value then
+        local currentPos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+        getgenv().posLock = game:GetService("RunService").Heartbeat:Connect(function()
+            if game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = currentPos
+            end
+        end)
+    else
+        if getgenv().posLock then
+            getgenv().posLock:Disconnect()
+            getgenv().posLock = nil
+        end
+    end
+end)
+
+rebirthTab:AddButton("set size 1", function()
+    local args = {"changeSize", 1/1}
+    game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
+end)
+
+AddButton("Anti Lag", function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+            v.Enabled = false
+        end
+    end
+
+    local lighting = game:GetService("Lighting")
+    lighting.GlobalShadows = false
+    lighting.FogEnd = 9e9
+    lighting.Brightness = 0
+
+    settings().Rendering.QualityLevel = 1
+
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 1
+        elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
+            v.Material = Enum.Material.SmoothPlastic
+            if v.Parent and (v.Parent:FindFirstChild("Humanoid") or v.Parent.Parent:FindFirstChild("Humanoid")) then
+            else
+                v.Reflectance = 0
+            end
+        end
+    end
+
+    for _, v in pairs(lighting:GetChildren()) do
+        if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+            v.Enabled = false
+        end
+    end
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Anti Lag Activado",
+        Text = "Full optimization applied!",
+        Duration = 5
+    })
+end)
+
+rebirthTab:AddButton("Spin Auto", function(state)
+    _G.AutoSpinWheel = state
+    
+    if state then
+        spawn(function()
+            while _G.AutoSpinWheel and task.wait(0.1) do
+                game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer(
+                    "openFortuneWheel",
+                    game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"]
+                )
+            end
+        end)
+    end
+end)
+
+
+rebirthTab:AddButton("Jungle Lift", function()
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    hrp.CFrame = CFrame.new(-8652.8672, 29.2667, 2089.2617)
+    task.wait(0.2)
+
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+
+    print("[Jungle Lift] Teletransport ejecutado correctamente.")
+end)
