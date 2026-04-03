@@ -7,7 +7,7 @@ local window = library:AddWindow("Invincible || Fast Farm ||", {
     background_transparency = 0.5,
 })
 
-local fastTab = AddFolder(Fast Strength, "Stats")
+local fastTab = window:AddTab("Fast Strength") -- Fixed: corrected AddTab syntax
 
 local sessionStartTime = os.time()
 local sessionStartStrength = 0
@@ -17,28 +17,29 @@ local sessionStartRebirths = 0
 local sessionStartBrawls = 0
 local hasStartedTracking = false
 
-statsFolder:AddLabel("Strength")
-local strengthStatsLabel = statsFolder:AddLabel("Actual: Waiting...")
-local strengthGainLabel = statsFolder:AddLabel("Gained: 0")
+-- Add all labels and buttons directly to fastTab instead of statsFolder
+fastTab:AddLabel("Strength")
+local strengthStatsLabel = fastTab:AddLabel("Actual: Waiting...")
+local strengthGainLabel = fastTab:AddLabel("Gained: 0")
 
-statsFolder:AddLabel("Durability")
-local durabilityStatsLabel = statsFolder:AddLabel("Actual: Waiting...")
-local durabilityGainLabel = statsFolder:AddLabel("Gained: 0")
+fastTab:AddLabel("Durability")
+local durabilityStatsLabel = fastTab:AddLabel("Actual: Waiting...")
+local durabilityGainLabel = fastTab:AddLabel("Gained: 0")
 
-statsFolder:AddLabel("Rebirths")
-local rebirthsStatsLabel = statsFolder:AddLabel("Actual: Waiting...")
-local rebirthsGainLabel = statsFolder:AddLabel("Gained: 0")
+fastTab:AddLabel("Rebirths")
+local rebirthsStatsLabel = fastTab:AddLabel("Actual: Waiting...")
+local rebirthsGainLabel = fastTab:AddLabel("Gained: 0")
 
-statsFolder:AddLabel("Kills")
-local killsStatsLabel = statsFolder:AddLabel("Actual: Waiting...")
-local killsGainLabel = statsFolder:AddLabel("Gained: 0")
+fastTab:AddLabel("Kills")
+local killsStatsLabel = fastTab:AddLabel("Actual: Waiting...")
+local killsGainLabel = fastTab:AddLabel("Gained: 0")
 
-statsFolder:AddLabel("Brawls")
-local brawlsStatsLabel = statsFolder:AddLabel("Actual: Waiting...")
-local brawlsGainLabel = statsFolder:AddLabel("Gained: 0")
+fastTab:AddLabel("Brawls")
+local brawlsStatsLabel = fastTab:AddLabel("Actual: Waiting...")
+local brawlsGainLabel = fastTab:AddLabel("Gained: 0")
 
-statsFolder:AddLabel("Time Of Session")
-local sessionTimeLabel = statsFolder:AddLabel("Time: 00:00:00")
+fastTab:AddLabel("Time Of Session")
+local sessionTimeLabel = fastTab:AddLabel("Time: 00:00:00")
 
 local function formatNumber(number)
     if number >= 1e15 then return string.format("%.2fQ", number/1e15)
@@ -88,16 +89,19 @@ local function updateStats()
     local killsGain = currentKills - sessionStartKills
     local rebirthsGain = currentRebirths - sessionStartRebirths
     local brawlsGain = currentBrawls - sessionStartBrawls
+
     strengthStatsLabel.Text = string.format("Actual: %s", formatNumber(currentStrength))
     durabilityStatsLabel.Text = string.format("Actual: %s", formatNumber(currentDurability))
     rebirthsStatsLabel.Text = string.format("Actual: %s", formatNumber(currentRebirths))
     killsStatsLabel.Text = string.format("Actual: %s", formatNumber(currentKills))
     brawlsStatsLabel.Text = string.format("Actual: %s", formatNumber(currentBrawls))
+
     strengthGainLabel.Text = string.format("Gained: %s", formatNumber(strengthGain))
     durabilityGainLabel.Text = string.format("Gained: %s", formatNumber(durabilityGain))
     rebirthsGainLabel.Text = string.format("Gained: %s", formatNumber(rebirthsGain))
     killsGainLabel.Text = string.format("Gained: %s", formatNumber(killsGain))
     brawlsGainLabel.Text = string.format("Gained: %s", formatNumber(brawlsGain))
+
     local elapsedTime = os.time() - sessionStartTime
     sessionTimeLabel.Text = string.format("Time: %s", formatTime(elapsedTime))
 end
@@ -105,7 +109,7 @@ end
 updateStats()
 spawn(function() while wait(2) do updateStats() end end)
 
-statsFolder:AddButton("Reset Stats", function()
+fastTab:AddButton("Reset Stats", function()
     local player = game.Players.LocalPlayer
     sessionStartStrength = player.leaderstats.Strength.Value
     sessionStartDurability = player.Durability.Value
@@ -120,7 +124,7 @@ statsFolder:AddButton("Reset Stats", function()
     })
 end)
 
-statsFolder:AddButton("Copiar Estadísticas", function()
+fastTab:AddButton("Copiar Estadísticas", function()
     local player = game.Players.LocalPlayer
     local statsText = "Estadísticas de Muscle Legends:\n\n"
     statsText = statsText .. "Strength: " .. tostring(math.floor(player.leaderstats.Strength.Value)) .. "\n"
@@ -146,6 +150,7 @@ statsFolder:AddButton("Copiar Estadísticas", function()
     setclipboard(statsText)
 end)
 
+-- Auto Strength/Farm toggle
 fastTab:AddSwitch("Fast Strength", function(state)
     getgenv()._AutoRepFarmEnabled = state
     warn("[Auto Farm] State changed to:", state and "ON" or "OFF")
@@ -266,6 +271,7 @@ if not getgenv()._AutoRepFarmLoop then
     end)
 end
 
+-- Auto eat Protein Egg short function
 local autoEatEgg30 = false
 local function eatProteinEggShort()
     local player = game.Players.LocalPlayer
@@ -294,6 +300,7 @@ task.spawn(function()
     end
 end)
 
+-- Toggle for Eat Egg
 fastTab:AddSwitch("Eat Egg", function(state)
     autoEatEgg30 = state
     print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
