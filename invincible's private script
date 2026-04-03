@@ -386,68 +386,92 @@ local function updatePosLock(state)
     if state then startLock() else stopLock() end
 end
 
--- Auto Rebirth
-local function autoRebirth()
-    task.spawn(function()
-        while true do
-            game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-            task.wait(0.1)
-        end
-    end)
-end
+local targetRebirthValue = 100 -- default
+local infiniteSwitch
 
-local autoRebirthSwitch = rebirthTab:AddSwitch("Auto Rebirth (Infinite)", {
-    Default = false,
-    Callback = function(val)
-        if val then
-            autoRebirth()
-        end
+rebirthsFolder:AddTextBox("Rebirth Target", function(text)
+    local newValue = tonumber(text)
+    if newValue and newValue > 0 then
+        targetRebirthValue = newValue
+        updateStats()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Objetivo Actualizado",
+            Text = "Nuevo objetivo: " .. tostring(targetRebirthValue) .. " renacimientos",
+            Duration = 0
+        })
+    else
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Entrada Inválida",
+            Text = "Por favor ingresa un número válido mayor que 0",
+            Duration = 0
+        })
     end
-})
+end)
 
--- Auto Size 1
-local autoSizeSwitch = rebirthTab:AddSwitch("Auto Size 1", {
-    Default = false,
-    Callback = function(val)
-        _G.autoSizeActive = val
-        if val then
-            task.spawn(function()
-                while _G.autoSizeActive do
-                    game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
-                    task.wait(0.2)
+local targetSwitch = rebirthsFolder:AddSwitch("Auto Rebirth Target", function(bool)
+    _G.targetRebirthActive = bool
+    if bool then
+        if _G.infiniteRebirthActive and infiniteSwitch then
+            infiniteSwitch:Set(false)
+            _G.infiniteRebirthActive = false
+        end
+        spawn(function()
+            while _G.targetRebirthActive and wait(0.1) do
+                local currentRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
+                if currentRebirths >= targetRebirthValue then
+                    targetSwitch:Set(false)
+                    _G.targetRebirthActive = false
+                    game:GetService("StarterGui"):SetCore("SendNotification", {
+                        Title = "¡Objetivo Alcanzado!",
+                        Text = "Has alcanzado " .. tostring(targetRebirthValue) .. " renacimientos",
+                        Duration = 5
+                    })
+                    break
                 end
-            end)
-        end
-    end
-})
-
--- Auto Teleport to Muscle King
-local function autoTeleportToMuscleKing()
-    _G.teleportActive = true
-    task.spawn(function()
-        while _G.teleportActive do
-            if game.Players.LocalPlayer.Character then
-                game.Players.LocalPlayer.Character:MoveTo(Vector3.new(-8646, 17, -5738))
+                game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
             end
-            task.wait(0.5)
-        end
-    end)
-end
-
-local function stopAutoTeleport()
-    _G.teleportActive = false
-end
-
-local autoTeleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", {
-    Default = false,
-    Callback = function(val)
-        if val then
-            autoTeleportToMuscleKing()
-        else
-            stopAutoTeleport()
-        end
+        end)
     end
-})
+end)
+
+infiniteSwitch = rebirthsFolder:AddSwitch("Auto Rebirth (Infinite)", function(bool)
+    _G.infiniteRebirthActive = bool
+    if bool then
+        if _G.targetRebirthActive and targetSwitch then
+            targetSwitch:Set(false)
+            _G.targetRebirthActive = false
+        end
+        spawn(function()
+            while _G.infiniteRebirthActive and wait(0.1) do
+                game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            end
+        end)
+    end
+end)
+
+local sizeSwitch = rebirthsFolder:AddSwitch("Auto Size 1", function(bool)
+    _G.autoSizeActive = bool
+    if bool then
+        spawn(function()
+            while _G.autoSizeActive and wait() do
+                game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
+            end
+        end)
+    end
+end)
+
+local teleportSwitch = rebirthsFolder:AddSwitch("Auto Teleport to Muscle King", function(bool)
+    _G.teleportActive = bool
+    if bool then
+        spawn(function()
+            while _G.teleportActive and wait() do
+                if game.Players.LocalPlayer.Character then
+                    game.Players.LocalPlayer.Character:MoveTo(Vector3.new(-8646, 17, -5738))
+                end
+            end
+        end)
+    end
+end)
 
 -- Misc Controls
 local misc1Folder = miscTab:AddFolder("Misc 1")
