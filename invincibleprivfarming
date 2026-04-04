@@ -1,15 +1,18 @@
-local Players = game:GetService("Players")
+ualocal Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local fluentUI = require(path.to.fluentUILibrary) -- replace with actual path to Fluent UI library
+-- Load Fluent UI
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
--- Create a Fluent UI window
-local window = fluentUI.CreateWindow({
+-- Create the main window
+local Window = Fluent:CreateWindow({
     Title = string.format("invincibles priv script || Hello %s", LocalPlayer.DisplayName),
-    Size = UDim2.new(0, 660, 0, 890),
-    MinSize = UDim2.new(0, 660, 0, 890),
-    Resizable = false,
-    ThemeColor = Color3.fromRGB(0, 0, 0), -- black
+    SubTitle = "",                  -- You can add a subtitle if you want
+    TabWidth = 160,
+    Size = UDim2.fromOffset(660, 460),   -- Fluent uses UDim2 (recommended size)
+    Acrylic = true,                 -- Blur effect (set to false if you prefer no blur)
+    Theme = "Dark",                 -- Options: Dark, Light, Dusk, etc.
+    MinimizeKey = Enum.KeyCode.RightControl  -- Key to minimize the UI
 })
 
 -- Add content to your window as needed
