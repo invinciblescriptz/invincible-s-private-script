@@ -1,4 +1,4 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KyleXAkimbo/Gui/refs/heads/main/INV-UI"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/invinciblescriptz/invincible-ui/refs/heads/main/invincible%20ui"))()
 
 local window = library:AddWindow("Invincible Private Farming", {
     title_bar = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
@@ -9,7 +9,6 @@ local window = library:AddWindow("Invincible Private Farming", {
     min_size = Vector2.new(520, 660),
     can_resize = true
 })
-
 
 -- Services
 local Players = game:GetService("Players")
@@ -126,9 +125,8 @@ local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
-local AutoFarm = window:AddTab("Farm Op")
+local farmingTab = window:AddTab("Farming")
 local miscTab = window:AddTab("Misc")
-
 
 -- Tools Folder
 local toolsFolder = mainTab:AddFolder("Tools")
@@ -388,92 +386,68 @@ local function updatePosLock(state)
     if state then startLock() else stopLock() end
 end
 
-local targetRebirthValue = 100 -- default
-local infiniteSwitch
-
-rebirthsFolder:AddTextBox("Rebirth Target", function(text)
-    local newValue = tonumber(text)
-    if newValue and newValue > 0 then
-        targetRebirthValue = newValue
-        updateStats()
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Objetivo Actualizado",
-            Text = "Nuevo objetivo: " .. tostring(targetRebirthValue) .. " renacimientos",
-            Duration = 0
-        })
-    else
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Entrada Inválida",
-            Text = "Por favor ingresa un número válido mayor que 0",
-            Duration = 0
-        })
-    end
-end)
-
-local targetSwitch = rebirthsFolder:AddSwitch("Auto Rebirth Target", function(bool)
-    _G.targetRebirthActive = bool
-    if bool then
-        if _G.infiniteRebirthActive and infiniteSwitch then
-            infiniteSwitch:Set(false)
-            _G.infiniteRebirthActive = false
+-- Auto Rebirth
+local function autoRebirth()
+    task.spawn(function()
+        while true do
+            game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            task.wait(0.1)
         end
-        spawn(function()
-            while _G.targetRebirthActive and wait(0.1) do
-                local currentRebirths = game.Players.LocalPlayer.leaderstats.Rebirths.Value
-                if currentRebirths >= targetRebirthValue then
-                    targetSwitch:Set(false)
-                    _G.targetRebirthActive = false
-                    game:GetService("StarterGui"):SetCore("SendNotification", {
-                        Title = "¡Objetivo Alcanzado!",
-                        Text = "Has alcanzado " .. tostring(targetRebirthValue) .. " renacimientos",
-                        Duration = 5
-                    })
-                    break
-                end
-                game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-            end
-        end)
-    end
-end)
+    end)
+end
 
-infiniteSwitch = rebirthsFolder:AddSwitch("Auto Rebirth (Infinite)", function(bool)
-    _G.infiniteRebirthActive = bool
-    if bool then
-        if _G.targetRebirthActive and targetSwitch then
-            targetSwitch:Set(false)
-            _G.targetRebirthActive = false
+local autoRebirthSwitch = rebirthTab:AddSwitch("Auto Rebirth (Infinite)", {
+    Default = false,
+    Callback = function(val)
+        if val then
+            autoRebirth()
         end
-        spawn(function()
-            while _G.infiniteRebirthActive and wait(0.1) do
-                game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-            end
-        end)
     end
-end)
+})
 
-local sizeSwitch = rebirthsFolder:AddSwitch("Auto Size 1", function(bool)
-    _G.autoSizeActive = bool
-    if bool then
-        spawn(function()
-            while _G.autoSizeActive and wait() do
-                game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
-            end
-        end)
-    end
-end)
-
-local teleportSwitch = rebirthsFolder:AddSwitch("Auto Teleport to Muscle King", function(bool)
-    _G.teleportActive = bool
-    if bool then
-        spawn(function()
-            while _G.teleportActive and wait() do
-                if game.Players.LocalPlayer.Character then
-                    game.Players.LocalPlayer.Character:MoveTo(Vector3.new(-8646, 17, -5738))
+-- Auto Size 1
+local autoSizeSwitch = rebirthTab:AddSwitch("Auto Size 1", {
+    Default = false,
+    Callback = function(val)
+        _G.autoSizeActive = val
+        if val then
+            task.spawn(function()
+                while _G.autoSizeActive do
+                    game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
+                    task.wait(0.2)
                 end
-            end
-        end)
+            end)
+        end
     end
-end)
+})
+
+-- Auto Teleport to Muscle King
+local function autoTeleportToMuscleKing()
+    _G.teleportActive = true
+    task.spawn(function()
+        while _G.teleportActive do
+            if game.Players.LocalPlayer.Character then
+                game.Players.LocalPlayer.Character:MoveTo(Vector3.new(-8646, 17, -5738))
+            end
+            task.wait(0.5)
+        end
+    end)
+end
+
+local function stopAutoTeleport()
+    _G.teleportActive = false
+end
+
+local autoTeleportSwitch = rebirthTab:AddSwitch("Auto Teleport to Muscle King", {
+    Default = false,
+    Callback = function(val)
+        if val then
+            autoTeleportToMuscleKing()
+        else
+            stopAutoTeleport()
+        end
+    end
+})
 
 -- Misc Controls
 local misc1Folder = miscTab:AddFolder("Misc 1")
@@ -579,12 +553,12 @@ misc2Folder:AddSwitch("Infinite Jump", function(bool)
     end
 end)
 
-local AutoFarm = window:AddTab("Farm OP")
+local opTab = window:AddTab("Farm OP")
 AutoFarm:Show()
 
 
 -- Switch: Strength OP
-AutoFarm:AddSwitch("OP STRENGTH", function(state)
+opTab:AddSwitch("OP STRENGTH", function(state)
     getgenv()._AutoRepFarmEnabled = state
     warn("[Auto Rep Farm] :", state and "ON" or "OFF")
 end)
@@ -728,7 +702,7 @@ task.spawn(function()
     end
 end)
 
-AutoFarm:AddSwitch("Eat Egg (30 Min)", function(state)
+opTab:AddSwitch("Eat Egg (30 Min)", function(state)
     autoEatEnabled = state
     print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
 end)
@@ -768,7 +742,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- Auto Spin
-AutoFarm:AddButton("Auto Spin", function(state)
+opTab:AddButton("Auto Spin", function(state)
     _G.AutoSpinWheel = state
     
     if state then
@@ -784,7 +758,7 @@ AutoFarm:AddButton("Auto Spin", function(state)
 end)
 
 
-AutoFarm:AddButton("Equip Swift Samurai", function()
+opTab:AddButton("Equip Swift Samurai", function()
     print("equip 8 Swift Samurai")
 
     local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -827,7 +801,7 @@ end)
 
 
 -- Jungle Squat
-AutoFarm:AddButton("Jungle Squat", function()
+opTab:AddButton("Jungle Squat", function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         char:SetPrimaryPartCFrame(CFrame.new(-8374.25586, 34.5933418, 2932.44995))
@@ -847,7 +821,7 @@ end)
 
 
 -- FOLDER REBIRTH (Ordenado con Anti AFK antes de Anti Lag)
-local rebirthFolder = AutoFarm:AddFolder("OP Rebirthing")
+local fareFolder = opTab:AddFolder("OP Rebirth")
 
 local player = game.Players.LocalPlayer
 local leaderstats = player:WaitForChild("leaderstats")
@@ -864,7 +838,7 @@ local stopwatchLabel = RebirthFolder:AddLabel("0d 0h 0m 0s")
 stopwatchLabel.TextSize = 20
 stopwatchLabel.Font = Enum.Font.PatrickHand
 
-rebirthFolder:AddLabel("").TextSize = 10
+farehFolder:AddLabel("").TextSize = 10
 
 local gainedLabel = RebirthFolder:AddLabel("Gained Rebirths: 0")
 gainedLabel.TextSize = 16
@@ -885,7 +859,7 @@ task.spawn(function()
 end)
 
 -- Fast Rebirths
-rebirthFolder:AddSwitch("Fast Rebirths", function(state)
+fareFolder:AddSwitch("Fast Rebirths", function(state)
     getgenv().AutoFarming = state
     if state then
         task.spawn(function()
@@ -958,7 +932,7 @@ rebirthFolder:AddSwitch("Fast Rebirths", function(state)
 end)
 
 -- Lock Position
-rebirthFolder:AddSwitch("Lock Position", function(Value)
+farethFolder:AddSwitch("Lock Position", function(Value)
     if Value then
         local currentPos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
         getgenv().posLock = game:GetService("RunService").Heartbeat:Connect(function()
@@ -975,7 +949,7 @@ rebirthFolder:AddSwitch("Lock Position", function(Value)
 end)
 
 --  Anti Lag
-rebirthFolder:AddButton("Anti Lag", function()
+farehFolder:AddButton("Anti Lag", function()
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
             v.Enabled = false
@@ -1015,7 +989,7 @@ rebirthFolder:AddButton("Anti Lag", function()
 end)
 
 -- Jungle Lift
-rebirthFolder:AddButton("Jungle Lift", function()
+fareFolder:AddButton("Jungle Lift", function()
     local player = game.Players.LocalPlayer
     local char = player.Character or player.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
