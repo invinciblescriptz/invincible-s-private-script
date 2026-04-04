@@ -126,8 +126,9 @@ local mainTab = window:AddTab("Main")
 local specsTab = window:AddTab("Specs")
 local rebirthTab = window:AddTab("Rebirth")
 local teleportTab = window:AddTab("Teleport")
-local farmingTab = window:AddTab("Farming")
+local AutoFarm = window:AddTab("Farm Op")
 local miscTab = window:AddTab("Misc")
+
 
 -- Tools Folder
 local toolsFolder = mainTab:AddFolder("Tools")
@@ -846,7 +847,7 @@ end)
 
 
 -- FOLDER REBIRTH (Ordenado con Anti AFK antes de Anti Lag)
-local RebirthFolder = AutoFarm:AddFolder("OP Rebirth")
+local rebirthFolder = AutoFarm:AddFolder("OP Rebirthing")
 
 local player = game.Players.LocalPlayer
 local leaderstats = player:WaitForChild("leaderstats")
@@ -863,7 +864,7 @@ local stopwatchLabel = RebirthFolder:AddLabel("0d 0h 0m 0s")
 stopwatchLabel.TextSize = 20
 stopwatchLabel.Font = Enum.Font.PatrickHand
 
-RebirthFolder:AddLabel("").TextSize = 10
+rebirthFolder:AddLabel("").TextSize = 10
 
 local gainedLabel = RebirthFolder:AddLabel("Gained Rebirths: 0")
 gainedLabel.TextSize = 16
@@ -884,7 +885,7 @@ task.spawn(function()
 end)
 
 -- Fast Rebirths
-RebirthFolder:AddSwitch("Fast Rebirths", function(state)
+rebirthFolder:AddSwitch("Fast Rebirths", function(state)
     getgenv().AutoFarming = state
     if state then
         task.spawn(function()
@@ -957,7 +958,7 @@ RebirthFolder:AddSwitch("Fast Rebirths", function(state)
 end)
 
 -- Lock Position
-RebirthFolder:AddSwitch("Lock Position", function(Value)
+rebirthFolder:AddSwitch("Lock Position", function(Value)
     if Value then
         local currentPos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
         getgenv().posLock = game:GetService("RunService").Heartbeat:Connect(function()
@@ -974,7 +975,7 @@ RebirthFolder:AddSwitch("Lock Position", function(Value)
 end)
 
 --  Anti Lag
-RebirthFolder:AddButton("Anti Lag", function()
+rebirthFolder:AddButton("Anti Lag", function()
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
             v.Enabled = false
@@ -1014,7 +1015,7 @@ RebirthFolder:AddButton("Anti Lag", function()
 end)
 
 -- Jungle Lift
-RebirthFolder:AddButton("Jungle Lift", function()
+rebirthFolder:AddButton("Jungle Lift", function()
     local player = game.Players.LocalPlayer
     local char = player.Character or player.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
