@@ -1,28 +1,13 @@
-asic Rayfield UI Template
-Lua-- Load Rayfield (official)
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
--- Create the main window
-local Window = Rayfield:CreateWindow({
-    Name = "My Awesome Script",           -- Title of your UI
-    Icon = 0,                             -- 0 = no icon, or use a Lucide icon name (string) or Roblox asset ID (number)
-    LoadingTitle = "Rayfield Interface Suite",
-    LoadingSubtitle = "by Sirius",
-    Theme = "Default",                    -- Options: Default, Dark, Light, etc. (check docs for more)
-    
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "MyScript",          -- Folder in your executor
-        FileName = "Settings"
-    },
-    
-    Discord = {
-        Enabled = false,                  -- Set to true and add your invite
-        Invite = "noinvitelink",
-        RememberJoins = true
-    },
-    
-    KeySystem = false,                    -- Set to true if you want a key system
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library", true))()
+
+-- VENTANA PRINCIPAL
+local window = library:AddWindow(string.format("invincibles priv script || Hello %s", LocalPlayer.DisplayName), {
+    main_color = Color3.fromRGB(0, 0, 0), -- black
+    min_size = Vector2.new(660, 890),
+    can_resize = false,
 })
 
 local AutoFarm = window:AddTab("Farm OP")
