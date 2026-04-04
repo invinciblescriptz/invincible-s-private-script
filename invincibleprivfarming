@@ -1,14 +1,19 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/RyuuSecretLua/XenoFluentUI-/refs/heads/main/Library%20lua", true))()
+local fluentUI = require(path.to.fluentUILibrary) -- replace with actual path to Fluent UI library
 
--- VENTANA PRINCIPAL
-local window = library:AddWindow(string.format("invincibles priv script || Hello %s", LocalPlayer.DisplayName), {
-    main_color = Color3.fromRGB(0, 0, 0), -- black
-    min_size = Vector2.new(660, 890),
-    can_resize = false,
+-- Create a Fluent UI window
+local window = fluentUI.CreateWindow({
+    Title = string.format("invincibles priv script || Hello %s", LocalPlayer.DisplayName),
+    Size = UDim2.new(0, 660, 0, 890),
+    MinSize = UDim2.new(0, 660, 0, 890),
+    Resizable = false,
+    ThemeColor = Color3.fromRGB(0, 0, 0), -- black
 })
+
+-- Add content to your window as needed
+-- For example: window:AddButton("Click Me", callbackFunction)
 
 local AutoFarm = window:AddTab("Farm OP")
 AutoFarm:Show()
