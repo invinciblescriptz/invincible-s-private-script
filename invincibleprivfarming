@@ -1,29 +1,29 @@
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- Load Fluent UI
-local success, Fluent = pcall(function()
-    return loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-end)
-
-if not success or not Fluent then
-    warn("Failed to load Fluent UI library.")
-    return
-end
+asic Rayfield UI Template
+Lua-- Load Rayfield (official)
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Create the main window
-local Window = Fluent:CreateWindow({
-    Title = string.format("invincibles priv script || Hello %s", LocalPlayer.DisplayName),
-    SubTitle = "",                  
-    TabWidth = 160,
-    Size = UDim2.fromOffset(660, 460),
-    Acrylic = true,                 
-    Theme = "Dark",                 
-    MinimizeKey = Enum.KeyCode.RightControl
+local Window = Rayfield:CreateWindow({
+    Name = "My Awesome Script",           -- Title of your UI
+    Icon = 0,                             -- 0 = no icon, or use a Lucide icon name (string) or Roblox asset ID (number)
+    LoadingTitle = "Rayfield Interface Suite",
+    LoadingSubtitle = "by Sirius",
+    Theme = "Default",                    -- Options: Default, Dark, Light, etc. (check docs for more)
+    
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "MyScript",          -- Folder in your executor
+        FileName = "Settings"
+    },
+    
+    Discord = {
+        Enabled = false,                  -- Set to true and add your invite
+        Invite = "noinvitelink",
+        RememberJoins = true
+    },
+    
+    KeySystem = false,                    -- Set to true if you want a key system
 })
-
--- Add content to your window as needed
--- For example: window:AddButton("Click Me", callbackFunction)
 
 local AutoFarm = window:AddTab("Farm OP")
 AutoFarm:Show()
