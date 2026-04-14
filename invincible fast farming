@@ -1,44 +1,52 @@
--- UI Library
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
-local window = library:AddWindow("Invincible || Fast Farm ||", {
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/invinciblescriptz/invincible-ui/refs/heads/main/invincible%20ui"))()
+
+local window = library:AddWindow("Invincible | Private | Killing", {
+    title_bar = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
+    title_bar_transparency = 0.2,
+    background = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
+    background_transparency = 0.1,
     main_color = Color3.fromRGB(0, 0, 0),
-    min_size = Vector2.new(660, 660),
-    can_resize = false,
-    background_transparency = 0.5,
+    min_size = Vector2.new(520, 660),
+    can_resize = true
 })
 
-local fastTab = window:AddTab("Fast Strength") -- Fixed: corrected AddTab syntax
 
--- Auto Strength/Farm toggle
-fastTab:AddSwitch("Fast Strength", function(state)
+local AutoFarm = window:AddTab("Farm OP")
+AutoFarm:Show()
+
+
+-- Estado inicial
+getgenv()._AutoRepFarmEnabled = false  
+
+-- Switch en la librería
+AutoFarm:AddSwitch("Fuerza OP (Usar si tu ping es menor que 250 ms)", function(state)
     getgenv()._AutoRepFarmEnabled = state
-    warn("[Auto Farm] State changed to:", state and "ON" or "OFF")
+    warn("[Auto Rep Farm] Estado cambiado a:", state and "ON" or "OFF")
 end)
 
--- Services
+-- Servicios
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local Stats = game:GetService("Stats")
 local LocalPlayer = Players.LocalPlayer
 
--- Configuration
+-- Configuración
 local PET_NAME = "Swift Samurai"
 local ROCK_NAME = "Rock5M"
 local PROTEIN_EGG_NAME = "ProteinEgg"
-local PROTEIN_EGG_INTERVAL = 30 * 60 -- 30 minutes
+local PROTEIN_EGG_INTERVAL = 30 * 60
 local REPS_PER_CYCLE = 185
 local REP_DELAY = 0.01
 local ROCK_INTERVAL = 1
-local MAX_PING = 1100 -- if ping > 1100, pause
-local MIN_PING = 300 -- if ping < 300, resume
+local MAX_PING = 1100   -- si pasa esto, pausa
+local MIN_PING = 300   -- si baja de esto, reanuda
 
--- Internal variables
+-- Variables internas
 local HumanoidRootPart
 local lastProteinEggTime = 0
 local lastRockTime = 0
-local RockRef = workspace:FindFirstChild(ROCK_NAME)
 
--- Function to get current ping
+-- Funciones
 local function getPing()
     local success, ping = pcall(function()
         return Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
@@ -46,13 +54,11 @@ local function getPing()
     return success and ping or 999
 end
 
--- Function to update character references
 local function updateCharacterRefs()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     HumanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
 end
 
--- Function to equip pet
 local function equipPet()
     local petsFolder = LocalPlayer:FindFirstChild("petsFolder")
     if petsFolder and petsFolder:FindFirstChild("Unique") then
@@ -65,7 +71,6 @@ local function equipPet()
     end
 end
 
--- Function to eat Protein Egg
 local function eatProteinEgg()
     if LocalPlayer:FindFirstChild("Backpack") then
         for _, item in pairs(LocalPlayer.Backpack:GetChildren()) do
@@ -77,7 +82,129 @@ local function eatProteinEgg()
     end
 end
 
--- Function to hit the Rock
+local function hitRock()
+    local rock = workspace:FindFirstChild(ROCK_NAME)
+    if rock and HumanoidRootPart then
+        HumanoidRootPart.CFrame = rock.CFrame * CFrame.new(0, 0, -5)
+        ReplicatedStorage.rEvents.hitEvent:FireServer("hit", rock)
+    end
+end
+
+-- Loop principal (siempre corriendo)
+task.spawn(function()
+    updateCharacterRefs()
+    equipPet()
+    lastProteinEggTime = tick()
+    lastRockTime = tick()
+
+    local farmingPaused = false
+
+    while true do
+        if getgenv()._AutoRepFarmEnabled then
+            local ping = getPing()
+
+            -- Pausa si ping alto
+            if ping > MAX_PING then
+                if not farmingPaused then
+                    warn("[Auto Rep Farm] Ping alto ("..math.floor(ping).."ms), pausando farmeo...")
+                    farmingPaused = true
+                end
+            end
+
+            -- Reanuda si ping bajo
+            if ping <= MIN_PING then
+                if farmingPaused then
+                    warn("[Auto Rep Farm] Ping bajo ("..math.floor(ping).."ms), reanudando farmeo...")
+                    farmingPaused = false
+                end
+            end
+
+            -- Solo farmea si no está pausado
+            if not farmingPaused then
+                if LocalPlayer:FindFirstChild("muscleEvent") then
+                    for i = 1, REPS_PER_CYCLE do
+                        LocalPlayer.muscleEvent:FireServer("rep")
+                    end
+                end
+
+                if tick() - lastProteinEggTime >= PROTEIN_EGG_INTERVAL then
+                    eatProteinEgg()
+                    lastProteinEggTime = tick()
+                end
+
+                if tick() - lastRockTime >= ROCK_INTERVAL then
+                    hitRock()
+                    lastRockTime = tick()
+                end
+            end
+        end
+
+        task.wait(REP_DELAY)
+    end
+end)
+
+
+-- 1️⃣ Switch: Fuerza OP
+AutoFarm:AddSwitch("Auto Farm OP", function(state)
+    getgenv()._AutoRepFarmEnabled = state
+    warn("[Auto Rep Farm] Estado cambiado a:", state and "ON" or "OFF")
+end)
+
+-- ✅ Configuración optimizada
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Stats = game:GetService("Stats")
+local LocalPlayer = Players.LocalPlayer
+
+local PET_NAME = "Swift Samurai"
+local ROCK_NAME = "Rock5M"
+local PROTEIN_EGG_NAME = "ProteinEgg"
+local PROTEIN_EGG_INTERVAL = 30 * 60 -- 30 min
+local REPS_PER_CYCLE = 185
+local REP_DELAY = 0.01
+local ROCK_INTERVAL = 1
+local MAX_PING = 1100
+
+local HumanoidRootPart
+local lastProteinEggTime = 0
+local lastRockTime = 0
+local RockRef = workspace:FindFirstChild(ROCK_NAME)
+
+local function getPing()
+    local success, ping = pcall(function()
+        return Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+    end)
+    return success and ping or 999
+end
+
+local function updateCharacterRefs()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    HumanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
+end
+
+local function equipPet()
+    local petsFolder = LocalPlayer:FindFirstChild("petsFolder")
+    if petsFolder and petsFolder:FindFirstChild("Unique") then
+        for _, pet in pairs(petsFolder.Unique:GetChildren()) do
+            if pet.Name == PET_NAME then
+                ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                break
+            end
+        end
+    end
+end
+
+local function eatProteinEgg()
+    if LocalPlayer:FindFirstChild("Backpack") then
+        for _, item in pairs(LocalPlayer.Backpack:GetChildren()) do
+            if item.Name == PROTEIN_EGG_NAME then
+                ReplicatedStorage.rEvents.eatEvent:FireServer("eat", item)
+                break
+            end
+        end
+    end
+end
+
 local function hitRock()
     if not RockRef or not RockRef.Parent then
         RockRef = workspace:FindFirstChild(ROCK_NAME)
@@ -88,7 +215,7 @@ local function hitRock()
     end
 end
 
--- Main loop for farming
+-- ✅ Loop principal
 if not getgenv()._AutoRepFarmLoop then
     getgenv()._AutoRepFarmLoop = true
 
@@ -102,7 +229,7 @@ if not getgenv()._AutoRepFarmLoop then
             if getgenv()._AutoRepFarmEnabled then
                 local ping = getPing()
                 if ping > MAX_PING then
-                    warn("[Auto Rep Farm] High ping (" .. math.floor(ping) .. "ms), pausing 5 seconds...")
+                    warn("[Auto Rep Farm] Ping alto ("..math.floor(ping).."ms), pausando 5s...")
                     task.wait(5)
                 else
                     if LocalPlayer:FindFirstChild("muscleEvent") then
@@ -130,14 +257,13 @@ if not getgenv()._AutoRepFarmLoop then
     end)
 end
 
-fastTab:AddLabel("More features").TextSize = 22
-
--- Auto eat Protein Egg short function
-local autoEatEgg30 = false
-local function eatProteinEggShort()
+-- 2️⃣ Switch: Eat Egg (30 Min)
+local autoEatEnabled = false
+local function eatProteinEggNew()
     local player = game.Players.LocalPlayer
     local backpack = player:WaitForChild("Backpack")
     local character = player.Character or player.CharacterAdded:Wait()
+
     local egg = backpack:FindFirstChild("Protein Egg")
     if egg then
         egg.Parent = character
@@ -146,14 +272,14 @@ local function eatProteinEggShort()
         end)
         print("[AutoEgg] Protein Egg consumido.")
     else
-        warn("[AutoEgg] No Protein Egg in Backpack.")
+        warn("[AutoEgg] No se encontró Protein Egg en Backpack.")
     end
 end
 
 task.spawn(function()
     while true do
-        if autoEatEgg30 then
-            eatProteinEggShort()
+        if autoEatEnabled then
+            eatProteinEggNew()
             task.wait(1800)
         else
             task.wait(1)
@@ -161,14 +287,13 @@ task.spawn(function()
     end
 end)
 
--- Toggle for Eat Egg
-fastTab:AddSwitch("Eat Egg", function(state)
-    autoEatEgg30 = state
+AutoFarm:AddSwitch("Eat Egg (30 Min)", function(state)
+    autoEatEnabled = state
     print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
 end)
 
--- Hide all frames
-fastTab:AddButton("Hide All Frames", function(bool)
+
+AutoFarm:AddSwitch("Hide All Frames", function(bool)
     local rSto = game:GetService("ReplicatedStorage")
     for _, obj in pairs(rSto:GetChildren()) do
         if obj.Name:match("Frame$") then
@@ -177,138 +302,85 @@ fastTab:AddButton("Hide All Frames", function(bool)
     end
 end)
 
-fastTab:AddButton("Jungle Squat Area", function() tpTo(Vector3.new(-8371.4, 6.8, 2858.9)) end)
 
--- Assuming you already have a tab called rebirthTab
-local rebirthTab = window:AddTab("Rebirths") -- If you haven't created it yet
-
--- Add the label to this tab
-local rebirthsLabel = rebirthTab:AddLabel("Total Rebirths: 0")
-
-local player = game.Players.LocalPlayer
-local rebirthsValue = nil
-
--- Wait until the player's leaderstats and rebirths value exist
-repeat wait() until player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Rebirths")
-rebirthsValue = player.leaderstats.Rebirths
-
--- Update the label whenever rebirths change
-rebirthsValue.Changed:Connect(function()
-    rebirthsLabel:Set("Total Rebirths: " .. rebirthsValue.Value)
+AutoFarm:AddSwitch("Anti Lag", function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+            v.Enabled = false
+        end
+    end
+ 
+    local lighting = game:GetService("Lighting")
+    lighting.GlobalShadows = false
+    lighting.FogEnd = 9e9
+    lighting.Brightness = 0
+ 
+    settings().Rendering.QualityLevel = 1
+ 
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 1
+        elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
+            v.Material = Enum.Material.SmoothPlastic
+            if v.Parent and (v.Parent:FindFirstChild("Humanoid") or v.Parent.Parent:FindFirstChild("Humanoid")) then
+            else
+                v.Reflectance = 0
+            end
+        end
+    end
+ 
+    for _, v in pairs(lighting:GetChildren()) do
+        if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+            v.Enabled = false
+        end
+    end
+ 
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "anti lag activado",
+        Text = "Full optimization applied!",
+        Duration = 5
+    })
 end)
 
--- Initialize the label with current value
-rebirthsLabel:Set("Total Rebirths: " .. rebirthsValue.Value)
 
-rebirthTab:AddSwitch('Fast Rebirth (Pack Farm)', function(p79)
-    fastRebirth = p79
-
-    if p79 then
-        spawn(function()
-            local _ReplicatedStorage = game:GetService('ReplicatedStorage')
-            local _LocalPlayer = game:GetService('Players').LocalPlayer
-
-            local function u91(_)
-                local _petsFolder = _LocalPlayer.petsFolder
-                local v83, v84, v85 = pairs(_petsFolder:GetChildren())
-
-                while true do
-                    local v86
-                    v85, v86 = v83(v84, v85)
-                    if v85 == nil then break end
-                    if v86:IsA('Folder') then
-                        local v87, v88, v89 = pairs(v86:GetChildren())
-                        while true do
-                            local v90
-                            v89, v90 = v87(v88, v89)
-                            if v89 == nil then break end
-                            _ReplicatedStorage.rEvents.equipPetEvent:FireServer('unequipPet', v90)
-                        end
-                    end
-                end
-                task.wait(0.1)
+AutoFarm:AddSwitch("Anti Lag", function(State)
+    local lighting = game:GetService("Lighting")
+    if State then
+        for _, gui in pairs(LocalPlayer.PlayerGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then gui:Destroy() end
+        end
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("ParticleEmitter") or obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+                obj:Destroy()
             end
-
-            local function v97(p92)
-                u91()
-                task.wait(0.01)
-                local v93, v94, v95 = pairs(_LocalPlayer.petsFolder.Unique:GetChildren())
-                while true do
-                    local v96
-                    v95, v96 = v93(v94, v95)
-                    if v95 == nil then break end
-                    if v96.Name == p92 then
-                        _ReplicatedStorage.rEvents.equipPetEvent:FireServer('equipPet', v96)
-                    end
+        end
+        for _, v in pairs(lighting:GetChildren()) do
+            if v:IsA("Sky") then v:Destroy() end
+        end
+        local darkSky = Instance.new("Sky")
+        darkSky.Name = "DarkSky"
+        darkSky.SkyboxBk = "rbxassetid://0"
+        darkSky.SkyboxDn = "rbxassetid://0"
+        darkSky.SkyboxFt = "rbxassetid://0"
+        darkSky.SkyboxLf = "rbxassetid://0"
+        darkSky.SkyboxRt = "rbxassetid://0"
+        darkSky.SkyboxUp = "rbxassetid://0"
+        darkSky.Parent = lighting
+        lighting.Brightness = 0
+        lighting.ClockTime = 0
+        lighting.TimeOfDay = "00:00:00"
+        lighting.OutdoorAmbient = Color3.new(0,0,0)
+        lighting.Ambient = Color3.new(0,0,0)
+        lighting.FogColor = Color3.new(0,0,0)
+        lighting.FogEnd = 100
+        task.spawn(function()
+            while State do
+                task.wait(5)
+                if not lighting:FindFirstChild("DarkSky") then
+                    darkSky:Clone().Parent = lighting
                 end
-            end
-
-            local function v105(p99)
-                local v100 = workspace.machinesFolder:FindFirstChild(p99)
-                if not v100 then
-                    local v101, v102, v103 = pairs(workspace:GetChildren())
-                    while true do
-                        local v104
-                        v103, v104 = v101(v102, v103)
-                        if v103 == nil then break end
-                        if v104:IsA('Folder') and v104.Name:find('machines') then
-                            v100 = v104:FindFirstChild(p99)
-                            if v100 then break end
-                        end
-                    end
-                end
-                return v100
-            end
-
-            local function v107()
-                local _VirtualInputManager = game:GetService('VirtualInputManager')
-                _VirtualInputManager:SendKeyEvent(true, 'E', false, game)
-                task.wait(0.1)
-                _VirtualInputManager:SendKeyEvent(false, 'E', false, game)
-            end
-
-            while fastRebirth do
-                local v108 = 10000 + 5000 * _LocalPlayer.leaderstats.Rebirths.Value
-                if _LocalPlayer.ultimatesFolder:FindFirstChild('Golden Rebirth') then
-                    local _Value = _LocalPlayer.ultimatesFolder['Golden Rebirth'].Value
-                    v108 = math.floor(v108 * (1 - _Value * 0.1))
-                end
-
-                u91()
-                task.wait(0.1)
-                v97('Swift Samurai')
-
-                while _LocalPlayer.leaderstats.Strength.Value < v108 do
-                    for _ = 1, 15 do
-                        _LocalPlayer.muscleEvent:FireServer('rep')
-                    end
-                    task.wait()
-                end
-
-                u91()
-                task.wait(0.1)
-                v97('Tribal Overlord')
-
-                local _JungleBarLift = v105('Jungle Bar Lift')
-                if _JungleBarLift and _JungleBarLift:FindFirstChild('interactSeat') then
-                    _LocalPlayer.Character.HumanoidRootPart.CFrame = _JungleBarLift.interactSeat.CFrame * CFrame.new(0, 3, 0)
-                    repeat
-                        task.wait(0.1)
-                        local _VirtualInputManager = game:GetService('VirtualInputManager')
-                        _VirtualInputManager:SendKeyEvent(true, 'E', false, game)
-                        task.wait(0.1)
-                        _VirtualInputManager:SendKeyEvent(false, 'E', false, game)
-                    until _LocalPlayer.Character.Humanoid.Sit
-                end
-
-                local _Value2 = _LocalPlayer.leaderstats.Rebirths.Value
-                repeat
-                    game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer('rebirthRequest')
-                    task.wait(0.1)
-                until _Value2 < _LocalPlayer.leaderstats.Rebirths.Value
-
-                task.wait()
             end
         end)
     end
 end)
+
