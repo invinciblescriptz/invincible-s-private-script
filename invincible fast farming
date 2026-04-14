@@ -171,40 +171,6 @@ AutoFarm:AddSwitch("Hide All Frames", function(bool)
     end
 end)
 
--- Define the pet name
-local PET_NAME = "Swift Samurai"
-
--- Reference to the player
-local player = game.Players.LocalPlayer
-local LocalPlayer = player
-
--- Create ScreenGui
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoFarmGUI"
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
-
--- Create Button
-local equipButton = Instance.new("TextButton")
-equipButton.Size = UDim2.new(0, 200, 0, 50)
-equipButton.Position = UDim2.new(0, 10, 0, 10)
-equipButton.Text = "Equip Swift Samurai"
-equipButton.Parent = ScreenGui
-
--- Define the equipPet function
-local function equipPet()
-    for _, pet in pairs(LocalPlayer:FindFirstChild("petsFolder").Unique:GetChildren()) do
-        if pet.Name == PET_NAME then
-            ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
-            break
-        end
-    end
-end
-
--- Connect button to the function
-equipButton.Activated:Connect(function()
-    equipPet()
-end)
-
 AutoFarm:AddButton("Jungle Squat", function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
