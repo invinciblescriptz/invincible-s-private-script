@@ -465,3 +465,7 @@ rebirthTab:AddButton("Jungle Lift", function()
 
     print("[Jungle Lift] Teletransport ejecutado correctamente.")
 end)
+
+-- Credits Tab
+local creditsTab = window:AddTab("Credits")
+creditsTab:AddLabel("Made with â¤ï¸ by invincible").TextSize = 25
