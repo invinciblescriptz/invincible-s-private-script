@@ -171,6 +171,39 @@ AutoFarm:AddSwitch("Hide All Frames", function(bool)
     end
 end)
 
+-- Define the pet name
+local PET_NAME = "Swift Samurai"
+
+-- Reference to the player
+local player = game.Players.LocalPlayer
+local LocalPlayer = player
+
+-- Create ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoFarmGUI"
+ScreenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Create Button
+local equipButton = Instance.new("TextButton")
+equipButton.Size = UDim2.new(0, 200, 0, 50)
+equipButton.Position = UDim2.new(0, 10, 0, 10)
+equipButton.Text = "Equip Swift Samurai"
+equipButton.Parent = ScreenGui
+
+-- Define the equipPet function
+local function equipPet()
+    for _, pet in pairs(LocalPlayer:FindFirstChild("petsFolder").Unique:GetChildren()) do
+        if pet.Name == PET_NAME then
+            ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+            break
+        end
+    end
+end
+
+-- Connect button to the function
+equipButton.Activated:Connect(function()
+    equipPet()
+end)
 
 AutoFarm:AddButton("Jungle Squat", function()
     local char = LocalPlayer.Character
@@ -271,6 +304,30 @@ AutoFarm:AddButton("Anti Lag", function(State)
                 end
             end
         end)
+    end
+end)
+
+-- Anti-AFK toggle variable
+local antiAFKEnabled = false
+local antiAFKConnection
+
+-- Add a toggle switch for Anti-AFK
+local antiAFKToggle = AutoFarm:AddSwitch("Anti AFK", function(state)
+    antiAFKEnabled = state
+    if state then
+        -- Enable Anti AFK
+        local VirtualUser = game:GetService("VirtualUser")
+        -- Connect a loop to simulate user input
+        antiAFKConnection = game:GetService("RunService").Stepped:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        end)
+    else
+        -- Disable Anti AFK
+        if antiAFKConnection then
+            antiAFKConnection:Disconnect()
+            antiAFKConnection = nil
+        end
     end
 end)
 
