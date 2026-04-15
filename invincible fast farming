@@ -1,6 +1,6 @@
 local ScriptLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/p4020854-hub/Lb/refs/heads/main/X", true))()
 
-local Window = ScriptLibrary:AddWindow(string.format("invincible|| Fast Farming || Hello %s", game.Players.LocalPlayer.DisplayName), { min_size = Vector2.new(660, 700), can_resize = true, main_color = Color3.fromRGB(255, 192, 203) })
+local Window = ScriptLibrary:AddWindow(string.format("invincible|| Fast Farming || Hello %s", game.Players.LocalPlayer.DisplayName), { min_size = Vector2.new(660, 700), can_resize = true, main_color = Color3.fromRGB(0, 0, 0) })
 
 local AutoFarm = window:AddTab("Farm OP")
 AutoFarm:Show()
