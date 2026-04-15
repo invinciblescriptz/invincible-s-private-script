@@ -191,16 +191,26 @@ end)
 
 AutoFarm:AddLabel("use for less lag").TextSize = 25
 
-AutoFarm::AddButton("Full Optimisation", function()
+AutoFarm::AddButton("Full Optimization", function()
     pcall(function()
-        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 1e9
-        Lighting.Brightness = 0
-        for _, o in ipairs(Workspace:GetDescendants()) do
-            if o:IsA("ParticleEmitter") then o.Enabled = false end
-            if o:IsA("Decal") or o:IsA("Texture") then o.Transparency = 1 end
+        for _, g in ipairs(LocalPlayer.PlayerGui:GetChildren()) do
+            if g:IsA("ScreenGui") then g:Destroy() end
         end
+        for _, o in ipairs(Workspace:GetDescendants()) do
+            if o:IsA("ParticleEmitter") or o:IsA("PointLight") then o:Destroy() end
+        end
+        for _, s in ipairs(Lighting:GetChildren()) do
+            if s:IsA("Sky") then s:Destroy() end
+        end
+        local darkSky = Instance.new("Sky", Lighting)
+        for _, face in ipairs({"Bk","Dn","Ft","Lf","Rt","Up"}) do
+            darkSky["Skybox" .. face] = "rbxassetid://0"
+        end
+        Lighting.Brightness = 0
+        Lighting.ClockTime = 0
+        Lighting.OutdoorAmbient = Color3.new()
+        Lighting.Ambient = Color3.new()
+        Lighting.FogEnd = 120
     end)
 end)
 
