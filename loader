@@ -1,25 +1,25 @@
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FluentUI_Draggable"
 screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-screenGui.Name = "FluentUI_ScriptLoader"
 
--- Create a Frame to hold the buttons, styled to look Fluent-inspired
+-- Main Frame with Fluent-inspired style
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 250)
-frame.Position = UDim2.new(0.5, -150, 0.3, 0)
+frame.Size = UDim2.new(0, 400, 0, 350)
+frame.Position = UDim2.new(0.5, -200, 0.3, 0)
 frame.AnchorPoint = Vector2.new(0.5, 0.5)
 frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 frame.BorderSizePixel = 0
-frame.BackgroundTransparency = 0.1
+frame.Radius = UDim.new(0, 12)
 frame.Parent = screenGui
 
--- Add a UIStroke for Fluent border effect
+-- Add UIStroke for border
 local stroke = Instance.new("UIStroke")
 stroke.Color = Color3.fromRGB(200, 200, 200)
 stroke.Thickness = 2
 stroke.Parent = frame
 
--- Add a UIGradient for a subtle gradient effect
+-- Add UIGradient for subtle background
 local gradient = Instance.new("UIGradient")
 gradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
@@ -28,10 +28,61 @@ gradient.Color = ColorSequence.new{
 gradient.Rotation = 90
 gradient.Parent = frame
 
--- Button properties
-local buttonSize = UDim2.new(0, 250, 0, 40)
-local buttonSpacing = 10
-local startY = 0
+-- Add DropShadow effect
+local shadow = Instance.new("Frame")
+shadow.Size = UDim2.new(1, 20, 1, 20)
+shadow.Position = UDim2.new(0, 10, 0, 10)
+shadow.BackgroundColor3 = Color3.new(0, 0, 0)
+shadow.BackgroundTransparency = 0.2
+shadow.ZIndex = -1
+shadow.Parent = frame
+
+-- Make the frame draggable
+local dragging = false
+local dragInput, dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Title Label
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 50)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Script Loader"
+titleLabel.Font = Enum.Font.SegoeUI
+titleLabel.TextSize = 24
+titleLabel.TextColor3 = Color3.fromRGB(50, 50, 50)
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.PaddingLeft = UDim.new(0, 15)
+titleLabel.Parent = frame
+
+-- Button Properties
+local buttonSize = UDim2.new(0, 350, 0, 45)
+local buttonSpacing = 12
+local startY = 0.2
 
 local buttonNames = {
     "Script 1",
@@ -49,23 +100,37 @@ local scriptUrls = {
 for i = 1, 4 do
     local btn = Instance.new("TextButton")
     btn.Size = buttonSize
-    btn.Position = UDim2.new(0.5, -buttonSize.X.Offset/2, startY + (i - 1) * (buttonSize.Y.Offset + buttonSpacing), 0)
+    btn.Position = UDim2.new(0.5, -buttonSize.X.Offset/2, startY + (i-1)*(buttonSize.Y.Offset+buttonSpacing), 0)
     btn.AnchorPoint = Vector2.new(0.5, 0)
     btn.Text = buttonNames[i]
     btn.Font = Enum.Font.SegoeUI
-    btn.TextSize = 14
-    btn.TextColor3 = Color3.fromRGB(30, 30, 30)
+    btn.TextSize = 16
+    btn.TextColor3 = Color3.fromRGB(20, 20, 20)
     btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     btn.BorderSizePixel = 0
-    btn.Parent = frame
+    btn.Radius = UDim.new(0, 8)
+
+    -- Gradient overlay for buttons
+    local btnGradient = Instance.new("UIGradient")
+    btnGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(230, 230, 230))
+    }
+    btnGradient.Rotation = 90
+    btnGradient.Parent = btn
 
     -- Add a subtle hover effect
-    local uistroke = Instance.new("UIStroke")
-    uistroke.Color = Color3.fromRGB(200, 200, 200)
-    uistroke.Thickness = 1
-    uistroke.Parent = btn
+    local hover = false
+    btn.MouseEnter:Connect(function()
+        hover = true
+        btn.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+    end)
+    btn.MouseLeave:Connect(function()
+        hover = false
+        btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    end)
 
-    -- Click event
+    -- Button click loads script
     local index = i
     btn.MouseButton1Click:Connect(function()
         local success, err = pcall(function()
@@ -76,4 +141,7 @@ for i = 1, 4 do
             warn("Failed to load script: " .. err)
         end
     end)
+
+    -- Parent to frame
+    btn.Parent = frame
 end
