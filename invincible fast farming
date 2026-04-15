@@ -192,22 +192,30 @@ end)
 AutoFarm:AddLabel("use for less lag").TextSize = 25
 
 local blackScreenToggle = false
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local overlayName = "AutoFarmBlackOverlay"
+
 AutoFarm:AddButton("Black Screen", function()
     blackScreenToggle = not blackScreenToggle
+
+    local existingOverlay = playerGui:FindFirstChild(overlayName)
+
     if blackScreenToggle then
-        -- Create black overlay
-        local blackOverlay = Instance.new("Frame")
-        blackOverlay.Size = UDim2.new(1, 0, 1, 0)
-        blackOverlay.Position = UDim2.new(0, 0, 0, 0)
-        blackOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
-        blackOverlay.ZIndex = 9999
-        blackOverlay.Name = "AutoFarmBlackOverlay"
-        blackOverlay.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+        if not existingOverlay then
+            -- Create black overlay
+            local blackOverlay = Instance.new("Frame")
+            blackOverlay.Size = UDim2.new(1, 0, 1, 0)
+            blackOverlay.Position = UDim2.new(0, 0, 0, 0)
+            blackOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
+            blackOverlay.ZIndex = 9999
+            blackOverlay.Name = overlayName
+            blackOverlay.Parent = playerGui
+        end
     else
         -- Remove overlay if exists
-        local overlay = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("AutoFarmBlackOverlay")
-        if overlay then
-            overlay:Destroy()
+        if existingOverlay then
+            existingOverlay:Destroy()
         end
     end
 end)
