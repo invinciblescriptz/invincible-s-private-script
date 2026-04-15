@@ -191,45 +191,28 @@ end)
 
 AutoFarm:AddLabel("use for less lag").TextSize = 25
 
-AutoFarm:AddButton("Full optimisation", function()
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
-            v.Enabled = false
+AutoFarm:AddButton("Full Optimization", function()
+    pcall(function()
+        for _, g in ipairs(LocalPlayer.PlayerGui:GetChildren()) do
+            if g:IsA("ScreenGui") then g:Destroy() end
         end
-    end
- 
-    local lighting = game:GetService("Lighting")
-    lighting.GlobalShadows = false
-    lighting.FogEnd = 9e9
-    lighting.Brightness = 0
- 
-    settings().Rendering.QualityLevel = 1
- 
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("Decal") or v:IsA("Texture") then
-            v.Transparency = 1
-        elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
-            v.Material = Enum.Material.SmoothPlastic
-            if v.Parent and (v.Parent:FindFirstChild("Humanoid") or v.Parent.Parent:FindFirstChild("Humanoid")) then
-            else
-                v.Reflectance = 0
-            end
+        for _, o in ipairs(Workspace:GetDescendants()) do
+            if o:IsA("ParticleEmitter") or o:IsA("PointLight") then o:Destroy() end
         end
-    end
- 
-    for _, v in pairs(lighting:GetChildren()) do
-        if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
-            v.Enabled = false
+        for _, s in ipairs(Lighting:GetChildren()) do
+            if s:IsA("Sky") then s:Destroy() end
         end
-    end
- 
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "anti lag activado",
-        Text = "Full optimization applied!",
-        Duration = 5
-    })
+        local darkSky = Instance.new("Sky", Lighting)
+        for _, face in ipairs({"Bk","Dn","Ft","Lf","Rt","Up"}) do
+            darkSky["Skybox" .. face] = "rbxassetid://0"
+        end
+        Lighting.Brightness = 0
+        Lighting.ClockTime = 0
+        Lighting.OutdoorAmbient = Color3.new()
+        Lighting.Ambient = Color3.new()
+        Lighting.FogEnd = 120
+    end)
 end)
-
 
 AutoFarm:AddButton("Anti Lag", function(State)
     local lighting = game:GetService("Lighting")
