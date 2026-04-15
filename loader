@@ -1,0 +1,79 @@
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Name = "FluentUI_ScriptLoader"
+
+-- Create a Frame to hold the buttons, styled to look Fluent-inspired
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 250)
+frame.Position = UDim2.new(0.5, -150, 0.3, 0)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+frame.BorderSizePixel = 0
+frame.BackgroundTransparency = 0.1
+frame.Parent = screenGui
+
+-- Add a UIStroke for Fluent border effect
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(200, 200, 200)
+stroke.Thickness = 2
+stroke.Parent = frame
+
+-- Add a UIGradient for a subtle gradient effect
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(240, 240, 240))
+}
+gradient.Rotation = 90
+gradient.Parent = frame
+
+-- Button properties
+local buttonSize = UDim2.new(0, 250, 0, 40)
+local buttonSpacing = 10
+local startY = 0
+
+local buttonNames = {
+    "Script 1",
+    "Script 2",
+    "Script 3",
+    "Script 4"
+}
+local scriptUrls = {
+    "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible%20private%20killing",
+    "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible%20fast%20farming",
+    "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible's%20private%20script",
+    "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible%20private%20farming%20v2"
+}
+
+for i = 1, 4 do
+    local btn = Instance.new("TextButton")
+    btn.Size = buttonSize
+    btn.Position = UDim2.new(0.5, -buttonSize.X.Offset/2, startY + (i - 1) * (buttonSize.Y.Offset + buttonSpacing), 0)
+    btn.AnchorPoint = Vector2.new(0.5, 0)
+    btn.Text = buttonNames[i]
+    btn.Font = Enum.Font.SegoeUI
+    btn.TextSize = 14
+    btn.TextColor3 = Color3.fromRGB(30, 30, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BorderSizePixel = 0
+    btn.Parent = frame
+
+    -- Add a subtle hover effect
+    local uistroke = Instance.new("UIStroke")
+    uistroke.Color = Color3.fromRGB(200, 200, 200)
+    uistroke.Thickness = 1
+    uistroke.Parent = btn
+
+    -- Click event
+    local index = i
+    btn.MouseButton1Click:Connect(function()
+        local success, err = pcall(function()
+            local scriptContent = game:HttpGet(scriptUrls[index])
+            loadstring(scriptContent)()
+        end)
+        if not success then
+            warn("Failed to load script: " .. err)
+        end
+    end)
+end
