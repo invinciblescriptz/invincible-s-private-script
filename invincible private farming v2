@@ -666,8 +666,6 @@ Killer:AddSwitch("Auto Kill", function(bool)
     end)
 end)
 
--- Use if getting slimed out
-Killer:AddLabel("Use if getting slimed out").TextSize = 25
 local urls = {
     "https://raw.githubusercontent.com/SadOz8/Stuffs/refs/heads/main/Crack",
     "https://raw.githubusercontent.com/SadOz8/Stuffs/refs/heads/main/Crack2",
