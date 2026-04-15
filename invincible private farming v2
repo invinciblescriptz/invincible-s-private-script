@@ -1,4 +1,4 @@
-local ScriptLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/p4020854-hub/Lb/refs/heads/main/X", true))()
+local ScriptLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/LightMildTH/EleriumUILibrary/refs/heads/master/EleriumLibrary.lua", true))()
 
 local playerName = game.Players.LocalPlayer.DisplayName
 local windowTitle = string.format("invincible v2|| Private || Hello %s", playerName)
