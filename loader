@@ -1,25 +1,29 @@
+-- Place this script inside StarterPlayer > StarterPlayerScripts as a LocalScript
+
+local UserInputService = game:GetService("UserInputService")
+
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "FluentUI_Draggable"
+screenGui.Name = "FluentUI"
 screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
 -- Main Frame with Fluent-inspired style
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 400, 0, 350)
 frame.Position = UDim2.new(0.5, -200, 0.3, 0)
-frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.AnchorPoint = Vector2.new(0.5, 0)
 frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 frame.BorderSizePixel = 0
 frame.Radius = UDim.new(0, 12)
 frame.Parent = screenGui
 
--- Add UIStroke for border
+-- Add border stroke for Fluent style
 local stroke = Instance.new("UIStroke")
 stroke.Color = Color3.fromRGB(200, 200, 200)
 stroke.Thickness = 2
 stroke.Parent = frame
 
--- Add UIGradient for subtle background
+-- Add subtle gradient background
 local gradient = Instance.new("UIGradient")
 gradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
@@ -28,7 +32,7 @@ gradient.Color = ColorSequence.new{
 gradient.Rotation = 90
 gradient.Parent = frame
 
--- Add DropShadow effect
+-- Add DropShadow for depth
 local shadow = Instance.new("Frame")
 shadow.Size = UDim2.new(1, 20, 1, 20)
 shadow.Position = UDim2.new(0, 10, 0, 10)
@@ -39,7 +43,7 @@ shadow.Parent = frame
 
 -- Make the frame draggable
 local dragging = false
-local dragInput, dragStart, startPos
+local dragStart, startPos
 
 frame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -56,14 +60,9 @@ end)
 
 frame.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
         local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
@@ -79,30 +78,24 @@ titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.PaddingLeft = UDim.new(0, 15)
 titleLabel.Parent = frame
 
--- Button Properties
+-- Button info
+local buttonData = {
+    {name = "Script 1", url = "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible%20private%20killing"},
+    {name = "Script 2", url = "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible%20fast%20farming"},
+    {name = "Script 3", url = "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible's%20private%20script"},
+    {name = "Script 4", url = "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible%20private%20farming%20v2"}
+}
+
 local buttonSize = UDim2.new(0, 350, 0, 45)
-local buttonSpacing = 12
 local startY = 0.2
+local buttonSpacing = 12
 
-local buttonNames = {
-    "Script 1",
-    "Script 2",
-    "Script 3",
-    "Script 4"
-}
-local scriptUrls = {
-    "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible%20private%20killing",
-    "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible%20fast%20farming",
-    "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible's%20private%20script",
-    "https://raw.githubusercontent.com/invinciblescriptz/invincible-s-private-script/refs/heads/main/invincible%20private%20farming%20v2"
-}
-
-for i = 1, 4 do
+for i, data in ipairs(buttonData) do
     local btn = Instance.new("TextButton")
     btn.Size = buttonSize
     btn.Position = UDim2.new(0.5, -buttonSize.X.Offset/2, startY + (i-1)*(buttonSize.Y.Offset+buttonSpacing), 0)
     btn.AnchorPoint = Vector2.new(0.5, 0)
-    btn.Text = buttonNames[i]
+    btn.Text = data.name
     btn.Font = Enum.Font.SegoeUI
     btn.TextSize = 16
     btn.TextColor3 = Color3.fromRGB(20, 20, 20)
@@ -119,29 +112,25 @@ for i = 1, 4 do
     btnGradient.Rotation = 90
     btnGradient.Parent = btn
 
-    -- Add a subtle hover effect
-    local hover = false
+    -- Hover effect
     btn.MouseEnter:Connect(function()
-        hover = true
         btn.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
     end)
     btn.MouseLeave:Connect(function()
-        hover = false
         btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     end)
 
-    -- Button click loads script
-    local index = i
+    -- Load script on click
+    local url = data.url
     btn.MouseButton1Click:Connect(function()
         local success, err = pcall(function()
-            local scriptContent = game:HttpGet(scriptUrls[index])
+            local scriptContent = game:HttpGet(url)
             loadstring(scriptContent)()
         end)
         if not success then
-            warn("Failed to load script: " .. err)
+            warn("Failed to load script: ", err)
         end
     end)
 
-    -- Parent to frame
     btn.Parent = frame
 end
