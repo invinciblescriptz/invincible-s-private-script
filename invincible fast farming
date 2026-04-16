@@ -206,6 +206,7 @@ end)
 
 
 AutoFarm:AddLabel("use for less lag").TextSize = 25
+titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 
 local blackScreenToggle = false
 local player = game.Players.LocalPlayer
