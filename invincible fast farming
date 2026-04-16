@@ -17,7 +17,7 @@ local AutoFarm = window:AddTab("Farm OP")
 AutoFarm:Show()
 
 -- Speedy grinding switch
-AutoFarm:AddSwitch("Fuerza OP (Usar si tu ping es menor que 250 ms)", function(state)
+AutoFarm:AddSwitch("speedy grinding", function(state)
     getgenv()._AutoRepFarmEnabled = state
     warn("[Auto Rep Farm] Estado cambiado a:", state and "ON" or "OFF")
 end)
