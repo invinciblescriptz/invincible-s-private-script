@@ -398,44 +398,6 @@ rebirthTab:AddButton("Lock Position", function(Value)
     end
 end)
 
-rebirthTab:AddButton("Anti Lag", function()
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
-            v.Enabled = false
-        end
-    end
-    local lighting = game:GetService("Lighting")
-    lighting.GlobalShadows = false
-    lighting.FogEnd = 9e9
-    lighting.Brightness = 0
-
-    settings().Rendering.QualityLevel = 1
-
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("Decal") or v:IsA("Texture") then
-            v.Transparency = 1
-        elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
-            v.Material = Enum.Material.SmoothPlastic
-            if v.Parent and (v.Parent:FindFirstChild("Humanoid") or v.Parent.Parent:FindFirstChild("Humanoid")) then
-            else
-                v.Reflectance = 0
-            end
-        end
-    end
-
-    for _, v in pairs(lighting:GetChildren()) do
-        if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
-            v.Enabled = false
-        end
-    end
-
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Anti Lag Activado",
-        Text = "Full optimization applied!",
-        Duration = 5
-    })
-end)
-
 rebirthTab:AddButton("Spin Auto", function(state)
     _G.AutoSpinWheel = state
     
