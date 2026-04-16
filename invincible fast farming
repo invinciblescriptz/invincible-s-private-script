@@ -13,6 +13,22 @@ local window = library:AddWindow("invincible | Fast Farming |", {
 local AutoFarm = window:AddTab("Farm OP")
 AutoFarm:Show()
 
+AutoFarm:AddSwitch("Speedy grinding v2", function(enabled)
+    if not enabled then
+        unequipAllPets()
+        return
+    end
+    equipPetFromFolder("Unique", "Swift Samurai")
+    for _ = 1, 23 do
+        task.spawn(function()
+            while enabled do
+                player.muscleEvent:FireServer("rep")
+                task.wait()
+            end
+        end)
+    end
+end)
+
 AutoFarm:AddSwitch("Fast strength", function(state)
     getgenv()._AutoRepFarmEnabled = state
     warn("[Auto Rep Farm] Estado cambiado a:", state and "ON" or "OFF")
@@ -196,46 +212,53 @@ local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local overlayName = "AutoFarmBlackOverlay"
 
-AutoFarm:AddButton("Black Screen", function()
-    blackScreenToggle = not blackScreenToggle
-
-    local existingOverlay = playerGui:FindFirstChild(overlayName)
-
-    if blackScreenToggle then
-        if not existingOverlay then
-            -- Create black overlay
-            local blackOverlay = Instance.new("Frame")
-            blackOverlay.Size = UDim2.new(1, 0, 1, 0)
-            blackOverlay.Position = UDim2.new(0, 0, 0, 0)
-            blackOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
-            blackOverlay.ZIndex = 9999
-            blackOverlay.Name = overlayName
-            blackOverlay.Parent = playerGui
-        end
-    else
-        -- Remove overlay if exists
-        if existingOverlay then
-            existingOverlay:Destroy()
+AutoFarm:AddButton("Full Optimization", function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+            v.Enabled = false
         end
     end
+ 
+    local lighting = game:GetService("Lighting")
+    lighting.GlobalShadows = false
+    lighting.FogEnd = 9e9
+    lighting.Brightness = 0
+ 
+    settings().Rendering.QualityLevel = 1
+ 
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 1
+        elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
+            v.Material = Enum.Material.SmoothPlastic
+            if v.Parent and (v.Parent:FindFirstChild("Humanoid") or v.Parent.Parent:FindFirstChild("Humanoid")) then
+            else
+                v.Reflectance = 0
+            end
+        end
+    end
+ 
+    for _, v in pairs(lighting:GetChildren()) do
+        if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+            v.Enabled = false
+        end
+    end
+ 
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Optimization",
+        Text = "Full optimization applied!",
+        Duration = 5
+    })
 end)
 
 
-local lagButton = AutoFarm:AddButton("Reduce Lag", {
-    callback = function()
-        -- Disable particle emitters
-        for _, emitter in pairs(workspace:GetDescendants()) do
-            if emitter:IsA("ParticleEmitter") or emitter:IsA("Trail") then
-                emitter.Enabled = false
-            end
+AutoFarm:AddButton("Anti Lag", function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+            v.Enabled = false
         end
+    end
 
-        -- Disable unnecessary scripts
-        for _, script in pairs(workspace:GetDescendants()) do
-            if script:IsA("Script") or script:IsA("LocalScript") then
-                script.Disabled = true
-            end
-        end
 
         -- Lower rendering detail
         game:GetService("Lighting").Technology = Enum.Technology.ForceLowDetail
@@ -381,7 +404,6 @@ rebirthTab:AddButton("Anti Lag", function()
             v.Enabled = false
         end
     end
-
     local lighting = game:GetService("Lighting")
     lighting.GlobalShadows = false
     lighting.FogEnd = 9e9
