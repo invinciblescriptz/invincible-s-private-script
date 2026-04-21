@@ -325,7 +325,7 @@ redLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 redLabel.TextSize = 25
 
 -- Full Optimization Button
-AutoFarm:AddSwitch("Full Optimization", function(State)
+AutoFarm:AddButton("Full Optimization", function(State)
     local lighting = game:GetService("Lighting")
     if State then
         for _, gui in pairs(LocalPlayer.PlayerGui:GetChildren()) do
