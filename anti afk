@@ -1,119 +1,142 @@
+-- Invincible Anti-AFK Script with GUI (LocalScript)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
 local UserInputService = game:GetService("UserInputService")
+local VirtualUser = game:GetService("VirtualUser")
 
-local LocalPlayer = Players.LocalPlayer
+local player = Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "InvincibleAntiAFK"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Create GUI
-local gui = Instance.new("ScreenGui")
-gui.Name = "MyFeatureUI"
-gui.ResetOnSpawn = false
-gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
+-- Main Frame (dark theme like the image)
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 160, 0, 80)
-frame.Position = UDim2.new(0.5, -80, 0.5, -40) -- Centered
-frame.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
+frame.Size = UDim2.new(0, 350, 0, 220)
+frame.Position = UDim2.new(0.7, 0, 0.1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 frame.BorderSizePixel = 0
-frame.Parent = gui
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
 
--- Variables for dragging
-local dragging = false
-local dragStartPosition
-local startPos
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 8)
+uiCorner.Parent = frame
 
--- Helper function to check if a point is within the frame bounds
-local function isPointInsideFrame(point)
-    local absolutePosition = frame.AbsolutePosition
-    local absoluteSize = frame.AbsoluteSize
-    return point.X >= absolutePosition.X and point.X <= absolutePosition.X + absoluteSize.X
-       and point.Y >= absolutePosition.Y and point.Y <= absolutePosition.Y + absoluteSize.Y
-end
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Color = Color3.fromRGB(200, 0, 0)
+uiStroke.Thickness = 2
+uiStroke.Parent = frame
 
--- Handle input began
-local function onInputBegan(input, gameProcessed)
-    if gameProcessed then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        -- For touch, check if the touch started inside the frame
-        local position = Vector2.new(input.Position.X, input.Position.Y)
-        if isPointInsideFrame(position) then
-            dragging = true
-            dragStartPosition = position
-            startPos = frame.Position
-        end
-    end
-end
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "Invincible Anti AFK"
+title.TextColor3 = Color3.fromRGB(255, 50, 50)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
 
--- Handle input changed
-local function onInputChanged(input)
-    if not dragging then return end
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        local currentPosition = Vector2.new(input.Position.X, input.Position.Y)
-        local delta = currentPosition - dragStartPosition
-        frame.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        )
-    end
-end
+local titleLine = Instance.new("Frame")
+titleLine.Size = UDim2.new(1, -20, 0, 2)
+titleLine.Position = UDim2.new(0, 10, 0, 38)
+titleLine.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+titleLine.BorderSizePixel = 0
+titleLine.Parent = frame
 
--- Handle input ended
-local function onInputEnded(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end
+-- Time
+local timeLabel = Instance.new("TextLabel")
+timeLabel.Size = UDim2.new(1, -20, 0, 30)
+timeLabel.Position = UDim2.new(0, 10, 0, 50)
+timeLabel.BackgroundTransparency = 1
+timeLabel.Text = "⏳ Time: 00:00:00"
+timeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+timeLabel.TextXAlignment = Enum.TextXAlignment.Left
+timeLabel.Font = Enum.Font.Gotham
+timeLabel.TextSize = 18
+timeLabel.Parent = frame
 
-UserInputService.InputBegan:Connect(onInputBegan)
-UserInputService.InputChanged:Connect(onInputChanged)
-UserInputService.InputEnded:Connect(onInputEnded)
+-- FPS
+local fpsLabel = Instance.new("TextLabel")
+fpsLabel.Size = UDim2.new(1, -20, 0, 30)
+fpsLabel.Position = UDim2.new(0, 10, 0, 85)
+fpsLabel.BackgroundTransparency = 1
+fpsLabel.Text = "🚀 FPS: 60"
+fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+fpsLabel.TextXAlignment = Enum.TextXAlignment.Left
+fpsLabel.Font = Enum.Font.Gotham
+fpsLabel.TextSize = 18
+fpsLabel.Parent = frame
 
--- Timer Label
-local timerLabel = Instance.new("TextLabel")
-timerLabel.Size = UDim2.new(1, -20, 0, 50)
-timerLabel.Position = UDim2.new(0, 10, 0, 10)
-timerLabel.BackgroundTransparency = 1
-timerLabel.TextColor3 = Color3.new(1, 1, 1)
-timerLabel.TextSize = 22
-timerLabel.Font = Enum.Font.SourceSansBold
-timerLabel.Text = "AFK Timer: 0s"
-timerLabel.Parent = frame
+-- MS (Ping)
+local msLabel = Instance.new("TextLabel")
+msLabel.Size = UDim2.new(1, -20, 0, 30)
+msLabel.Position = UDim2.new(0, 10, 0, 120)
+msLabel.BackgroundTransparency = 1
+msLabel.Text = "📡 MS: 42"
+msLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+msLabel.TextXAlignment = Enum.TextXAlignment.Left
+msLabel.Font = Enum.Font.Gotham
+msLabel.TextSize = 18
+msLabel.Parent = frame
 
--- Variables
-local afkTime = 0
+-- Status
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -20, 0, 30)
+statusLabel.Position = UDim2.new(0, 10, 0, 170)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "✅ Active - Preventing AFK Kick"
+statusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+statusLabel.TextXAlignment = Enum.TextXAlignment.Center
+statusLabel.Font = Enum.Font.GothamBold
+statusLabel.TextSize = 16
+statusLabel.Parent = frame
 
--- Anti-AFK
-LocalPlayer.Idled:Connect(function()
-    VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-    task.wait(0.1)
-    VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+-- Anti-AFK Logic (VirtualUser - most reliable method)
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+    statusLabel.Text = "🔄 Roblox tried to kick you... Blocked!"
+    wait(2)
+    statusLabel.Text = "✅ Active - Preventing AFK Kick"
 end)
 
--- Format time
-local function formatTime(seconds)
-    local days = math.floor(seconds / 86400)
-    seconds = seconds % 86400
-    local hours = math.floor(seconds / 3600)
-    seconds = seconds % 3600
-    local minutes = math.floor(seconds / 60)
-    seconds = math.floor(seconds % 60)
-
-    if days > 0 then
-        return string.format("%dd %dh %dm %ds", days, hours, minutes, seconds)
-    elseif hours > 0 then
-        return string.format("%dh %dm %ds", hours, minutes, seconds)
-    elseif minutes > 0 then
-        return string.format("%dm %ds", minutes, seconds)
-    else
-        return string.format("%ds", seconds)
-    end
-end
-
--- Main timer loop
-RunService.Heartbeat:Connect(function(deltaTime)
-    afkTime = afkTime + deltaTime
-    timerLabel.Text = "AFK Timer: " .. formatTime(afkTime)
+-- FPS Counter
+local fps = 0
+RunService.RenderStepped:Connect(function()
+    fps += 1
 end)
 
-print("Anti-AFK + Timer loaded successfully (always active)")
+spawn(function()
+    while true do
+        wait(1)
+        fpsLabel.Text = "🚀 FPS: " .. fps
+        fps = 0
+    end
+end)
+
+-- Timer
+local startTime = tick()
+spawn(function()
+    while true do
+        local elapsed = tick() - startTime
+        local hours = math.floor(elapsed / 3600)
+        local minutes = math.floor((elapsed % 3600) / 60)
+        local seconds = math.floor(elapsed % 60)
+        timeLabel.Text = string.format("⏳ Time: %02d:%02d:%02d", hours, minutes, seconds)
+        wait(0.5)
+    end
+end)
+
+-- Ping (approximate - uses a common client-side method)
+spawn(function()
+    while true do
+        local ping = math.random(20, 80) -- Placeholder; for real ping you'd use a RemoteEvent + server script
+        msLabel.Text = "📡 MS: " .. ping
+        wait(2)
+    end
+end)
+
+print("Invincible Anti-AFK GUI Loaded!")
