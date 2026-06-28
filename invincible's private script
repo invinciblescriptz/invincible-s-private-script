@@ -592,6 +592,138 @@ Killer:AddButton("Goofball Button", function()
     end
 end)
 
+local statsFolder = Killer:AddFolder("player specs")
+
+-- ====================== PLAYER STATS ======================
+
+local SelectPlayerName = ""
+
+local PlayerDrop = statsFolder:AddDropdown("Select Player", function(Value)
+    SelectPlayerName = Value:match("| (.+)") or Value
+end)
+
+for _, Plr in pairs(Players:GetPlayers()) do
+    PlayerDrop:Add(Plr.DisplayName .. " | " .. Plr.Name)
+end
+
+local function FormatDisplay(value)
+    if not value then return "N/A" end
+    local normal = tostring(value):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+    local abbreviations = {"", "K", "M", "B", "T", "Qa", "Qi"}
+    local num, i = value, 1
+    while num >= 1000 do
+        num = num / 1000
+        i = i + 1
+    end
+    local abbr = string.format("%.2f", num) .. abbreviations[i]
+    return "[ " .. normal .. " | " .. abbr .. " ]"
+end
+
+-- Basic Stats
+statsFolder:AddLabel("--- Basic Stats ---")
+local Update = statsFolder:AddLabel("Strength: N/A")
+local Update1 = statsFolder:AddLabel("Gems: N/A")
+local Update2 = statsFolder:AddLabel("Rebirth: N/A")
+local Update3 = statsFolder:AddLabel("Agility: N/A")
+local Update4 = statsFolder:AddLabel("Durability: N/A")
+local Update5 = statsFolder:AddLabel("Kills: N/A")
+local Update6 = statsFolder:AddLabel("Muscle King Time: N/A")
+local Update9 = statsFolder:AddLabel("Current Map: N/A")
+local Update10 = statsFolder:AddLabel("Custom Size: N/A")
+local Update11 = statsFolder:AddLabel("Custom Speed: N/A")
+local Update12 = statsFolder:AddLabel("Evil Karma: N/A")
+local Update13 = statsFolder:AddLabel("Good Karma: N/A")
+
+-- Update Loop
+task.spawn(function()
+    while task.wait() do
+        if SelectPlayerName ~= "" then
+            local player = Players:FindFirstChild(SelectPlayerName)
+            if player then
+                local ls = player:FindFirstChild("leaderstats")
+                
+                if ls then
+                    if ls:FindFirstChild("Strength") then
+                        Update.Text = "Strength: " .. FormatDisplay(ls.Strength.Value)
+                    end
+                    if ls:FindFirstChild("Rebirths") then
+                        Update2.Text = "Rebirth: " .. FormatDisplay(ls.Rebirths.Value)
+                    end
+                    if ls:FindFirstChild("Kills") then
+                        Update5.Text = "Kills: " .. FormatDisplay(ls.Kills.Value)
+                    end
+                end
+
+                Update1.Text = "Gems: " .. FormatDisplay(player:FindFirstChild("Gems") and player.Gems.Value)
+                Update3.Text = "Agility: " .. FormatDisplay(player:FindFirstChild("Agility") and player.Agility.Value)
+                Update4.Text = "Durability: " .. FormatDisplay(player:FindFirstChild("Durability") and player.Durability.Value)
+                Update6.Text = "Muscle King Time: " .. FormatDisplay(player:FindFirstChild("muscleKingTime") and player.muscleKingTime.Value)
+                Update10.Text = "Custom Size: " .. FormatDisplay(player:FindFirstChild("customSize") and player.customSize.Value)
+                Update11.Text = "Custom Speed: " .. FormatDisplay(player:FindFirstChild("customSpeed") and player.customSpeed.Value)
+                Update12.Text = "Evil Karma: " .. FormatDisplay(player:FindFirstChild("evilKarma") and player.evilKarma.Value)
+                Update13.Text = "Good Karma: " .. FormatDisplay(player:FindFirstChild("goodKarma") and player.goodKarma.Value)
+
+                Update9.Text = "Current Map: " .. (player:FindFirstChild("currentMap") and tostring(player.currentMap.Value) or "N/A")
+            end
+        end
+    end
+end)
+
+statsFolder:AddLabel("────────────────────────────")
+statsFolder:AddLabel("Advanced Stats:").TextSize = 24
+
+local enemyHealthLabel = statsFolder:AddLabel("Enemy Health: N/A")
+local playerDamageLabel = statsFolder:AddLabel("Your Damage: N/A")
+local hitsToKillLabel = statsFolder:AddLabel("Hits to Kill: N/A")
+
+-- Advanced Stats Functions
+local function calculateEnemyHealth(target)
+    if not target then return 0 end
+    local base = target:FindFirstChild("Durability") and target.Durability.Value or 0
+    local mult = 1
+    if target:FindFirstChild("ultimatesFolder") and target.ultimatesFolder:FindFirstChild("Infernal Health") then
+        mult = mult + 0.15 * (target.ultimatesFolder["Infernal Health"].Value or 0)
+    end
+    return base * mult
+end
+
+local function calculateLocalPlayerDamage()
+    local str = LocalPlayer.leaderstats and LocalPlayer.leaderstats:FindFirstChild("Strength")
+    if not str then return 0 end
+    local base = str.Value * 0.0667
+    local mult = 1
+    if LocalPlayer:FindFirstChild("ultimatesFolder") and LocalPlayer.ultimatesFolder:FindFirstChild("Demon Damage") then
+        mult = mult + math.min(0.1 * LocalPlayer.ultimatesFolder["Demon Damage"].Value, 0.5)
+    end
+    return base * mult
+end
+
+local function calculateHitsToKill(health, damage)
+    if damage <= 0 then return "∞" end
+    local hits = math.ceil(health / damage)
+    return hits > 50 and "∞" or hits
+end
+
+-- Advanced Stats Loop
+task.spawn(function()
+    while task.wait(0.3) do
+        local target = Players:FindFirstChild(SelectPlayerName)
+        if target then
+            local health = calculateEnemyHealth(target)
+            local dmg = calculateLocalPlayerDamage()
+            local hits = calculateHitsToKill(health, dmg)
+
+            enemyHealthLabel.Text = "Enemy Health: " .. FormatDisplay(health)
+            playerDamageLabel.Text = "Your Damage: " .. FormatDisplay(dmg)
+            hitsToKillLabel.Text = "Hits to Kill: " .. tostring(hits)
+        else
+            enemyHealthLabel.Text = "Enemy Health: N/A"
+            playerDamageLabel.Text = "Your Damage: N/A"
+            hitsToKillLabel.Text = "Hits to Kill: N/A"
+        end
+    end
+end)
+
 local miscTab = window:AddTab("Misc")
 local mobileFolder = miscTab:AddFolder("Rock Farming ")
  
