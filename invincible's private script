@@ -1,17 +1,3 @@
--- === FULL FIXED 404 HUB SCRIPT ===
--- Everything from your original paste + fixes to make it open
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VirtualUser = game:GetService("VirtualUser")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-
-local muscleEvent = LocalPlayer:WaitForChild("muscleEvent")
-local player = LocalPlayer
-local PlayerData = LocalPlayer:WaitForChild("PlayerData")
-local rebirthsStat = LocalPlayer.leaderstats:WaitForChild("Rebirths")
-
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library"))()
 
 local window = library:AddWindow("404 Hub", {
@@ -22,6 +8,8 @@ local window = library:AddWindow("404 Hub", {
 })
 
 local Killer = window:AddTab("Killer")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 local playerWhitelist = {}
 local targetPlayerNames = {}
 local autoGoodKarma = false
@@ -33,8 +21,6 @@ local autoEquipPunch = false
 local autoPunchNoAnim = false
 local targetDropdownItems = {}
 local availableTargets = {}
-local selectedTarget = nil
-local targetRebirthValue = 0
 
 local titleLabel = Killer:AddLabel("Select Pack")
 titleLabel.TextSize = 18
@@ -66,9 +52,10 @@ local dropdown = Killer:AddDropdown("Select Pet", function(text)
     end
 end)
 
-dropdown:Add("Wild Wizard")
-dropdown:Add("Mighty Monster")
+local Wild_Wizard = dropdown:Add("Wild Wizard")
+local Powerful_Monster = dropdown:Add("Mighty Monster")
 
+-- Auto Good Karma
 Killer:AddSwitch("Auto Good Karma", function(bool)
     autoGoodKarma = bool
     task.spawn(function()
@@ -98,6 +85,7 @@ Killer:AddSwitch("Auto Good Karma", function(bool)
     end)
 end)
 
+-- Auto Bad Karma
 Killer:AddSwitch("Auto Bad Karma", function(bool)
     autoBadKarma = bool
     task.spawn(function()
@@ -127,6 +115,7 @@ Killer:AddSwitch("Auto Bad Karma", function(bool)
     end)
 end)
 
+-- Auto Whitelist Friends
 local friendWhitelistActive = false
 Killer:AddSwitch("Auto Whitelist Friends", function(state)
     friendWhitelistActive = state
@@ -219,42 +208,9 @@ Killer:AddSwitch("Auto Punch", function(state)
     end
 end)
 
-Killer:AddSwitch("Fast punch", function(state)
-    _G.autoPunchActive = state
-    if state then
-        task.spawn(function()
-            while _G.autoPunchActive do
-                local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
-                if punch then
-                    punch.Parent = LocalPlayer.Character
-                    if punch:FindFirstChild("attackTime") then
-                        punch.attackTime.Value = 0
-                    end
-                end
-                task.wait()
-            end
-        end)
-        task.spawn(function()
-            while _G.autoPunchActive do
-                local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
-                if punch then
-                    punch:Activate()
-                end
-                task.wait()
-            end
-        end)
-    else
-        local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
-        if punch then
-            punch.Parent = LocalPlayer.Backpack
-        end
-    end
-end)
-
 local titleLabel = Killer:AddLabel("OP Kill Players")
 titleLabel.TextSize = 18
 titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-
 local targetDropdown = Killer:AddDropdown("Select Target", function(displayName)
     for _, player in ipairs(Players:GetPlayers()) do
         if player.DisplayName == displayName then
@@ -279,6 +235,7 @@ Killer:AddButton("Remove Selected Target", function()
     end
 end)
 
+-- Populate initial players
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
         targetDropdown:Add(player.DisplayName)
@@ -286,6 +243,7 @@ for _, player in ipairs(Players:GetPlayers()) do
     end
 end
 
+-- Player joins
 Players.PlayerAdded:Connect(function(player)
     if player ~= LocalPlayer then
         targetDropdown:Add(player.DisplayName)
@@ -293,6 +251,7 @@ Players.PlayerAdded:Connect(function(player)
     end
 end)
 
+-- Player leaves
 Players.PlayerRemoving:Connect(function(player)
     if targetDropdownItems[player.Name] then
         targetDropdownItems[player.Name] = nil
@@ -308,6 +267,7 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
+-- Start Kill with list of targets
 local kill = false
 Killer:AddSwitch("Start Kill Target", function(state)
     kill = state
@@ -342,6 +302,7 @@ Killer:AddSwitch("Start Kill Target", function(state)
     end)
 end)
 
+-- View Player (Spy)
 local targetPlayerName = nil
 local spyTargetDropdownItems = {}
 local spyTargetDropdown = Killer:AddDropdown("Select View Target", function(displayName)
@@ -368,7 +329,7 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    if spyTargetDropdownItems[player.Name] then
+    if player ~= LocalPlayer then
         spyTargetDropdownItems[player.Name] = nil
         spyTargetDropdown:Clear()
         for _, displayName in pairs(spyTargetDropdownItems) do
@@ -400,6 +361,7 @@ end)
 
 Killer:AddLabel("-----------------").TextSize = 25
 
+-- God Mode (join brawl)
 local godModeToggle = false
 Killer:AddSwitch("Good mode", function(State)
     godModeToggle = State
@@ -413,6 +375,7 @@ Killer:AddSwitch("Good mode", function(State)
     end
 end)
 
+-- Auto Follow System
 local following = false
 local followTarget = nil
 
@@ -440,6 +403,7 @@ local followDropdown = Killer:AddDropdown("Teleport player", function(selectedDi
         if target then
             followTarget = target.Name
             following = true
+            print("📝 Started following:", target.Name)
             followPlayer(target)
         end
     end
@@ -458,6 +422,7 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
+    -- Refresh list
     followDropdown:Clear()
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
@@ -473,6 +438,7 @@ end)
 Killer:AddButton("unfollow", function()
     following = false
     followTarget = nil
+    print("➖ Stopped following")
 end)
 
 task.spawn(function()
@@ -490,6 +456,7 @@ task.spawn(function()
     end
 end)
 
+-- Refollow when respawn
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(1)
     if following and followTarget then
@@ -500,21 +467,23 @@ LocalPlayer.CharacterAdded:Connect(function()
     end
 end)
 
+-- Auto slam "Ground Slam"
 local godDamageActive = false
 Killer:AddSwitch("auto slams", function(state)
     godDamageActive = state
     if state then
         task.spawn(function()
             while godDamageActive do
-                local groundSlam = LocalPlayer.Backpack:FindFirstChild("Ground Slam") or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Ground Slam"))
+                local player = LocalPlayer
+                local groundSlam = player.Backpack:FindFirstChild("Ground Slam") or (player.Character and player.Character:FindFirstChild("Ground Slam"))
                 if groundSlam then
-                    if groundSlam.Parent == LocalPlayer.Backpack then
-                        groundSlam.Parent = LocalPlayer.Character
+                    if groundSlam.Parent == player.Backpack then
+                        groundSlam.Parent = player.Character
                     end
                     if groundSlam:FindFirstChild("attackTime") then
                         groundSlam.attackTime.Value = 0
                     end
-                    muscleEvent:FireServer("slam")
+                    player.muscleEvent:FireServer("slam")
                     groundSlam:Activate()
                 end
                 task.wait(0.1)
@@ -522,6 +491,12 @@ Killer:AddSwitch("auto slams", function(state)
         end)
     end
 end)
+
+-- Auto Kill
+local targetDropdownItems = {}
+local targetPlayerNames = {}
+local selectedTarget = nil
+local autoKill = false
 
 Killer:AddSwitch("Auto Kill", function(bool)
     autoKill = bool
@@ -570,17 +545,25 @@ Killer:AddButton("Goofball Button", function()
                 return game:HttpGet(url)
             end)
             if success and response then
-                pcall(function()
+                local loadSuccess, err = pcall(function()
                     loadstring(response)()
                 end)
+                if not loadSuccess then
+                    warn("[Pegar Muerto] Error ejecutando raw:", url, err)
+                end
+            else
+                warn("[Pegar Muerto] No se pudo cargar:", url)
             end
         end)
     end
 end)
 
-LocalPlayer.Idled:Connect(function() 
-    VirtualUser:CaptureController() 
-    VirtualUser:ClickButton2(Vector2.new()) 
+-----------------------------------------
+
+-- Simplified Fast Rebirth Script (Labels & Calculators Removed)
+player.Idled:Connect(function()
+    virtualUser:CaptureController()
+    virtualUser:ClickButton2(Vector2.new())
 end)
 
 local function deleteAds()
@@ -599,21 +582,20 @@ end
 deleteAds()
 
 local fastTab = window:AddTab("Fast Farming")
-
 local isRunning = false
 
 local function managePets(petName)
     for _, folder in pairs(player.petsFolder:GetChildren()) do
         if folder:IsA("Folder") then
             for _, pet in pairs(folder:GetChildren()) do
-                ReplicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+                replicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
             end
         end
     end
     task.wait(0.1)
     for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
         if pet.Name == petName then
-            ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+            replicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
         end
     end
 end
@@ -621,21 +603,21 @@ end
 local function doRebirth()
     local rebirths = rebirthsStat.Value
     local strengthTarget = 5000 + (rebirths * 2550)
-    
+
     while isRunning and player.leaderstats.Strength.Value < strengthTarget do
         local reps = player.MembershipType == Enum.MembershipType.Premium and 12 or 20
         for _ = 1, reps do
-            muscleEvent:FireServer("rep")
+            muscleEvent:FireServer("reps")
         end
         task.wait(0.02)
     end
-    
+
     if isRunning and player.leaderstats.Strength.Value >= strengthTarget then
         managePets("Tribal Overlord")
         task.wait(0.25)
         local before = rebirthsStat.Value
         repeat
-            ReplicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            replicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
             task.wait(0.05)
         until rebirthsStat.Value > before or not isRunning
     end
@@ -657,12 +639,12 @@ fastTab:AddSwitch("Fast Rebirth", function(state)
 end)
 
 local sizeSwitch = fastTab:AddSwitch("Set Size 1", function(bool)
-    local running = bool
+    running = bool
     if running then
-        local thread = coroutine.create(function()
+        thread = coroutine.create(function()
             while running do
                 game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
-                task.wait(0.01)
+                wait(0.01)
             end
         end)
         coroutine.resume(thread)
@@ -673,66 +655,76 @@ local posLocked = false
 local lockedPosition = nil
 
 local function lockPosition()
-	if not posLocked or not lockedPosition then return end
-	local currentCharacter = player.Character
-	if not currentCharacter then return end
-	local rootPart = currentCharacter:FindFirstChild("HumanoidRootPart")
-	if not rootPart then return end
-	local existingPosition = rootPart:FindFirstChild("PositionLocker")
-	if existingPosition then
-		existingPosition.Position = lockedPosition
-	else
-		local bodyPosition = Instance.new("BodyPosition")
-		bodyPosition.Name = "PositionLocker"
-		bodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-		bodyPosition.Position = lockedPosition
-		bodyPosition.P = 100000
-		bodyPosition.Parent = rootPart
-	end
+    if not posLocked or not lockedPosition then
+        return
+    end
+
+    local currentCharacter = player.Character
+    if not currentCharacter then
+        return
+    end
+
+    local rootPart = currentCharacter:FindFirstChild("HumanoidRootPart")
+    if not rootPart then
+        return
+    end
+
+    local existingPosition = rootPart:FindFirstChild("PositionLocker")
+    if existingPosition then
+        existingPosition.Position = lockedPosition
+    else
+        local bodyPosition = Instance.new("BodyPosition")
+        bodyPosition.Name = "PositionLocker"
+        bodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyPosition.Position = lockedPosition
+        bodyPosition.P = 100000
+        bodyPosition.Parent = rootPart
+    end
 end
 
 local function unlockPosition()
-	local currentCharacter = player.Character
-	if currentCharacter then
-		local rootPart = currentCharacter:FindFirstChild("HumanoidRootPart")
-		if rootPart then
-			local existingPosition = rootPart:FindFirstChild("PositionLocker")
-			if existingPosition then
-				existingPosition:Destroy()
-			end
-		end
-	end
-	lockedPosition = nil
+    local currentCharacter = player.Character
+    if currentCharacter then
+        local rootPart = currentCharacter:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            local existingPosition = rootPart:FindFirstChild("PositionLocker")
+            if existingPosition then
+                existingPosition:Destroy()
+            end
+        end
+    end
+    lockedPosition = nil
 end
 
 local lockPositionSwitch = fastTab:AddSwitch("Lock Position", function(bool)
-	posLocked = bool
-	if bool then
-		local currentRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-		if currentRootPart then
-			lockedPosition = currentRootPart.Position
-		end
-		lockPosition()
-	else
-		unlockPosition()
-	end
+    posLocked = bool
+
+    if bool then
+        local currentRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if currentRootPart then
+            lockedPosition = currentRootPart.Position
+        end
+        lockPosition()
+    else
+        unlockPosition()
+    end
 end)
 
 player.CharacterAdded:Connect(function(newCharacter)
-	local rootPart = newCharacter:WaitForChild("HumanoidRootPart", 5)
-	if posLocked and rootPart then
-		lockedPosition = rootPart.Position
-		lockPosition()
-	end
+    local rootPart = newCharacter:WaitForChild("HumanoidRootPart", 5)
+    if posLocked and rootPart then
+        lockedPosition = rootPart.Position
+        lockPosition()
+    end
 end)
 
 task.spawn(function()
-	while true do
-		if posLocked then
-			lockPosition()
-		end
-		task.wait(0.1)
-	end
+    while true do
+        if posLocked then
+            lockPosition()
+        end
+        task.wait(0.1)
+    end
 end)
 
 fastTab:AddLabel("====================").TextSize = 17
@@ -747,22 +739,35 @@ local function getCurrentPing()
 end
 
 local function getAdaptiveSpeed(ping)
-    if ping < 80 then return 500 elseif ping < 150 then return 300 elseif ping < 250 then return 100 else return 50 end
+    if ping < 80 then
+        return 500
+    elseif ping < 150 then
+        return 300
+    elseif ping < 250 then
+        return 100
+    else
+        return 50
+    end
 end
 
 local function startAutoRep()
     local lastPingUpdate = tick()
     local currentPing = getCurrentPing()
+
     while farmRunning do
         if tick() - lastPingUpdate > 0.5 then
             currentPing = getCurrentPing()
             lastPingUpdate = tick()
         end
+
         local repsToFire = pingControl and getAdaptiveSpeed(currentPing) or repSpeed
         local delayBetweenBatches = math.clamp(currentPing / 2500, 0.001, 0.1)
+
         for repCount = 1, math.min(repsToFire, repSpeed) do
-            muscleEvent:FireServer("rep")
-            if repCount % 500 == 0 then task.wait(0) end
+            muscleEvent:FireServer("reps")
+            if repCount % 500 == 0 then
+                task.wait(0)
+            end
         end
         task.wait(delayBetweenBatches)
     end
@@ -770,7 +775,9 @@ end
 
 fastTab:AddTextBox("Rep Speed:", function(inputText)
     local speedValue = tonumber(inputText)
-    if speedValue then repSpeed = math.clamp(math.floor(speedValue), 1, 1000) end
+    if speedValue then
+        repSpeed = math.clamp(math.floor(speedValue), 1, 1000)
+    end
 end)
 
 fastTab:AddSwitch("Controlled Speed", function(isEnabled)
@@ -779,7 +786,9 @@ end):Set(true)
 
 fastTab:AddSwitch("Fast Rep", function(isEnabled)
     farmRunning = isEnabled
-    if farmRunning then task.spawn(startAutoRep) end
+    if farmRunning then
+        task.spawn(startAutoRep)
+    end
 end)
 
 fastTab:AddLabel("====================").TextSize = 17
@@ -788,16 +797,21 @@ local ProteinEggLabel = fastTab:AddLabel("Protein Eggs Owned: 0")
 ProteinEggLabel.TextSize = 14
 
 task.spawn(function()
-	while true do
-		local proteinEggCount = 0
-		if PlayerData.Backpack then
-			for _, item in ipairs(PlayerData.Backpack:GetChildren()) do
-				if item.Name == "Protein Egg" then proteinEggCount = proteinEggCount + 1 end
-			end
-		end
-		ProteinEggLabel.Text = "Protein Eggs: " .. proteinEggCount
-		task.wait(7.5)
-	end
+    while true do
+        local proteinEggCount = 0
+        local tropicalShakeCount = 0
+        if PlayerData.Backpack then
+            for _, item in ipairs(PlayerData.Backpack:GetChildren()) do
+                if item.Name == "Protein Egg" then
+                    proteinEggCount = proteinEggCount + 1
+                elseif item.Name == "Tropical Shake" then
+                    tropicalShakeCount = tropicalShakeCount + 1
+                end
+            end
+        end
+        ProteinEggLabel.Text = "Protein Eggs: " .. proteinEggCount
+        task.wait(7.5)
+    end
 end)
 
 local ProteinEggBoostLabel = fastTab:AddLabel("Protein Egg Boost: 00:00")
@@ -811,11 +825,12 @@ end
 
 task.spawn(function()
     while true do
-        local boostTimersFolder = LocalPlayer:FindFirstChild("boostTimersFolder")
+        local boostTimersFolder = game.Players.LocalPlayer:FindFirstChild("boostTimersFolder")
         if boostTimersFolder then
             local boost = boostTimersFolder:FindFirstChild("Protein Egg")
             if boost and boost:IsA("IntValue") then
-                ProteinEggBoostLabel.Text = "Protein Egg Timer: " .. formatTime(boost.Value)
+                local seconds = boost.Value
+                ProteinEggBoostLabel.Text = "Protein Egg Timer: " .. formatTime(seconds)
             else
                 ProteinEggBoostLabel.Text = "Protein Egg Timer: 00:00"
             end
@@ -827,13 +842,22 @@ task.spawn(function()
 end)
 
 local function useEggs()
-    local boost = LocalPlayer.boostTimersFolder:FindFirstChild("Protein Egg")
-    if boost and boost:IsA("IntValue") and boost.Value >= 5 then return end
+    local boost = game.Players.LocalPlayer.boostTimersFolder:FindFirstChild("Protein Egg")
+    if boost and boost:IsA("IntValue") then
+        local seconds = boost.Value
+        if seconds >= 5 then
+            return
+        end
+    end
+
     local tool = player.Character:FindFirstChild("Protein Egg") or player.Backpack:FindFirstChild("Protein Egg")
-    if tool then muscleEvent:FireServer("proteinEgg", tool) end
+    if tool then
+        muscleEvent:FireServer("proteinEgg", tool)
+    end
 end
 
 local running1 = false
+
 task.spawn(function()
     while true do
         if running1 then
@@ -845,17 +869,22 @@ task.spawn(function()
     end
 end)
 
-fastTab:AddSwitch("Auto Egg", function(state)
+local autoEggSwitch = fastTab:AddSwitch("Auto Egg", function(state)
     running1 = state
-    if state then useEggs() end
+    if state then
+        useEggs()
+    end
 end)
 
 local function useShakes()
     local tool = player.Character:FindFirstChild("Tropical Shake") or player.Backpack:FindFirstChild("Tropical Shake")
-    if tool then muscleEvent:FireServer("tropicalShake", tool) end
+    if tool then
+        muscleEvent:FireServer("tropicalShake", tool)
+    end
 end
 
 local running2 = false
+
 task.spawn(function()
     while true do
         if running2 then
@@ -867,49 +896,57 @@ task.spawn(function()
     end
 end)
 
-fastTab:AddSwitch("Auto Shake", function(state)
+local autoShakeSwitch = fastTab:AddSwitch("Auto Shake", function(state)
     running2 = state
-    if state then useShakes() end
+    if state then
+        useShakes()
+    end
 end)
 
-fastTab:AddSwitch("Spin Fortune Wheel", function(bool)
+local spinwheelSwitch = fastTab:AddSwitch("Spin Fortune Wheel", function(bool)
     _G.AutoSpinWheel = bool
+
     if bool then
         spawn(function()
-            while _G.AutoSpinWheel do
-                ReplicatedStorage.rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", ReplicatedStorage.fortuneWheelChances["Fortune Wheel"])
-                task.wait(1)
+            while _G.AutoSpinWheel and wait(1) do
+                game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"])
             end
         end)
     end
 end)
 
 local statPetDropdown = fastTab:AddDropdown("Perk Pet Equip", function(text)
-	local petsFolder = LocalPlayer.petsFolder
-	for _, folder in pairs(petsFolder:GetChildren()) do
-		if folder:IsA("Folder") then
-			for _, pet in pairs(folder:GetChildren()) do
-				ReplicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
-			end
-		end
-	end
-	task.wait(0.2)
-	local petsToEquip = {}
-	for _, pet in pairs(LocalPlayer.petsFolder.Unique:GetChildren()) do
-		if pet.Name == text then table.insert(petsToEquip, pet) end
-	end
-	for i = 1, math.min(8, #petsToEquip) do
-		ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", petsToEquip[i])
-		task.wait(0.1)
-	end
+    local petsFolder = game.Players.LocalPlayer.petsFolder
+    for _, folder in pairs(petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                game:GetService("ReplicatedStorage").rEvents.equipPetEvent:FireServer("unequipPet", pet)
+            end
+        end
+    end
+    task.wait(0.2)
+
+    local petName = text
+    local petsToEquip = {}
+
+    for _, pet in pairs(game.Players.LocalPlayer.petsFolder.Unique:GetChildren()) do
+        if pet.Name == petName then
+            table.insert(petsToEquip, pet)
+        end
+    end
+
+    for i = 1, math.min(8, #petsToEquip) do
+        game:GetService("ReplicatedStorage").rEvents.equipPetEvent:FireServer("equipPet", petsToEquip[i])
+        task.wait(0.1)
+    end
 end)
 statPetDropdown:Add("Swift Samurai")
 statPetDropdown:Add("Tribal Overlord")
 
-local char = player.Character or player.CharacterAdded:Wait()
+local char = player.Character or player.CharacterAdded:wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
-fastTab:AddButton("Jungle Lift",function()
+fastTab:AddButton("Jungle Lift", function()
     hrp.CFrame = CFrame.new(-8642.396484375, 6.7980651855, 2086.1030273)
     task.wait(0.2)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
@@ -917,7 +954,7 @@ fastTab:AddButton("Jungle Lift",function()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
 
-fastTab:AddButton("Jungle Squat",function()
+fastTab:AddButton("Jungle Squat", function()
     hrp.CFrame = CFrame.new(-8371.43359375, 6.79806327, 2858.88525390)
     task.wait(0.2)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
@@ -925,32 +962,40 @@ fastTab:AddButton("Jungle Squat",function()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
 
+==========================================
+
 local miscTab = window:AddTab("Misc")
 local mobileFolder = miscTab:AddFolder("Rock Farming ")
 
 local function gettool()
-    for _, v in pairs(LocalPlayer.Backpack:GetChildren()) do
-        if v.Name == "Punch" and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid:EquipTool(v)
+    for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+        if v.Name == "Punch" and game.Players.LocalPlayer.Character then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
         end
     end
-    muscleEvent:FireServer("punch", "leftHand")
-    muscleEvent:FireServer("punch", "rightHand")
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
 end
 
 local tinyIslandRockSwitch = mobileFolder:AddSwitch("Farm Tiny Island Rock", function(bool)
+    selectrock = "Tiny Island Rock"
     getgenv().autoFarm = bool
+
     if bool then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
-                if LocalPlayer.Durability.Value >= 0 then
-                    for _, v in pairs(workspace.machinesFolder:GetDescendants()) do
-                        if v.Name == "neededDurability" and v.Value == 0 and LocalPlayer.Character:FindFirstChild("LeftHand") and LocalPlayer.Character:FindFirstChild("RightHand") then
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 0.01)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 0.01)
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 0 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 0 and
+                            game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") and
+                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") then
+
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0.01)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 0.01)
                             gettool()
                         end
                     end
@@ -961,18 +1006,24 @@ local tinyIslandRockSwitch = mobileFolder:AddSwitch("Farm Tiny Island Rock", fun
 end)
 
 local starterIslandRockSwitch = mobileFolder:AddSwitch("Farm Starter Island Rock", function(bool)
+    selectrock = "Starter Island Rock"
     getgenv().autoFarm = bool
+
     if bool then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
-                if LocalPlayer.Durability.Value >= 100 then
-                    for _, v in pairs(workspace.machinesFolder:GetDescendants()) do
-                        if v.Name == "neededDurability" and v.Value == 100 and LocalPlayer.Character:FindFirstChild("LeftHand") and LocalPlayer.Character:FindFirstChild("RightHand") then
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 1)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 1)
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 100 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 100 and
+                            game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") and
+                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") then
+
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 1)
                             gettool()
                         end
                     end
@@ -983,18 +1034,24 @@ local starterIslandRockSwitch = mobileFolder:AddSwitch("Farm Starter Island Rock
 end)
 
 local legendBeachRockSwitch = mobileFolder:AddSwitch("Farm Legend Beach Rock", function(bool)
+    selectrock = "Legend Beach Rock"
     getgenv().autoFarm = bool
+
     if bool then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
-                if LocalPlayer.Durability.Value >= 5000 then
-                    for _, v in pairs(workspace.machinesFolder:GetDescendants()) do
-                        if v.Name == "neededDurability" and v.Value == 5000 and LocalPlayer.Character:FindFirstChild("LeftHand") and LocalPlayer.Character:FindFirstChild("RightHand") then
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 1)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 1)
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 5000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 5000 and
+                            game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") and
+                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") then
+
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 1)
                             gettool()
                         end
                     end
@@ -1005,18 +1062,24 @@ local legendBeachRockSwitch = mobileFolder:AddSwitch("Farm Legend Beach Rock", f
 end)
 
 local frostGymRockSwitch = mobileFolder:AddSwitch("Farm Frost Gym Rock", function(bool)
+    selectrock = "Frost Gym Rock"
     getgenv().autoFarm = bool
+
     if bool then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
-                if LocalPlayer.Durability.Value >= 150000 then
-                    for _, v in pairs(workspace.machinesFolder:GetDescendants()) do
-                        if v.Name == "neededDurability" and v.Value == 150000 and LocalPlayer.Character:FindFirstChild("LeftHand") and LocalPlayer.Character:FindFirstChild("RightHand") then
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 1)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 1)
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 150000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 150000 and
+                            game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") and
+                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") then
+
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 1)
                             gettool()
                         end
                     end
@@ -1027,18 +1090,24 @@ local frostGymRockSwitch = mobileFolder:AddSwitch("Farm Frost Gym Rock", functio
 end)
 
 local mythicalGymRockSwitch = mobileFolder:AddSwitch("Farm Mythical Gym Rock", function(bool)
+    selectrock = "Mythical Gym Rock"
     getgenv().autoFarm = bool
+
     if bool then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
-                if LocalPlayer.Durability.Value >= 400000 then
-                    for _, v in pairs(workspace.machinesFolder:GetDescendants()) do
-                        if v.Name == "neededDurability" and v.Value == 400000 and LocalPlayer.Character:FindFirstChild("LeftHand") and LocalPlayer.Character:FindFirstChild("RightHand") then
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 1)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 1)
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 400000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 400000 and
+                            game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") and
+                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") then
+
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 1)
                             gettool()
                         end
                     end
@@ -1049,18 +1118,24 @@ local mythicalGymRockSwitch = mobileFolder:AddSwitch("Farm Mythical Gym Rock", f
 end)
 
 local eternalGymRockSwitch = mobileFolder:AddSwitch("Farm Eternal Gym Rock", function(bool)
+    selectrock = "Eternal Gym Rock"
     getgenv().autoFarm = bool
+
     if bool then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
-                if LocalPlayer.Durability.Value >= 750000 then
-                    for _, v in pairs(workspace.machinesFolder:GetDescendants()) do
-                        if v.Name == "neededDurability" and v.Value == 750000 and LocalPlayer.Character:FindFirstChild("LeftHand") and LocalPlayer.Character:FindFirstChild("RightHand") then
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 1)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 1)
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 750000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 750000 and
+                            game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") and
+                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") then
+
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 1)
                             gettool()
                         end
                     end
@@ -1071,18 +1146,24 @@ local eternalGymRockSwitch = mobileFolder:AddSwitch("Farm Eternal Gym Rock", fun
 end)
 
 local legendGymRockSwitch = mobileFolder:AddSwitch("Farm Legend Gym Rock", function(bool)
+    selectrock = "Legend Gym Rock"
     getgenv().autoFarm = bool
+
     if bool then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
-                if LocalPlayer.Durability.Value >= 1000000 then
-                    for _, v in pairs(workspace.machinesFolder:GetDescendants()) do
-                        if v.Name == "neededDurability" and v.Value == 1000000 and LocalPlayer.Character:FindFirstChild("LeftHand") and LocalPlayer.Character:FindFirstChild("RightHand") then
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 1)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 1)
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 1000000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 1000000 and
+                            game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") and
+                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") then
+
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 1)
                             gettool()
                         end
                     end
@@ -1093,18 +1174,24 @@ local legendGymRockSwitch = mobileFolder:AddSwitch("Farm Legend Gym Rock", funct
 end)
 
 local muscleKingGymRockSwitch = mobileFolder:AddSwitch("Farm Muscle King Gym Rock", function(bool)
+    selectrock = "Muscle King Gym Rock"
     getgenv().autoFarm = bool
+
     if bool then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
-                if LocalPlayer.Durability.Value >= 5000000 then
-                    for _, v in pairs(workspace.machinesFolder:GetDescendants()) do
-                        if v.Name == "neededDurability" and v.Value == 5000000 and LocalPlayer.Character:FindFirstChild("LeftHand") and LocalPlayer.Character:FindFirstChild("RightHand") then
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 1)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 1)
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 5000000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 5000000 and
+                            game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and
+                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 1)
                             gettool()
                         end
                     end
@@ -1115,18 +1202,24 @@ local muscleKingGymRockSwitch = mobileFolder:AddSwitch("Farm Muscle King Gym Roc
 end)
 
 local ancientJungleRockSwitch = mobileFolder:AddSwitch("Farm Ancient Jungle Rock", function(bool)
+    selectrock = "Ancient Jungle Rock"
     getgenv().autoFarm = bool
+
     if bool then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
-                if LocalPlayer.Durability.Value >= 10000000 then
-                    for _, v in pairs(workspace.machinesFolder:GetDescendants()) do
-                        if v.Name == "neededDurability" and v.Value == 10000000 and LocalPlayer.Character:FindFirstChild("LeftHand") and LocalPlayer.Character:FindFirstChild("RightHand") then
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.RightHand, 1)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 0)
-                            firetouchinterest(v.Parent.Rock, LocalPlayer.Character.LeftHand, 1)
+                if game:GetService("Players").LocalPlayer.Durability.Value >= 10000000 then
+                    for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                        if v.Name == "neededDurability" and v.Value == 10000000 and
+                            game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") and
+                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") then
+
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 1)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 0)
+                            firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.LeftHand, 1)
                             gettool()
                         end
                     end
@@ -1138,55 +1231,94 @@ end)
 
 local rebirthsFolder = miscTab:AddFolder("Rebirths")
 
+-- Target Rebirth
 rebirthsFolder:AddTextBox("Rebirth Target", function(text)
     local newValue = tonumber(text)
     if newValue and newValue > 0 then
         targetRebirthValue = newValue
+
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Objetivo Actualizado",
+            Text = "Nuevo objetivo: " .. tostring(targetRebirthValue) .. " renacimientos",
+            Duration = 3
+        })
+    else
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Entrada Inválida",
+            Text = "Por favor ingresa un número mayor que 0",
+            Duration = 3
+        })
     end
 end)
 
+-- Auto Rebirth Target (stops when goal is reached)
 local targetSwitch = rebirthsFolder:AddSwitch("Auto Rebirth Target", function(bool)
     _G.targetRebirthActive = bool
+
     if bool then
+        -- Turn off infinite rebirth if active
+        if _G.infiniteRebirthActive and infiniteSwitch then
+            infiniteSwitch:Set(false)
+            _G.infiniteRebirthActive = false
+        end
+
         spawn(function()
             while _G.targetRebirthActive do
                 local currentRebirths = LocalPlayer.leaderstats.Rebirths.Value
+
                 if currentRebirths >= targetRebirthValue then
                     targetSwitch:Set(false)
                     _G.targetRebirthActive = false
+
+                    game:GetService("StarterGui"):SetCore("SendNotification", {
+                        Title = "¡Objetivo Alcanzado!",
+                        Text = "Has alcanzado " .. tostring(targetRebirthValue) .. " renacimientos",
+                        Duration = 5
+                    })
                     break
                 end
-                ReplicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+
+                game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
                 task.wait(0.15)
             end
         end)
     end
 end)
 
-local infiniteSwitch = rebirthsFolder:AddSwitch("Auto Rebirth (Infinite)", function(bool)
+-- Auto Rebirth Infinite
+infiniteSwitch = rebirthsFolder:AddSwitch("Auto Rebirth (Infinite)", function(bool)
     _G.infiniteRebirthActive = bool
+
     if bool then
+        -- Turn off target rebirth if active
+        if _G.targetRebirthActive and targetSwitch then
+            targetSwitch:Set(false)
+            _G.targetRebirthActive = false
+        end
+
         spawn(function()
             while _G.infiniteRebirthActive do
-                ReplicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer("rebirthRequest")
                 task.wait(0.15)
             end
         end)
     end
 end)
 
+-- Auto Size 1
 rebirthsFolder:AddSwitch("Auto Size 1", function(bool)
     _G.autoSizeActive = bool
     if bool then
         spawn(function()
             while _G.autoSizeActive do
-                ReplicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
+                game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
                 task.wait()
             end
         end)
     end
 end)
 
+-- Auto Teleport to Muscle King
 rebirthsFolder:AddSwitch("Auto Teleport to Muscle King", function(bool)
     _G.teleportActive = bool
     if bool then
@@ -1204,148 +1336,290 @@ end)
 local teleport = miscTab:AddFolder("other")
 
 teleport:AddButton("Spawn", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(2, 8, 115)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Spawn",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("Secret Area", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(1947, 2, 6191)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Secret Area",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("Tiny Island", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(-34, 7, 1903)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Tiny Island",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("Frozen Island", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(-2600.00244, 3.67686558, -403.884369)
+    humanoidRootPart.CFrame = CFrame.new(-2600.00244, 3.67686558, -403.884369, 0.0873617008, 1.0482899e-09, 0.99617666, 3.07204253e-08, 1, -3.7464023e-09, -0.99617666, 3.09302628e-08, 0.0873617008)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Frozen Island",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("Mythical Island", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(2255, 7, 1071)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Mythical Island",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("lava Island", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(-6768, 7, -1287)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to ***** Island",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("Legend Island", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(4604, 991, -3887)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Legend Island",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("Muscle King Island", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(-8646, 17, -5738)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Muscle King",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("Jungle Island", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(-8659, 6, 2384)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Jungle Island",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("Brawl Lava", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(4471, 119, -8836)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Brawl Lava",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("Brawl Desert", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(960, 17, -7398)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Brawl Desert",
+        Duration = 0
+    })
 end)
 
 teleport:AddButton("Brawl Regular", function()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoidRootPart.CFrame = CFrame.new(-1849, 20, -6335)
+
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Teletransporte",
+        Text = "Teleported to Brawl Regular",
+        Duration = 0
+    })
 end)
+---------------------
 
 local autoEquipToolsFolder = miscTab:AddFolder("Tools")
+-- or whatever name you prefer
 
 autoEquipToolsFolder:AddButton("Gamepass AutoLift", function()
-    local gamepassFolder = ReplicatedStorage.gamepassIds
-    if not LocalPlayer:FindFirstChild("ownedGamepasses") then
-        Instance.new("Folder", LocalPlayer).Name = "ownedGamepasses"
+    local gamepassFolder = game:GetService("ReplicatedStorage").gamepassIds
+    local player = game:GetService("Players").LocalPlayer
+
+    if not player:FindFirstChild("ownedGamepasses") then
+        Instance.new("Folder", player).Name = "ownedGamepasses"
     end
+
     for _, gamepass in pairs(gamepassFolder:GetChildren()) do
         local value = Instance.new("IntValue")
         value.Name = gamepass.Name
         value.Value = gamepass.Value
-        value.Parent = LocalPlayer.ownedGamepasses
+        value.Parent = player.ownedGamepasses
     end
+    print("All gamepasses granted!")
 end)
 
 autoEquipToolsFolder:AddSwitch("Auto Weight", function(Value)
     _G.AutoWeight = Value
     if Value then
-        task.spawn(function()
-            while _G.AutoWeight do
-                muscleEvent:FireServer("rep")
-                task.wait(0.1)
-            end
-        end)
+        local weightTool = game.Players.LocalPlayer.Backpack:FindFirstChild("Weight")
+        if weightTool then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(weightTool)
+        end
+    else
+        local character = game.Players.LocalPlayer.Character
+        local equipped = character:FindFirstChild("Weight")
+        if equipped then
+            equipped.Parent = game.Players.LocalPlayer.Backpack
+        end
     end
+
+    task.spawn(function()
+        while _G.AutoWeight do
+            if not _G.AutoWeight then break end
+            game:GetService("Players").LocalPlayer.muscleEvent:FireServer("reps")
+            task.wait(0.1)
+        end
+    end)
 end)
 
 autoEquipToolsFolder:AddSwitch("Auto Pushups", function(Value)
     _G.AutoPushups = Value
     if Value then
-        task.spawn(function()
-            while _G.AutoPushups do
-                muscleEvent:FireServer("rep")
-                task.wait(0.1)
-            end
-        end)
+        local tool = game.Players.LocalPlayer.Backpack:FindFirstChild("Pushups")
+        if tool then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
+        end
+    else
+        local character = game.Players.LocalPlayer.Character
+        local equipped = character:FindFirstChild("Pushups")
+        if equipped then
+            equipped.Parent = game.Players.LocalPlayer.Backpack
+        end
     end
+
+    task.spawn(function()
+        while _G.AutoPushups do
+            if not _G.AutoPushups then break end
+            game:GetService("Players").LocalPlayer.muscleEvent:FireServer("reps")
+            task.wait(0.1)
+        end
+    end)
 end)
 
 autoEquipToolsFolder:AddSwitch("Auto Handstands", function(Value)
     _G.AutoHandstands = Value
     if Value then
-        task.spawn(function()
-            while _G.AutoHandstands do
-                muscleEvent:FireServer("rep")
-                task.wait(0.1)
-            end
-        end)
+        local tool = game.Players.LocalPlayer.Backpack:FindFirstChild("Handstands")
+        if tool then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
+        end
+    else
+        local character = game.Players.LocalPlayer.Character
+        local equipped = character:FindFirstChild("Handstands")
+        if equipped then
+            equipped.Parent = game.Players.LocalPlayer.Backpack
+        end
     end
+
+    task.spawn(function()
+        while _G.AutoHandstands do
+            if not _G.AutoHandstands then break end
+            game:GetService("Players").LocalPlayer.muscleEvent:FireServer("reps")
+            task.wait(0.1)
+        end
+    end)
 end)
 
 autoEquipToolsFolder:AddSwitch("Auto Situps", function(Value)
     _G.AutoSitups = Value
     if Value then
-        task.spawn(function()
-            while _G.AutoSitups do
-                muscleEvent:FireServer("rep")
-                task.wait(0.1)
-            end
-        end)
+        local tool = game.Players.LocalPlayer.Backpack:FindFirstChild("Situps")
+        if tool then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
+        end
+    else
+        local character = game.Players.LocalPlayer.Character
+        local equipped = character:FindFirstChild("Situps")
+        if equipped then
+            equipped.Parent = game.Players.LocalPlayer.Backpack
+        end
     end
+
+    task.spawn(function()
+        while _G.AutoSitups do
+            if not _G.AutoSitups then break end
+            game:GetService("Players").LocalPlayer.muscleEvent:FireServer("reps")
+            task.wait(0.1)
+        end
+    end)
 end)
 
 autoEquipToolsFolder:AddSwitch("Auto Punch", function(Value)
     _G.fastHitActive = Value
+
     if Value then
+        -- Equip + fast attack setup
         task.spawn(function()
             while _G.fastHitActive do
-                local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+                if not _G.fastHitActive then break end
+                local player = game.Players.LocalPlayer
+                local punch = player.Backpack:FindFirstChild("Punch")
                 if punch then
-                    punch.Parent = LocalPlayer.Character
+                    punch.Parent = player.Character
                     if punch:FindFirstChild("attackTime") then
                         punch.attackTime.Value = 0
                     end
@@ -1353,17 +1627,33 @@ autoEquipToolsFolder:AddSwitch("Auto Punch", function(Value)
                 task.wait(0.1)
             end
         end)
+
+        -- Main punch loop
         task.spawn(function()
             while _G.fastHitActive do
-                local character = LocalPlayer.Character
+                if not _G.fastHitActive then break end
+                local player = game.Players.LocalPlayer
+                player.muscleEvent:FireServer("punch", "rightHand")
+                player.muscleEvent:FireServer("punch", "leftHand")
+
+                local character = player.Character
                 if character then
                     local punchTool = character:FindFirstChild("Punch")
-                    if punchTool then punchTool:Activate() end
+                    if punchTool then
+                        punchTool:Activate()
+                    end
                 end
                 task.wait(0)
             end
         end)
+    else
+        -- Unequip on disable
+        local character = game.Players.LocalPlayer.Character
+        if character then
+            local equipped = character:FindFirstChild("Punch")
+            if equipped then
+                equipped.Parent = game.Players.LocalPlayer.Backpack
+            end
+        end
     end
 end)
-
-print("404 Hub Loaded")
