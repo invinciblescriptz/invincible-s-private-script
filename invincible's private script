@@ -161,7 +161,7 @@ Killer:AddSwitch("Auto Punch [without animation ]", function(state)
     autoPunchNoAnim = state
     task.spawn(function()
         while autoPunchNoAnim do
-            local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
+            local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch"))
             if punch then
                 if punch.Parent ~= LocalPlayer.Character then
                     punch.Parent = LocalPlayer.Character
@@ -786,7 +786,7 @@ end):Set(true)
 
 fastTab:AddSwitch("Fast Rep", function(isEnabled)
     farmRunning = isEnabled
-    if farmRunning then
+    if isEnabled then
         task.spawn(startAutoRep)
     end
 end)
@@ -1213,8 +1213,8 @@ local ancientJungleRockSwitch = mobileFolder:AddSwitch("Farm Ancient Jungle Rock
                     for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
                         if v.Name == "neededDurability" and v.Value == 10000000 and
                             game.Players.LocalPlayer.Character and
-                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") and
-                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") then
+                            game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") and
+                            game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
 
                             firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 0)
                             firetouchinterest(v.Parent.Rock, game.Players.LocalPlayer.Character.RightHand, 1)
@@ -1635,7 +1635,6 @@ autoEquipToolsFolder:AddSwitch("Auto Punch", function(Value)
                 local player = game.Players.LocalPlayer
                 player.muscleEvent:FireServer("punch", "rightHand")
                 player.muscleEvent:FireServer("punch", "leftHand")
-
                 local character = player.Character
                 if character then
                     local punchTool = character:FindFirstChild("Punch")
