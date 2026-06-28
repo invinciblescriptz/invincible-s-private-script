@@ -25,7 +25,6 @@ local availableTargets = {}
 
 local titleLabel = Killer:AddLabel("Select Pack")
 titleLabel.TextSize = 18
-titleLabel.Font = Enum.Font.Merriweather 
 titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 
 local dropdown = Killer:AddDropdown("Select Pet", function(text)
@@ -142,7 +141,9 @@ Killer:AddSwitch("Auto Whitelist Friends", function(state)
     end
 end)
 
-Killer:AddLabel("HayMakers").TextSize = 25
+local titleLabel = Killer:AddLabel("punching")
+titleLabel.TextSize = 18 
+titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 
 Killer:AddSwitch("Auto Equip Punch", function(state)
     autoEquipPunch = state
@@ -240,7 +241,10 @@ Killer:AddSwitch("Fast punch", function(state)
     end
 end)
 
-Killer:AddLabel("OP Kill Players").TextSize = 25
+local titleLabel = Killer:AddLabel("OP Player Killing")
+titleLabel.TextSize = 18
+titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+
 local targetDropdown = Killer:AddDropdown("Select Target", function(displayName)
     for _, player in ipairs(Players:GetPlayers()) do
         if player.DisplayName == displayName then
@@ -393,7 +397,7 @@ Killer:AddLabel("-----------------").TextSize = 25
 
 -- God Mode (join brawl)
 local godModeToggle = false
-Killer:AddSwitch("Good mode", function(State)
+Killer:AddSwitch("God mode (for pussies)", function(State)
     godModeToggle = State
     if State then
         task.spawn(function()
