@@ -25,6 +25,7 @@ local availableTargets = {}
 
 local titleLabel = Killer:AddLabel("Select Pack")
 titleLabel.TextSize = 18
+titleLabel.Font = Enum.Font.Merriweather 
 titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 
 local dropdown = Killer:AddDropdown("Select Pet", function(text)
@@ -141,9 +142,116 @@ Killer:AddSwitch("Auto Whitelist Friends", function(state)
     end
 end)
 
-local titleLabel = Killer:AddLabel("punching")
-titleLabel.TextSize = 18 
-titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+-- Remove Punch Anim
+Killer:AddLabel("Punch animation").TextSize = 25
+local function setupAnimationBlocking()
+    local char = game.Players.LocalPlayer.Character
+    if not char or not char:FindFirstChild("Humanoid") then return end
+    local humanoid = char:FindFirstChild("Humanoid")
+    for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+        if track.Animation then
+            local animId = track.Animation.AnimationId
+            local animName = track.Name:lower()
+            if animId == "rbxassetid://3638729053" or
+               animId == "rbxassetid://3638767427" or
+               animName:match("punch") or
+               animName:match("attack") or
+               animName:match("right") then
+                track:Stop()
+            end
+        end
+    end
+    if not _G.AnimBlockConnection then
+        local connection = humanoid.AnimationPlayed:Connect(function(track)
+            if track.Animation then
+                local animId = track.Animation.AnimationId
+                local animName = track.Name:lower()
+                if animId == "rbxassetid://3638729053" or
+                   animId == "rbxassetid://3638767427" or
+                   animName:match("punch") or
+                   animName:match("attack") or
+                   animName:match("right") then
+                    track:Stop()
+                end
+            end
+        end)
+        _G.AnimBlockConnection = connection
+    end
+end
+
+local function overrideToolActivation()
+    local function processTool(tool)
+        if tool and (tool.Name == "Punch" or tool.Name:match("Attack") or tool.Name:match("Right")) then
+            if not tool:GetAttribute("ActivatedOverride") then
+                tool:SetAttribute("ActivatedOverride", true)
+                local connection = tool.Activated:Connect(function()
+                    task.wait(0.05)
+                    local char = game.Players.LocalPlayer.Character
+                    if char and char:FindFirstChild("Humanoid") then
+                        for _, track in pairs(char.Humanoid:GetPlayingAnimationTracks()) do
+                            if track.Animation then
+                                local animId = track.Animation.AnimationId
+                                local animName = track.Name:lower()
+                                if animId == "rbxassetid://3638729053" or
+                                   animId == "rbxassetid://3638767427" or
+                                   animName:match("punch") or
+                                   animName:match("attack") or
+                                   animName:match("right") then
+                                    track:Stop()
+                                end
+                            end
+                        end
+                    end
+                end)
+                if not _G.ToolConnections then _G.ToolConnections = {} end
+                _G.ToolConnections[tool] = connection
+            end
+        end
+    end
+    for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+        processTool(tool)
+    end
+    local char = game.Players.LocalPlayer.Character
+    if char then
+        for _, tool in pairs(char:GetChildren()) do
+            if tool:IsA("Tool") then
+                processTool(tool)
+            end
+        end
+    end
+    if not _G.BackpackAddedConnection then
+        _G.BackpackAddedConnection = game.Players.LocalPlayer.Backpack.ChildAdded:Connect(function(child)
+            if child:IsA("Tool") then
+                task.wait(0.1)
+                processTool(child)
+            end
+        end)
+    end
+    if not _G.CharacterToolAddedConnection and char then
+        _G.CharacterToolAddedConnection = char.ChildAdded:Connect(function(child)
+            if child:IsA("Tool") then
+                task.wait(0.1)
+                processTool(child)
+            end
+        end)
+    end
+end
+
+local function RecoveryPunch()
+    if _G.AnimBlockConnection then _G.AnimBlockConnection:Disconnect() _G.AnimBlockConnection = nil end
+    if _G.AnimMonitorConnection then _G.AnimMonitorConnection:Disconnect() _G.AnimMonitorConnection = nil end
+    if _G.ToolConnections then
+        for _, conn in pairs(_G.ToolConnections) do if conn then conn:Disconnect() end end
+        _G.ToolConnections = nil
+    end
+    if _G.BackpackAddedConnection then _G.BackpackAddedConnection:Disconnect() _G.BackpackAddedConnection = nil end
+    if _G.CharacterToolAddedConnection then _G.CharacterToolAddedConnection:Disconnect() _G.CharacterToolAddedConnection = nil end
+    if _G.CharacterAddedConnection then _G.CharacterAddedConnection:Disconnect() _G.CharacterAddedConnection = nil end
+end
+
+Killer:AddButton("Recover Punch Anim", function()
+    RecoveryPunch()
+end)
 
 Killer:AddSwitch("Auto Equip Punch", function(state)
     autoEquipPunch = state
@@ -241,10 +349,7 @@ Killer:AddSwitch("Fast punch", function(state)
     end
 end)
 
-local titleLabel = Killer:AddLabel("OP Player Killing")
-titleLabel.TextSize = 18
-titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-
+Killer:AddLabel("OP Kill Players").TextSize = 25
 local targetDropdown = Killer:AddDropdown("Select Target", function(displayName)
     for _, player in ipairs(Players:GetPlayers()) do
         if player.DisplayName == displayName then
@@ -397,7 +502,7 @@ Killer:AddLabel("-----------------").TextSize = 25
 
 -- God Mode (join brawl)
 local godModeToggle = false
-Killer:AddSwitch("God mode (for pussies)", function(State)
+Killer:AddSwitch("Good mode", function(State)
     godModeToggle = State
     if State then
         task.spawn(function()
@@ -587,6 +692,203 @@ Killer:AddButton("Goofball Button", function()
                 end
             else
                 warn("[Pegar Muerto] No se pudo cargar:", url)
+            end
+        end)
+    end
+end)
+
+local AutoFarm = window:AddTab("Farm OP")
+AutoFarm:Show()
+
+
+-- 1ÃƒÂ¯Ã‚Â¸Ã‚ÂÃƒÂ¢Ã†â€™Ã‚Â£ Switch: Fuerza OP
+AutoFarm:AddSwitch("OP STRENGTH", function(state)
+    getgenv()._AutoRepFarmEnabled = state
+    warn("[Auto Rep Farm] Estado cambiado a:", state and "ON" or "OFF")
+end)
+
+-- ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ ConfiguraciÃƒÆ’Ã‚Â³n optimizada
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Stats = game:GetService("Stats")
+local LocalPlayer = Players.LocalPlayer
+
+local PET_NAME = "Swift Samurai"
+local ROCK_NAME = "Rock5M"
+local PROTEIN_EGG_NAME = "ProteinEgg"
+local PROTEIN_EGG_INTERVAL = 30 * 60 -- 30 min
+local REPS_PER_CYCLE = 180
+local REP_DELAY = 0.01
+local ROCK_INTERVAL = 1
+local MAX_PING = 1100
+
+local HumanoidRootPart
+local lastProteinEggTime = 0
+local lastRockTime = 0
+local RockRef = workspace:FindFirstChild(ROCK_NAME)
+
+local function getPing()
+    local success, ping = pcall(function()
+        return Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+    end)
+    return success and ping or 999
+end
+
+local function updateCharacterRefs()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    HumanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
+end
+
+local function equipPet()
+    local petsFolder = LocalPlayer:FindFirstChild("petsFolder")
+    if petsFolder and petsFolder:FindFirstChild("Unique") then
+        for _, pet in pairs(petsFolder.Unique:GetChildren()) do
+            if pet.Name == PET_NAME then
+                ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                break
+            end
+        end
+    end
+end
+
+local function eatProteinEgg()
+    if LocalPlayer:FindFirstChild("Backpack") then
+        for _, item in pairs(LocalPlayer.Backpack:GetChildren()) do
+            if item.Name == PROTEIN_EGG_NAME then
+                ReplicatedStorage.rEvents.eatEvent:FireServer("eat", item)
+                break
+            end
+        end
+    end
+end
+
+local function hitRock()
+    if not RockRef or not RockRef.Parent then
+        RockRef = workspace:FindFirstChild(ROCK_NAME)
+    end
+    if RockRef and HumanoidRootPart then
+        HumanoidRootPart.CFrame = RockRef.CFrame * CFrame.new(0, 0, -5)
+        ReplicatedStorage.rEvents.hitEvent:FireServer("hit", RockRef)
+    end
+end
+
+-- ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Loop principal
+if not getgenv()._AutoRepFarmLoop then
+    getgenv()._AutoRepFarmLoop = true
+
+    task.spawn(function()
+        updateCharacterRefs()
+        equipPet()
+        lastProteinEggTime = tick()
+        lastRockTime = tick()
+
+        while true do
+            if getgenv()._AutoRepFarmEnabled then
+                local ping = getPing()
+                if ping > MAX_PING then
+                    warn("[Auto Rep Farm] Ping alto ("..math.floor(ping).."ms), pausando 5s...")
+                    task.wait(5)
+                else
+                    if LocalPlayer:FindFirstChild("muscleEvent") then
+                        for i = 1, REPS_PER_CYCLE do
+                            LocalPlayer.muscleEvent:FireServer("rep")
+                        end
+                    end
+
+                    if tick() - lastProteinEggTime >= PROTEIN_EGG_INTERVAL then
+                        eatProteinEgg()
+                        lastProteinEggTime = tick()
+                    end
+
+                    if tick() - lastRockTime >= ROCK_INTERVAL then
+                        hitRock()
+                        lastRockTime = tick()
+                    end
+
+                    task.wait(REP_DELAY)
+                end
+            else
+                task.wait(1)
+            end
+        end
+    end)
+end
+
+
+
+-- 2ÃƒÂ¯Ã‚Â¸Ã‚ÂÃƒÂ¢Ã†â€™Ã‚Â£ Switch: Eat Egg (30 Min)
+local autoEatEnabled = false
+local function eatProteinEggNew()
+    local player = game.Players.LocalPlayer
+    local backpack = player:WaitForChild("Backpack")
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    local egg = backpack:FindFirstChild("Protein Egg")
+    if egg then
+        egg.Parent = character
+        pcall(function()
+            egg:Activate()
+        end)
+        print("[AutoEgg] Protein Egg consumido.")
+    else
+        warn("[AutoEgg] No se encontrÃƒÆ’Ã‚Â³ Protein Egg en Backpack.")
+    end
+end
+
+task.spawn(function()
+    while true do
+        if autoEatEnabled then
+            eatProteinEggNew()
+            task.wait(1800)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+AutoFarm:AddSwitch("Eat Egg (30 Min)", function(state)
+    autoEatEnabled = state
+    print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
+end)
+
+
+-- 4ÃƒÂ¯Ã‚Â¸Ã‚ÂÃƒÂ¢Ã†â€™Ã‚Â£ Switch: Anti Lag
+AutoFarm:AddSwitch("Anti Lag", function(State)
+    local lighting = game:GetService("Lighting")
+    if State then
+        for _, gui in pairs(LocalPlayer.PlayerGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then gui:Destroy() end
+        end
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("ParticleEmitter") or obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+                obj:Destroy()
+            end
+        end
+        for _, v in pairs(lighting:GetChildren()) do
+            if v:IsA("Sky") then v:Destroy() end
+        end
+        local darkSky = Instance.new("Sky")
+        darkSky.Name = "DarkSky"
+        darkSky.SkyboxBk = "rbxassetid://0"
+        darkSky.SkyboxDn = "rbxassetid://0"
+        darkSky.SkyboxFt = "rbxassetid://0"
+        darkSky.SkyboxLf = "rbxassetid://0"
+        darkSky.SkyboxRt = "rbxassetid://0"
+        darkSky.SkyboxUp = "rbxassetid://0"
+        darkSky.Parent = lighting
+        lighting.Brightness = 0
+        lighting.ClockTime = 0
+        lighting.TimeOfDay = "00:00:00"
+        lighting.OutdoorAmbient = Color3.new(0,0,0)
+        lighting.Ambient = Color3.new(0,0,0)
+        lighting.FogColor = Color3.new(0,0,0)
+        lighting.FogEnd = 100
+        task.spawn(function()
+            while State do
+                task.wait(5)
+                if not lighting:FindFirstChild("DarkSky") then
+                    darkSky:Clone().Parent = lighting
+                end
             end
         end)
     end
@@ -848,7 +1150,6 @@ local ancientJungleRockSwitch = mobileFolder:AddSwitch("Farm Ancient Jungle Rock
         end)
     end
 end) 
-
 
 local rebirthsFolder = miscTab:AddFolder("Rebirths")
 
@@ -1278,761 +1579,3 @@ autoEquipToolsFolder:AddSwitch("Auto Punch", function(Value)
         end
     end
 end)
-
-=============================================================
-
-local specsTab = window:AddTab("Stats")
-
-local statsFolder = specsTab:AddFolder("player specs")
-
--- ====================== PLAYER STATS ======================
-
-local SelectPlayerName = ""
-
-local PlayerDrop = statsFolder:AddDropdown("Select Player", function(Value)
-    SelectPlayerName = Value:match("| (.+)") or Value
-end)
-
-for _, Plr in pairs(Players:GetPlayers()) do
-    PlayerDrop:Add(Plr.DisplayName .. " | " .. Plr.Name)
-end
-
-local function FormatDisplay(value)
-    if not value then return "N/A" end
-    local normal = tostring(value):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
-    local abbreviations = {"", "K", "M", "B", "T", "Qa", "Qi"}
-    local num, i = value, 1
-    while num >= 1000 do
-        num = num / 1000
-        i = i + 1
-    end
-    local abbr = string.format("%.2f", num) .. abbreviations[i]
-    return "[ " .. normal .. " | " .. abbr .. " ]"
-end
-
--- Basic Stats
-statsFolder:AddLabel("--- Basic Stats ---")
-local Update = statsFolder:AddLabel("Strength: N/A")
-local Update1 = statsFolder:AddLabel("Gems: N/A")
-local Update2 = statsFolder:AddLabel("Rebirth: N/A")
-local Update3 = statsFolder:AddLabel("Agility: N/A")
-local Update4 = statsFolder:AddLabel("Durability: N/A")
-local Update5 = statsFolder:AddLabel("Kills: N/A")
-local Update6 = statsFolder:AddLabel("Muscle King Time: N/A")
-local Update9 = statsFolder:AddLabel("Current Map: N/A")
-local Update10 = statsFolder:AddLabel("Custom Size: N/A")
-local Update11 = statsFolder:AddLabel("Custom Speed: N/A")
-local Update12 = statsFolder:AddLabel("Evil Karma: N/A")
-local Update13 = statsFolder:AddLabel("Good Karma: N/A")
-
--- Update Loop
-task.spawn(function()
-    while task.wait() do
-        if SelectPlayerName ~= "" then
-            local player = Players:FindFirstChild(SelectPlayerName)
-            if player then
-                local ls = player:FindFirstChild("leaderstats")
-                
-                if ls then
-                    if ls:FindFirstChild("Strength") then
-                        Update.Text = "Strength: " .. FormatDisplay(ls.Strength.Value)
-                    end
-                    if ls:FindFirstChild("Rebirths") then
-                        Update2.Text = "Rebirth: " .. FormatDisplay(ls.Rebirths.Value)
-                    end
-                    if ls:FindFirstChild("Kills") then
-                        Update5.Text = "Kills: " .. FormatDisplay(ls.Kills.Value)
-                    end
-                end
-
-                Update1.Text = "Gems: " .. FormatDisplay(player:FindFirstChild("Gems") and player.Gems.Value)
-                Update3.Text = "Agility: " .. FormatDisplay(player:FindFirstChild("Agility") and player.Agility.Value)
-                Update4.Text = "Durability: " .. FormatDisplay(player:FindFirstChild("Durability") and player.Durability.Value)
-                Update6.Text = "Muscle King Time: " .. FormatDisplay(player:FindFirstChild("muscleKingTime") and player.muscleKingTime.Value)
-                Update10.Text = "Custom Size: " .. FormatDisplay(player:FindFirstChild("customSize") and player.customSize.Value)
-                Update11.Text = "Custom Speed: " .. FormatDisplay(player:FindFirstChild("customSpeed") and player.customSpeed.Value)
-                Update12.Text = "Evil Karma: " .. FormatDisplay(player:FindFirstChild("evilKarma") and player.evilKarma.Value)
-                Update13.Text = "Good Karma: " .. FormatDisplay(player:FindFirstChild("goodKarma") and player.goodKarma.Value)
-
-                Update9.Text = "Current Map: " .. (player:FindFirstChild("currentMap") and tostring(player.currentMap.Value) or "N/A")
-            end
-        end
-    end
-end)
-
-statsFolder:AddLabel("────────────────────────────")
-statsFolder:AddLabel("Advanced Stats:").TextSize = 24
-
-local enemyHealthLabel = statsFolder:AddLabel("Enemy Health: N/A")
-local playerDamageLabel = statsFolder:AddLabel("Your Damage: N/A")
-local hitsToKillLabel = statsFolder:AddLabel("Hits to Kill: N/A")
-
--- Advanced Stats Functions
-local function calculateEnemyHealth(target)
-    if not target then return 0 end
-    local base = target:FindFirstChild("Durability") and target.Durability.Value or 0
-    local mult = 1
-    if target:FindFirstChild("ultimatesFolder") and target.ultimatesFolder:FindFirstChild("Infernal Health") then
-        mult = mult + 0.15 * (target.ultimatesFolder["Infernal Health"].Value or 0)
-    end
-    return base * mult
-end
-
-local function calculateLocalPlayerDamage()
-    local str = LocalPlayer.leaderstats and LocalPlayer.leaderstats:FindFirstChild("Strength")
-    if not str then return 0 end
-    local base = str.Value * 0.0667
-    local mult = 1
-    if LocalPlayer:FindFirstChild("ultimatesFolder") and LocalPlayer.ultimatesFolder:FindFirstChild("Demon Damage") then
-        mult = mult + math.min(0.1 * LocalPlayer.ultimatesFolder["Demon Damage"].Value, 0.5)
-    end
-    return base * mult
-end
-
-local function calculateHitsToKill(health, damage)
-    if damage <= 0 then return "∞" end
-    local hits = math.ceil(health / damage)
-    return hits > 50 and "∞" or hits
-end
-
--- Advanced Stats Loop
-task.spawn(function()
-    while task.wait(0.3) do
-        local target = Players:FindFirstChild(SelectPlayerName)
-        if target then
-            local health = calculateEnemyHealth(target)
-            local dmg = calculateLocalPlayerDamage()
-            local hits = calculateHitsToKill(health, dmg)
-
-            enemyHealthLabel.Text = "Enemy Health: " .. FormatDisplay(health)
-            playerDamageLabel.Text = "Your Damage: " .. FormatDisplay(dmg)
-            hitsToKillLabel.Text = "Hits to Kill: " .. tostring(hits)
-        else
-            enemyHealthLabel.Text = "Enemy Health: N/A"
-            playerDamageLabel.Text = "Your Damage: N/A"
-            hitsToKillLabel.Text = "Hits to Kill: N/A"
-        end
-    end
-end)
-
---------------------------------------
-
-
-local statsFolder = specsTab:AddFolder("Gained Stats (Fast Farming)")
-
--- Place your code inside a function or directly here
-local function initializeStatsTracking()
-    local player = game.Players.LocalPlayer
-    local leaderstats = player:WaitForChild("leaderstats")
-    local strengthStat = leaderstats:WaitForChild("Strength")
-    local durabilityStat = player:WaitForChild("Durability")
-
-    local function formatNumber(number)
-        local isNegative = number < 0
-        number = math.abs(number)
-        if number >= 1e15 then
-            return (isNegative and "-" or "") .. string.format("%.2fQa", number / 1e15)
-        elseif number >= 1e12 then
-            return (isNegative and "-" or "") .. string.format("%.2fT", number / 1e12)
-        elseif number >= 1e9 then
-            return (isNegative and "-" or "") .. string.format("%.2fB", number / 1e9)
-        elseif number >= 1e6 then
-            return (isNegative and "-" or "") .. string.format("%.2fM", number / 1e6)
-        elseif number >= 1e3 then
-            return (isNegative and "-" or "") .. string.format("%.2fK", number / 1e3)
-        else
-            return (isNegative and "-" or "") .. string.format("%.2f", number)
-        end
-    end
-
-    local stopwatchLabel = statsFolder:AddLabel("Fast Rep Time: 0d 0h 0m 0s")
-    stopwatchLabel.TextSize = 20
-
-    local projectedStrengthLabel = statsFolder:AddLabel("Strength Rate: 0 /Hour | 0 /Day | 0 /Week | 0 /Month")
-    projectedStrengthLabel.TextSize = 20
-
-    local projectedDurabilityLabel = statsFolder:AddLabel("Durability Rate: 0 /Hour | 0 /Day | 0 /Week | 0 /Month")
-    projectedDurabilityLabel.TextSize = 20
-
-    statsFolder:AddLabel("").TextSize = 10
-
-    local statsLabel = statsFolder:AddLabel("Stats:")
-    statsLabel.TextSize = 24
-
-    local strengthLabel = statsFolder:AddLabel("Strength: 0 | Gained: 0")
-    strengthLabel.TextSize = 20
-
-    local durabilityLabel = statsFolder:AddLabel("Durability: 0 | Gained: 0")
-    durabilityLabel.TextSize = 20
-
-    local startTime = tick()
-    local initialStrength = strengthStat.Value
-    local initialDurability = durabilityStat.Value
-    local trackingStarted = false
-
-    local strengthHistory = {}
-    local durabilityHistory = {}
-    local calculationInterval = 10
-
-    task.spawn(function()
-        local lastCalcTime = tick()
-        while true do
-            local currentTime = tick()
-            local currentStrength = strengthStat.Value
-            local currentDurability = durabilityStat.Value
-
-            if not trackingStarted and (currentStrength - initialStrength) >= 100e9 then
-                trackingStarted = true
-                startTime = tick()
-                strengthHistory = {}
-                durabilityHistory = {}
-            end
-
-            if trackingStarted then
-                local elapsedTime = currentTime - startTime
-                local days = math.floor(elapsedTime / (24 * 3600))
-                local hours = math.floor((elapsedTime % (24 * 3600)) / 3600)
-                local minutes = math.floor((elapsedTime % 3600) / 60)
-                local seconds = math.floor(elapsedTime % 60)
-
-                -- Update stopwatch label
-                stopwatchLabel.Text = string.format("Fast Rep Time: %dd %dh %dm %ds", days, hours, minutes, seconds)
-
-                -- Update stats labels
-                local sessionStrengthDelta = currentStrength - initialStrength
-                local sessionDurabilityDelta = currentDurability - initialDurability
-
-                strengthLabel.Text = "Strength: " .. formatNumber(currentStrength) .. " | Gained: " .. formatNumber(sessionStrengthDelta)
-                durabilityLabel.Text = "Durability: " .. formatNumber(currentDurability) .. " | Gained: " .. formatNumber(sessionDurabilityDelta)
-
-                -- Record history
-                table.insert(strengthHistory, {time = currentTime, value = currentStrength})
-                table.insert(durabilityHistory, {time = currentTime, value = currentDurability})
-
-                -- Remove old entries
-                while #strengthHistory > 0 and currentTime - strengthHistory[1].time > calculationInterval do
-                    table.remove(strengthHistory, 1)
-                end
-                while #durabilityHistory > 0 and currentTime - durabilityHistory[1].time > calculationInterval do
-                    table.remove(durabilityHistory, 1)
-                end
-
-                -- Calculate rates
-                if currentTime - lastCalcTime >= calculationInterval then
-                    lastCalcTime = currentTime
-
-                    if #strengthHistory >= 2 then
-                        local strengthDelta = strengthHistory[#strengthHistory].value - strengthHistory[1].value
-                        local strengthPerSecond = strengthDelta / calculationInterval
-                        local strengthPerHour = math.floor(strengthPerSecond * 3600)
-                        local strengthPerDay = math.floor(strengthPerSecond * 86400)
-                        local strengthPerWeek = math.floor(strengthPerSecond * 604800)
-                        local strengthPerMonth = math.floor(strengthPerSecond * 2592000)
-
-                        -- Update projected strength label
-                        projectedStrengthLabel.Text = "Strength Rate: " .. formatNumber(strengthPerHour) .. "/Hour | " .. formatNumber(strengthPerDay) .. "/Day | " .. formatNumber(strengthPerWeek) .. "/Week | " .. formatNumber(strengthPerMonth) .. "/Month"
-                    end
-
-                    if #durabilityHistory >= 2 then
-                        local durabilityDelta = durabilityHistory[#durabilityHistory].value - durabilityHistory[1].value
-                        local durabilityPerSecond = durabilityDelta / calculationInterval
-                        local durabilityPerHour = math.floor(durabilityPerSecond * 3600)
-                        local durabilityPerDay = math.floor(durabilityPerSecond * 86400)
-                        local durabilityPerWeek = math.floor(durabilityPerSecond * 604800)
-                        local durabilityPerMonth = math.floor(durabilityPerSecond * 2592000)
-
-                        -- Update projected durability label
-                        projectedDurabilityLabel.Text = "Durability Rate: " .. formatNumber(durabilityPerHour) .. "/Hour | " .. formatNumber(durabilityPerDay) .. "/Day | " .. formatNumber(durabilityPerWeek) .. "/Week | " .. formatNumber(durabilityPerMonth) .. "/Month"
-                    end
-                end
-            end
-
-            task.wait(0.05)
-        end
-    end)
-end
-
-initializeStatsTracking()
-
-
---------------------------------------
-
-
-local pets = window:AddTab(       "Crystals")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- Crystal data structure with exact names from your original code
-local crystalData = {
-    ["Blue Crystal"] = {
-        {name = "Blue Birdie", rarity = "Basic"},
-        {name = "Orange Hedgehog", rarity = "Basic"},
-        {name = "Blue Aura", rarity = "Basic"},
-        {name = "Red Kitty", rarity = "Basic"},
-        {name = "Dark Vampy", rarity = "Advanced"},
-        {name = "Blue Bunny", rarity = "Basic"},
-        {name = "Red Aura", rarity = "Basic"},
-        {name = "Blue Aura", rarity = "Basic"},
-        {name = "Green Aura", rarity = "Basic"},
-        {name = "Purple Aura", rarity = "Basic"},
-        {name = "Red Aura", rarity = "Basic"},
-        {name = "Yellow Aura", rarity = "Basic"}
-    },
-    ["Green Crystal"] = {
-        {name = "Silver Dog", rarity = "Basic"},
-        {name = "Green Aura", rarity = "Advanced"},
-        {name = "Dark Golem", rarity = "Advanced"},
-        {name = "Green Butterfly", rarity = "Advanced"},
-        {name = "Crimson Falcon", rarity = "Rare"},
-        {name = "Red Aura", rarity = "Basic"},
-        {name = "Blue Aura", rarity = "Basic"},
-        {name = "Green Aura", rarity = "Basic"},
-        {name = "Purple Aura", rarity = "Basic"},
-        {name = "Red Aura", rarity = "Basic"},
-        {name = "Yellow Aura", rarity = "Basic"}
-    },
-    ["Frost Crystal"] = {
-        {name = "Yellow Butterfly", rarity = "Advanced"},
-        {name = "Purple Dragon", rarity = "Rare"},
-        {name = "Blue Pheonix", rarity = "Epic"},
-        {name = "Orange Pegasus", rarity = "Rare"},
-        {name = "Lightning", rarity = "Rare"},
-        {name = "Electro", rarity = "Advanced"}
-    },
-    ["Mythical Crystal"] = {
-        {name = "Purple Falcon", rarity = "Rare"},
-        {name = "Red Dragon", rarity = "Rare"},
-        {name = "Blue Firecaster", rarity = "Epic"},
-        {name = "Golden Pheonix", rarity = "Epic"},
-        {name = "Power Lightning", rarity = "Rare"},
-        {name = "Dark Lightning", rarity = "Epic"}
-    },
-    ["Inferno Crystal"] = {
-        {name = "Red Firecaster", rarity = "Epic"},
-        {name = "Infernal Dragon", rarity = "Unique"},
-        {name = "White Pegasus", rarity = "Rare"},
-        {name = "Golden Pheonix", rarity = "Epic"},
-        {name = "Inferno", rarity = "Epic"},
-        {name = "Dark Storm", rarity = "Unique"}
-    },
-    ["Legends Crystal"] = {
-        {name = "Ultra Birdie", rarity = "Unique"},
-        {name = "Magic Butterfly", rarity = "Unique"},
-        {name = "Green Firecaster", rarity = "Epic"},
-        {name = "White Pheonix", rarity = "Epic"},
-        {name = "Supernova", rarity = "Epic"},
-        {name = "Purple Nova", rarity = "Unique"}
-    },
-    ["Muscle Elite Crystal"] = {
-        {name = "Frostwave Legends Penguin", rarity = "Rare"},
-        {name = "Phantom Genesis Dragon", rarity = "Rare"},
-        {name = "Dark Legends Manticore", rarity = "Epic"},
-        {name = "Ultimate Supernova Pegasus", rarity = "Epic"},
-        {name = "Aether Spirit Bunny", rarity = "Unique"},
-        {name = "Cybernetic Showdown Dragon", rarity = "Unique"}
-    },
-    ["Galaxy Oracle Crystal"] = {
-        {name = "Eternal Strike Leviathan", rarity = "Rare"},
-        {name = "Lightning Strike Phantom", rarity = "Epic"},
-        {name = "Darkstar Hunter", rarity = "Unique"},
-        {name = "Muscle King", rarity = "Unique"},
-        {name = "Azure Tundra", rarity = "Epic"},
-        {name = "Ultra Inferno", rarity = "Rare"}
-    },
-    ["Jungle Crystal"] = {
-        {name = "Entropic Blast", rarity = "Unique"},
-        {name = "Muscle Sensei", rarity = "Unique"},
-        {name = "Grand Supernova", rarity = "Epic"},
-        {name = "Neon Guardian", rarity = "Unique"},
-        {name = "Eternal Megastrike", rarity = "Unique"},
-        {name = "Golden Viking", rarity = "Epic"},
-        {name = "Astral Electro", rarity = "Epic"},
-        {name = "Dark Electro", rarity = "Epic"},
-        {name = "Enchanted Mirage", rarity = "Epic"},
-        {name = "Ultra Mirage", rarity = "Unique"},
-        {name = "Unstable Mirage", rarity = "Unique"}
-    }
-}
-
--- Function to collect all unique pets and auras
-local function getAllPetsAndAuras()
-    local allPets = {}
-    local allAuras = {}
-    
-    for crystalName, pets in pairs(crystalData) do
-        for _, pet in ipairs(pets) do
-            if string.find(pet.name, "Aura") then
-                if not allAuras[pet.name] then
-                    allAuras[pet.name] = {name = pet.name, rarity = pet.rarity, crystal = crystalName}
-                end
-            else
-                if not allPets[pet.name] then
-                    allPets[pet.name] = {name = pet.name, rarity = pet.rarity, crystal = crystalName}
-                end
-            end
-        end
-    end
-    
-    return allPets, allAuras
-end
-
--- Function to find which crystal contains a specific pet/aura
-local function findCrystalForItem(itemName)
-    for crystalName, pets in pairs(crystalData) do
-        for _, pet in ipairs(pets) do
-            if pet.name == itemName then
-                return crystalName
-            end
-        end
-    end
-    return nil
-end
-
--- Variables to track current selections
-local selectedPet = ""
-local selectedAura = ""
-
--- Get all pets and auras
-local allPets, allAuras = getAllPetsAndAuras()
-
-pets:AddLabel("=== Buy pets and auras ===")
-
--- Pet dropdown
-local petDropdown = pets:AddDropdown("Select pet", function(text)
-    selectedPet = text
-    local crystal = findCrystalForItem(text)
-    print("Pet selected: " .. text .. " (Found in: " .. (crystal or "Unknown") .. ")")
-end)
-
--- Add all pets manually (sorted by rarity)
--- Basic Pets
-petDropdown:Add("Blue Birdie (Basic)")
-petDropdown:Add("Orange Hedgehog (Basic)")
-petDropdown:Add("Red Kitty (Basic)")
-petDropdown:Add("Blue Bunny (Basic)")
-petDropdown:Add("Silver Dog (Basic)")
-
--- Advanced Pets
-petDropdown:Add("Dark Vampy (Advanced)")
-petDropdown:Add("Dark Golem (Advanced)")
-petDropdown:Add("Green Butterfly (Advanced)")
-petDropdown:Add("Yellow Butterfly (Advanced)")
-
--- Rare Pets
-petDropdown:Add("Crimson Falcon (Rare)")
-petDropdown:Add("Purple Dragon (Rare)")
-petDropdown:Add("Orange Pegasus (Rare)")
-petDropdown:Add("Purple Falcon (Rare)")
-petDropdown:Add("Red Dragon (Rare)")
-petDropdown:Add("White Pegasus (Rare)")
-petDropdown:Add("Frostwave Legends Penguin (Rare)")
-petDropdown:Add("Phantom Genesis Dragon (Rare)")
-petDropdown:Add("Eternal Strike Leviathan (Rare)")
-
--- Epic Pets
-petDropdown:Add("Blue Pheonix (Epic)")
-petDropdown:Add("Blue Firecaster (Epic)")
-petDropdown:Add("Golden Pheonix (Epic)")
-petDropdown:Add("Red Firecaster (Epic)")
-petDropdown:Add("Green Firecaster (Epic)")
-petDropdown:Add("White Pheonix (Epic)")
-petDropdown:Add("Dark Legends Manticore (Epic)")
-petDropdown:Add("Ultimate Supernova Pegasus (Epic)")
-petDropdown:Add("Lightning Strike Phantom (Epic)")
-petDropdown:Add("Golden Viking (Epic)")
-
--- Unique Pets
-petDropdown:Add("Infernal Dragon (Unique)")
-petDropdown:Add("Ultra Birdie (Unique)")
-petDropdown:Add("Magic Butterfly (Unique)")
-petDropdown:Add("Aether Spirit Bunny (Unique)")
-petDropdown:Add("Cybernetic Showdown Dragon (Unique)")
-petDropdown:Add("Darkstar Hunter (Unique)")
-petDropdown:Add("Muscle Sensei (Unique)")
-petDropdown:Add("Neon Guardian (Unique)")
-
--- Aura dropdown
-local auraDropdown = pets:AddDropdown("Select Aura", function(text)
-    selectedAura = text
-    local crystal = findCrystalForItem(text)
-    print("Aura selected: " .. text .. " (Found in: " .. (crystal or "Unknown") .. ")")
-end)
-
--- Add all auras manually (sorted by rarity)
--- Basic Auras
-auraDropdown:Add("Blue Aura (Basic)")
-auraDropdown:Add("Green Aura (Basic)")
-auraDropdown:Add("Purple Aura (Basic)")
-auraDropdown:Add("Red Aura (Basic)")
-auraDropdown:Add("Yellow Aura (Basic)")
-auraDropdown:Add("Ultra Inferno  (Rare)")
-auraDropdown:Add("Azure Tundra (Epic)")
-auraDropdown:Add("Grand Supernova (Epic)")
-auraDropdown:Add("Muscle King (Unique)")
-auraDropdown:Add("Entropic Blast (Unique)")
-auraDropdown:Add("Eternal Megastrike (Unique)")
-
-pets:AddLabel("=== System to buys===")
-
--- Auto buy pet toggle
-pets:AddSwitch("Auto Buy Pet", function(bool)
-    _G.AutoBuyPet = bool
-    
-    if bool then
-        if selectedPet == "" then
-            print("Please select a pet first!")
-            return
-        end)
-        
-        -- Extract pet name from dropdown selection (remove rarity part)
-        local petName = selectedPet:match("^(.-)%s*%(")
-        if not petName then
-            petName = selectedPet
-        end
-        
-        local crystal = findCrystalForItem(petName)
-        if not crystal then
-            print("Could not find crystal for pet: " .. petName)
-            return
-        end
-        
-        print("Auto buy pet started for: " .. petName .. " from " .. crystal)
-        spawn(function()
-            while _G.AutoBuyPet and selectedPet ~= "" do
-                local petToBuy = ReplicatedStorage.cPetShopFolder:FindFirstChild(petName)
-                if petToBuy then
-                    ReplicatedStorage.cPetShopRemote:InvokeServer(petToBuy)
-                    print("Bought pet: " .. petName)
-                else
-                    print("Pet not found: " .. petName)
-                end
-                task.wait(0.1)
-            end
-        end)
-    else
-        print("Auto buy pet stopped")
-    end
-end)
-
--- Auto buy aura toggle
-pets:AddSwitch("Auto buy Aura", function(bool)
-    _G.AutoBuyAura = bool
-    
-    if bool then
-        if selectedAura == "" then
-            print("Please select an aura first!")
-            return
-        end)
-        
-        -- Extract aura name from dropdown selection (remove rarity part)
-        local auraName = selectedAura:match("^(.-)%s*%(")
-        if not auraName then
-            auraName = selectedAura
-        end
-        
-        local crystal = findCrystalForItem(auraName)
-        if not crystal then
-            print("Could not find crystal for aura: " .. auraName)
-            return
-        end
-        
-        print("Auto buy aura started for: " .. auraName .. " from " .. crystal)
-        spawn(function()
-            while _G.AutoBuyAura and selectedAura ~= "" do
-                local auraToBuy = ReplicatedStorage.cPetShopFolder:FindFirstChild(auraName)
-                if auraToBuy then
-                    ReplicatedStorage.cPetShopRemote:InvokeServer(auraToBuy)
-                    print("Bought aura: " .. auraName)
-                else
-                    print("Aura not found: " .. auraName)
-                end
-                task.wait(0.1)
-            end
-        end)
-    else
-        print("Auto buy aura stopped")
-    end
-end)
-
-
-
-local Gift = window:AddTab("Gift")
-Gift:AddLabel("Gifting Protein egg:").TextSize = 22
-
-local proteinEggLabel = Gift:AddLabel("Protein Eggs: 0")
-proteinEggLabel.TextSize = 20
-
-local selectedEggPlayer = nil
-local eggCount = 0
-
-local eggDropdown = Gift:AddDropdown("Player to Gift Eggs", function(selectedDisplayName)
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr.DisplayName == selectedDisplayName then
-            selectedEggPlayer = plr
-            break
-        end
-    end
-end)
-
-for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= Players.LocalPlayer then
-        eggDropdown:Add(plr.DisplayName)
-    end
-end
-
-Players.PlayerAdded:Connect(function(plr)
-    if plr ~= Players.LocalPlayer then
-        eggDropdown:Add(plr.DisplayName)
-    end
-end)
-
-Gift:AddTextBox("Amount of Eggs", function(text)
-    eggCount = tonumber(text) or 0
-end)
-
-Gift:AddButton("Gift Eggs", function()
-    if selectedEggPlayer and eggCount > 0 then
-        for i = 1, eggCount do
-            local egg = Players.LocalPlayer.consumablesFolder:FindFirstChild("Protein Egg")
-            if egg then
-                ReplicatedStorage.rEvents.giftRemote:InvokeServer("giftRequest", selectedEggPlayer, egg)
-                task.wait(0.1)
-            end
-        end
-    end
-end)
-
-Gift:AddLabel("Gifting Tropical Shakes:").TextSize = 22
-
-local tropicalShakeLabel = Gift:AddLabel("Tropical Shakes: 0")
-tropicalShakeLabel.TextSize = 18
-
-local selectedShakePlayer = nil
-local shakeCount = 0
-
-local shakeDropdown = Gift:AddDropdown("Player to Gift Tropical Shakes", function(selectedDisplayName)
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr.DisplayName == selectedDisplayName then
-            selectedShakePlayer = plr
-            break
-        end
-    end
-end)
-
-for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= Players.LocalPlayer then
-        shakeDropdown:Add(plr.DisplayName)
-    end
-end
-
-Players.PlayerAdded:Connect(function(plr)
-    if plr ~= Players.LocalPlayer then
-        shakeDropdown:Add(plr.DisplayName)
-    end
-end)
-
-Gift:AddTextBox("Tropical Shakes gift", function(text)
-    shakeCount = tonumber(text) or 0
-end)
-
-Gift:AddButton("Gift Tropical Shakes", function()
-    if selectedShakePlayer and shakeCount > 0 then
-        for i = 1, shakeCount do
-            local shake = Players.LocalPlayer.consumablesFolder:FindFirstChild("Tropical Shake")
-            if shake then
-                ReplicatedStorage.rEvents.giftRemote:InvokeServer("giftRequest", selectedShakePlayer, shake)
-                task.wait(0.1)
-            end
-        end
-    end
-end)
-
-local function updateItemCount()
-    local proteinEggCount = 0
-    local tropicalShakeCount = 0
-
-    local backpack = Players.LocalPlayer:WaitForChild("Backpack")
-    if backpack then
-        for _, item in ipairs(backpack:GetChildren()) do
-            if item.Name == "Protein Egg" then
-                proteinEggCount = proteinEggCount + 1
-            elseif item.Name == "Tropical Shake" or item.Name == "PiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â±as" then
-                tropicalShakeCount = tropicalShakeCount + 1
-            end
-        end
-    end
-
-    proteinEggLabel.Text = "Protein Eggs: " .. proteinEggCount
-    tropicalShakeLabel.Text = "Tropical Shakes: " .. tropicalShakeCount
-end
-
-task.spawn(function()
-    while true do
-        updateItemCount()
-        task.wait(0.25)
-    end
-end)
-
-
-local itemList = {
-    "Tropical Shake",
-    "Energy Shake",
-    "Protein Bar",
-    "TOUGH Bar",
-    "Protein Shake",
-    "ULTRA Shake",
-    "Energy Bar"
-}
-
-local function formatEventName(itemName)
-    local parts = {}
-    for word in itemName:gmatch("%S+") do
-        table.insert(parts, word:lower())
-    end
-    for i = 2, #parts do
-        parts[i] = parts[i]:sub(1, 1):upper() .. parts[i]:sub(2)
-    end
-    return table.concat(parts)
-end
-
-local function activateRandomItems(count)
-    local shuffledItems = {}
-    for _, item in ipairs(itemList) do
-        table.insert(shuffledItems, item)
-    end
-    for i = #shuffledItems, 2, -1 do
-        local j = math.random(i)
-        shuffledItems[i], shuffledItems[j] = shuffledItems[j], shuffledItems[i]
-    end
-    for i = 1, math.min(count, #shuffledItems) do
-        local tool =
-            player.Character:FindFirstChild(shuffledItems[i]) or player.Backpack:FindFirstChild(shuffledItems[i])
-        if tool then
-            local eventName = formatEventName(shuffledItems[i])
-            player.muscleEvent:FireServer(eventName, tool)
-        end
-    end
-end
-
-local eatingRunning = false
-task.spawn(
-    function()
-        while true do
-            if eatingRunning then
-                activateRandomItems(4)
-                task.wait(0.5)
-            else
-                task.wait(0.5)
-            end
-        end
-    end
-)
-
-Gift:AddButton(
-    "Eat Everything",
-    function(state)
-        eatingRunning = state
-        if state then
-            activateRandomItems(4)
-        end
-    end
-)
