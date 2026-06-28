@@ -2044,7 +2044,7 @@ end
 --script begin 
 local window = library:AddWindow("invincible priv", {
 	main_color = Color3.fromRGB(0, 0, 0),
-	min_size = Vector2.new(660, 740),
+	min_size = Vector2.new(660, 870),
 	can_resize = false,
 })
 
