@@ -1279,9 +1279,7 @@ autoEquipToolsFolder:AddSwitch("Auto Punch", function(Value)
     end
 end)
 
----------------------
-
-
+=============================================================
 
 local specsTab = window:AddTab("Stats")
 
