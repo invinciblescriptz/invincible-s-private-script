@@ -397,7 +397,7 @@ Killer:AddLabel("-----------------").TextSize = 25
 
 -- God Mode (join brawl)
 local godModeToggle = false
-Killer:AddSwitch("Good mode", function(State)
+Killer:AddSwitch("God mode (for pussies)", function(State)
     godModeToggle = State
     if State then
         task.spawn(function()
