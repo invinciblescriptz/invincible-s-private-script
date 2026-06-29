@@ -2438,26 +2438,62 @@ Killer:AddSwitch("View Player", function(bool)
 end)
 
 
-Killer:AddSwitch("NaN", function()
-    -- Original NaN size change
-    local args = {"changeSize", 0/0}
-    game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
-    
-    -- Teleport to the given CFrame
+Killer:AddSwitch("NaN, function()
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
     local root = character:WaitForChild("HumanoidRootPart", 5)
     
-    if root then
-        local targetCFrame = CFrame.new(
-            -38.9849625, 0.111833394, 23.6454487,
-            0.228692636, 5.38890532e-08, 0.973498702,
-            9.52623491e-09, 1, -5.75939509e-08,
-            -0.973498702, 2.24450893e-08, 0.228692636
-        )
-        root.CFrame = targetCFrame
-    end
+    if not root then return end
+    
+    -- Target CFrame
+    local targetCFrame = CFrame.new(
+        -38.9849625, 0.111833394, 23.6454487,
+        0.228692636, 5.38890532e-08, 0.973498702,
+        9.52623491e-09, 1, -5.75939509e-08,
+        -0.973498702, 2.24450893e-08, 0.228692636
+    )
+    
+    -- Original NaN size change
+    local args = {"changeSize", 0/0}
+    game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
+    
+    -- Teleport
+    root.CFrame = targetCFrame
+    
+    -- Position Lock (keeps you stuck there)
+    task.spawn(function()
+        while task.wait(0.05) do
+            if not (root and root.Parent) then break end
+            root.CFrame = targetCFrame
+            root.Velocity = Vector3.new(0, 0, 0)
+            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        end
+    end)
 end)
+
+Killer:AddSwitch("Lock Pos", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local root = character:WaitForChild("HumanoidRootPart", 5)
+    
+    if not root then return end
+    
+    -- Capture current position & rotation
+    local targetCFrame = root.CFrame
+    
+    -- Strong position lock
+    task.spawn(function()
+        while task.wait(0.03) do
+            if not (root and root.Parent) then break end
+            
+            root.CFrame = targetCFrame
+            root.Velocity = Vector3.new(0, 0, 0)
+            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        end
+    end)
+end)
+
 local titleLabel = Killer:AddLabel("AUTO KILL")
 titleLabel.TextSize = 18
 titleLabel.Font = Enum.Font.Bangers        
