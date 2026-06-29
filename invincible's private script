@@ -2753,154 +2753,7 @@ deleteAds()
 
 local fastTab = window:AddTab("Fast Farming")
 
-local isRunning = false
-
-local function managePets(petName)
-    for _, folder in pairs(player.petsFolder:GetChildren()) do
-        if folder:IsA("Folder") then
-            for _, pet in pairs(folder:GetChildren()) do
-                replicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
-            end
-        end
-    end
-    task.wait(0.1)
-    for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
-        if pet.Name == petName then
-            replicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
-        end
-    end
-end
-
-local function doRebirth()
-    local rebirths = rebirthsStat.Value
-    local strengthTarget = 5000 + (rebirths * 2550)
-    
-    while isRunning and player.leaderstats.Strength.Value < strengthTarget do
-        local reps = player.MembershipType == Enum.MembershipType.Premium and 12 or 20
-        for _ = 1, reps do
-            muscleEvent:FireServer("rep")
-        end
-        task.wait(0.02)
-    end
-    
-    if isRunning and player.leaderstats.Strength.Value >= strengthTarget then
-        managePets("Tribal Overlord")
-        task.wait(0.25)
-        local before = rebirthsStat.Value
-        repeat
-            replicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-            task.wait(0.05)
-        until rebirthsStat.Value > before or not isRunning
-    end
-end
-
-local function fastRebirthLoop()
-    while isRunning do
-        managePets("Swift Samurai")
-        doRebirth()
-        task.wait(0.5)
-    end
-end
-
-
-fastTab:AddSwitch("Fast Rebirth", function(state)
-    isRunning = state
-    if isRunning then
-        task.spawn(fastRebirthLoop)
-    end
-end)
-
-local sizeSwitch = fastTab:AddSwitch("Set Size 1", function(bool)
-    running = bool
-    if running then
-        thread = coroutine.create(function()
-            while running do
-                game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
-                wait(0.01)
-            end
-        end)
-        coroutine.resume(thread)
-    end
-end)
-
-local posLocked = false
-local lockedPosition = nil
-
-local function lockPosition()
-	if not posLocked or not lockedPosition then
-		return
-	end
-
-	local currentCharacter = player.Character
-	if not currentCharacter then
-		return
-	end
-
-	local rootPart = currentCharacter:FindFirstChild("HumanoidRootPart")
-	if not rootPart then
-		return
-	end
-
-	local existingPosition = rootPart:FindFirstChild("PositionLocker")
-
-	if existingPosition then
-		existingPosition.Position = lockedPosition
-	else
-		local bodyPosition = Instance.new("BodyPosition")
-		bodyPosition.Name = "PositionLocker"
-		bodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-		bodyPosition.Position = lockedPosition
-		bodyPosition.P = 100000
-		bodyPosition.Parent = rootPart
-	end
-end
-
-local function unlockPosition()
-	local currentCharacter = player.Character
-	if currentCharacter then
-		local rootPart = currentCharacter:FindFirstChild("HumanoidRootPart")
-		if rootPart then
-			local existingPosition = rootPart:FindFirstChild("PositionLocker")
-			if existingPosition then
-				existingPosition:Destroy()
-			end
-		end
-	end
-	lockedPosition = nil
-end
-
-local lockPositionSwitch = fastTab:AddSwitch("Lock Position", function(bool)
-	posLocked = bool
-
-	if bool then
-		local currentRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-		if currentRootPart then
-			lockedPosition = currentRootPart.Position
-		end
-		lockPosition()
-	else
-		unlockPosition()
-	end
-end)
-
-player.CharacterAdded:Connect(function(newCharacter)
-	local rootPart = newCharacter:WaitForChild("HumanoidRootPart", 5)
-	if posLocked and rootPart then
-		lockedPosition = rootPart.Position
-		lockPosition()
-	end
-end)
-
-task.spawn(function()
-	while true do
-		if posLocked then
-			lockPosition()
-		end
-		task.wait(0.1)
-	end
-end)
-
-local titleLabel = Killer:AddLabel("_________________________")
+local titleLabel = fastTab:AddLabel("_________________________")
 titleLabel.TextSize = 18
 titleLabel.Font = Enum.Font.Bangers        
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -2949,18 +2802,6 @@ local function startAutoRep()
         task.wait(delayBetweenBatches)
     end
 end
-
-fastTab:AddTextBox("Rep Speed:", function(inputText)
-    local speedValue = tonumber(inputText)
-    if speedValue then
-        repSpeed = math.clamp(math.floor(speedValue), 1, 1000)
-    end
-end)
-
-fastTab:AddSwitch("Controlled Speed", function(isEnabled)
-    pingControl = isEnabled
-end):Set(true)
-
 fastTab:AddSwitch("Fast Rep", function(isEnabled)
     farmRunning = isEnabled
     if farmRunning then
@@ -2969,56 +2810,10 @@ fastTab:AddSwitch("Fast Rep", function(isEnabled)
 end)
 
 
-local titleLabel = Killer:AddLabel("_________________________")
+local titleLabel = fastTab:AddLabel("_________________________")
 titleLabel.TextSize = 18
 titleLabel.Font = Enum.Font.Bangers        
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-local ProteinEggLabel = fastTab:AddLabel("Protein Eggs Owned: 0")
-ProteinEggLabel.TextSize = 14
-
-task.spawn(function()
-	while true do
-		local proteinEggCount = 0
-		local tropicalShakeCount = 0
-		if PlayerData.Backpack then
-			for _, item in ipairs(PlayerData.Backpack:GetChildren()) do
-				if item.Name == "Protein Egg" then proteinEggCount = proteinEggCount + 1
-				elseif item.Name == "Tropical Shake" then tropicalShakeCount = tropicalShakeCount + 1 end
-			end
-		end
-		ProteinEggLabel.Text = "Protein Eggs: " .. proteinEggCount
-		task.wait(7.5)
-	end
-end)
-
-local ProteinEggBoostLabel = fastTab:AddLabel("Protein Egg Boost: 00:00")
-ProteinEggBoostLabel.TextSize = 14
-
-local function formatTime(seconds)
-    local m = math.floor(seconds / 60)
-    local s = seconds % 60
-    return string.format("%02d:%02d", m, s)
-end
-
-task.spawn(function()
-    while true do
-        local boostTimersFolder = game.Players.LocalPlayer:FindFirstChild("boostTimersFolder")
-        if boostTimersFolder then
-            local boost = boostTimersFolder:FindFirstChild("Protein Egg")
-            if boost and boost:IsA("IntValue") then
-                local seconds = boost.Value
-                ProteinEggBoostLabel.Text = "Protein Egg Timer: " .. formatTime(seconds)
-            else
-                ProteinEggBoostLabel.Text = "Protein Egg Timer: 00:00"
-            end
-        else
-            ProteinEggBoostLabel.Text = "Protein Egg Timer: 00:00"
-        end
-        task.wait(0.5)
-    end
-end)
-
 
 local function useEggs()
     local boost = game.Players.LocalPlayer.boostTimersFolder:FindFirstChild("Protein Egg")
@@ -3054,35 +2849,6 @@ local autoEggSwitch = fastTab:AddSwitch("Auto Egg", function(state)
         useEggs()
     end
 end)
-
-
-local function useShakes()
-    local tool = player.Character:FindFirstChild("Tropical Shake") or player.Backpack:FindFirstChild("Tropical Shake")
-    if tool then
-        muscleEvent:FireServer("tropicalShake", tool)
-    end
-end
-
-local running2 = false
-
-task.spawn(function()
-    while true do
-        if running2 then
-            useShakes()
-            task.wait(450)
-        else
-            task.wait(1)
-        end
-    end
-end)
-
-local autoShakeSwitch = fastTab:AddSwitch("Auto Shake", function(state)
-    running2 = state
-    if state then
-        useShakes()
-    end
-end)
-
 
 local spinwheelSwitch = fastTab:AddSwitch("Spin Fortune Wheel", function(bool)
     _G.AutoSpinWheel = bool
