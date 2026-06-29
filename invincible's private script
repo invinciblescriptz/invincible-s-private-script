@@ -2726,215 +2726,6 @@ Killer:AddButton("Goofball Button", function()
     end
 end)
 
-
---// Invincible Private - Fast Farming (No UI)
-local player = game.Players.LocalPlayer
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local muscleEvent = replicatedStorage.rEvents.muscleEvent
-local rebirthsStat = player.leaderstats:WaitForChild("Rebirths")
-local PlayerData = player:WaitForChild("PlayerData")
-
-local VirtualInputManager = game:GetService("VirtualInputManager")
-
--- Anti-AFK
-player.Idled:Connect(function()
-    game:GetService("VirtualUser"):CaptureController()
-    game:GetService("VirtualUser"):ClickButton2(Vector2.new())
-end)
-
--- Delete Ads
-local function deleteAds()
-    for _, v in pairs(game:GetDescendants()) do
-        if v.Name == "RobloxForwardPortals" then v:Destroy() end
-    end
-    if _G.ads then _G.ads:Disconnect() end
-    _G.ads = game.DescendantAdded:Connect(function(desc)
-        if desc.Name == "RobloxForwardPortals" then desc:Destroy() end
-    end)
-end
-deleteAds()
-
--- Settings (Change these as needed)
-local AUTO_REBIRTH = true
-local AUTO_REP = true
-local AUTO_EGG = true
-local AUTO_SHAKE = true
-local AUTO_SPIN_WHEEL = true
-local LOCK_POSITION = false
-local REP_SPEED = 350
-local USE_PING_CONTROL = true
-
--- Variables
-local posLocked = false
-local lockedPosition = nil
-
--- Pet Management
-local function managePets(petName)
-    for _, folder in pairs(player.petsFolder:GetChildren()) do
-        if folder:IsA("Folder") then
-            for _, pet in pairs(folder:GetChildren()) do
-                replicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
-            end
-        end
-    end
-    task.wait(0.1)
-    
-    for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
-        if pet.Name == petName then
-            replicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
-        end
-    end
-end
-
--- Rebirth
-local function doRebirth()
-    local rebirths = rebirthsStat.Value
-    local strengthTarget = 5000 + (rebirths * 2550)
-
-    while player.leaderstats.Strength.Value < strengthTarget do
-        local reps = player.MembershipType == Enum.MembershipType.Premium and 12 or 20
-        for _ = 1, reps do
-            muscleEvent:FireServer("rep")
-        end
-        task.wait(0.02)
-    end
-
-    managePets("Tribal Overlord")
-    task.wait(0.25)
-    
-    local before = rebirthsStat.Value
-    repeat
-        replicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-        task.wait(0.05)
-    until rebirthsStat.Value > before
-end
-
-local function fastRebirthLoop()
-    while AUTO_REBIRTH do
-        managePets("Swift Samurai")
-        doRebirth()
-        task.wait(0.5)
-    end
-end
-
--- Auto Rep
-local function getCurrentPing()
-    return game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
-end
-
-local function getAdaptiveSpeed(ping)
-    if ping < 80 then return 500
-    elseif ping < 150 then return 300
-    elseif ping < 250 then return 100
-    else return 50 end
-end
-
-local function startAutoRep()
-    while AUTO_REP do
-        local ping = getCurrentPing()
-        local repsToFire = USE_PING_CONTROL and getAdaptiveSpeed(ping) or REP_SPEED
-        local delay = math.clamp(ping / 2500, 0.001, 0.1)
-
-        for i = 1, repsToFire do
-            muscleEvent:FireServer("rep")
-            if i % 500 == 0 then task.wait() end
-        end
-        task.wait(delay)
-    end
-end
-
--- Position Lock
-local function lockPosition()
-    local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root or not lockedPosition then return end
-
-    local bp = root:FindFirstChild("PositionLocker") or Instance.new("BodyPosition")
-    bp.Name = "PositionLocker"
-    bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bp.Position = lockedPosition
-    bp.P = 100000
-    bp.Parent = root
-end
-
-local function unlockPosition()
-    local char = player.Character
-    if char then
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if root then
-            local bp = root:FindFirstChild("PositionLocker")
-            if bp then bp:Destroy() end
-        end
-    end
-    lockedPosition = nil
-end
-
--- Item Usage
-local function useEggs()
-    local tool = player.Character:FindFirstChild("Protein Egg") or player.Backpack:FindFirstChild("Protein Egg")
-    if tool then
-        muscleEvent:FireServer("proteinEgg", tool)
-    end
-end
-
-local function useShakes()
-    local tool = player.Character:FindFirstChild("Tropical Shake") or player.Backpack:FindFirstChild("Tropical Shake")
-    if tool then
-        muscleEvent:FireServer("tropicalShake", tool)
-    end
-end
-
--- Main Loops
-if AUTO_REBIRTH then task.spawn(fastRebirthLoop) end
-if AUTO_REP then task.spawn(startAutoRep) end
-
--- Auto Egg & Shake
-task.spawn(function()
-    while true do
-        if AUTO_EGG then useEggs() task.wait(1800) else task.wait(1) end
-    end
-end)
-
-task.spawn(function()
-    while true do
-        if AUTO_SHAKE then useShakes() task.wait(450) else task.wait(1) end
-    end
-end)
-
--- Auto Spin Wheel
-if AUTO_SPIN_WHEEL then
-    task.spawn(function()
-        while AUTO_SPIN_WHEEL do
-            replicatedStorage.rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", replicatedStorage.fortuneWheelChances["Fortune Wheel"])
-            task.wait(1)
-        end
-    end)
-end
-
--- Position Lock
-if LOCK_POSITION then
-    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if root then lockedPosition = root.Position end
-    task.spawn(function()
-        while LOCK_POSITION do
-            lockPosition()
-            task.wait(0.1)
-        end
-    end)
-end
-
-player.CharacterAdded:Connect(function()
-    task.wait(1)
-    if LOCK_POSITION then
-        local root = player.Character:WaitForChild("HumanoidRootPart")
-        lockedPosition = root.Position
-    end
-end)
-
-print("✅ Invincible Private Script Loaded (No UI)")
-
-
 local miscTab = window:AddTab("Misc")
 local mobileFolder = miscTab:AddFolder("Rock Farming ")
  
@@ -3619,3 +3410,211 @@ autoEquipToolsFolder:AddSwitch("Auto Punch", function(Value)
         end
     end
 end)
+
+
+--// Invincible Private - Fast Farming (No UI)
+local player = game.Players.LocalPlayer
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local muscleEvent = replicatedStorage.rEvents.muscleEvent
+local rebirthsStat = player.leaderstats:WaitForChild("Rebirths")
+local PlayerData = player:WaitForChild("PlayerData")
+
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+-- Anti-AFK
+player.Idled:Connect(function()
+    game:GetService("VirtualUser"):CaptureController()
+    game:GetService("VirtualUser"):ClickButton2(Vector2.new())
+end)
+
+-- Delete Ads
+local function deleteAds()
+    for _, v in pairs(game:GetDescendants()) do
+        if v.Name == "RobloxForwardPortals" then v:Destroy() end
+    end
+    if _G.ads then _G.ads:Disconnect() end
+    _G.ads = game.DescendantAdded:Connect(function(desc)
+        if desc.Name == "RobloxForwardPortals" then desc:Destroy() end
+    end)
+end
+deleteAds()
+
+-- Settings (Change these as needed)
+local AUTO_REBIRTH = true
+local AUTO_REP = true
+local AUTO_EGG = true
+local AUTO_SHAKE = true
+local AUTO_SPIN_WHEEL = true
+local LOCK_POSITION = false
+local REP_SPEED = 350
+local USE_PING_CONTROL = true
+
+-- Variables
+local posLocked = false
+local lockedPosition = nil
+
+-- Pet Management
+local function managePets(petName)
+    for _, folder in pairs(player.petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                replicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+            end
+        end
+    end
+    task.wait(0.1)
+    
+    for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
+        if pet.Name == petName then
+            replicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+        end
+    end
+end
+
+-- Rebirth
+local function doRebirth()
+    local rebirths = rebirthsStat.Value
+    local strengthTarget = 5000 + (rebirths * 2550)
+
+    while player.leaderstats.Strength.Value < strengthTarget do
+        local reps = player.MembershipType == Enum.MembershipType.Premium and 12 or 20
+        for _ = 1, reps do
+            muscleEvent:FireServer("rep")
+        end
+        task.wait(0.02)
+    end
+
+    managePets("Tribal Overlord")
+    task.wait(0.25)
+    
+    local before = rebirthsStat.Value
+    repeat
+        replicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+        task.wait(0.05)
+    until rebirthsStat.Value > before
+end
+
+local function fastRebirthLoop()
+    while AUTO_REBIRTH do
+        managePets("Swift Samurai")
+        doRebirth()
+        task.wait(0.5)
+    end
+end
+
+-- Auto Rep
+local function getCurrentPing()
+    return game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
+end
+
+local function getAdaptiveSpeed(ping)
+    if ping < 80 then return 500
+    elseif ping < 150 then return 300
+    elseif ping < 250 then return 100
+    else return 50 end
+end
+
+local function startAutoRep()
+    while AUTO_REP do
+        local ping = getCurrentPing()
+        local repsToFire = USE_PING_CONTROL and getAdaptiveSpeed(ping) or REP_SPEED
+        local delay = math.clamp(ping / 2500, 0.001, 0.1)
+
+        for i = 1, repsToFire do
+            muscleEvent:FireServer("rep")
+            if i % 500 == 0 then task.wait() end
+        end
+        task.wait(delay)
+    end
+end
+
+-- Position Lock
+local function lockPosition()
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root or not lockedPosition then return end
+
+    local bp = root:FindFirstChild("PositionLocker") or Instance.new("BodyPosition")
+    bp.Name = "PositionLocker"
+    bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bp.Position = lockedPosition
+    bp.P = 100000
+    bp.Parent = root
+end
+
+local function unlockPosition()
+    local char = player.Character
+    if char then
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root then
+            local bp = root:FindFirstChild("PositionLocker")
+            if bp then bp:Destroy() end
+        end
+    end
+    lockedPosition = nil
+end
+
+-- Item Usage
+local function useEggs()
+    local tool = player.Character:FindFirstChild("Protein Egg") or player.Backpack:FindFirstChild("Protein Egg")
+    if tool then
+        muscleEvent:FireServer("proteinEgg", tool)
+    end
+end
+
+local function useShakes()
+    local tool = player.Character:FindFirstChild("Tropical Shake") or player.Backpack:FindFirstChild("Tropical Shake")
+    if tool then
+        muscleEvent:FireServer("tropicalShake", tool)
+    end
+end
+
+-- Main Loops
+if AUTO_REBIRTH then task.spawn(fastRebirthLoop) end
+if AUTO_REP then task.spawn(startAutoRep) end
+
+-- Auto Egg & Shake
+task.spawn(function()
+    while true do
+        if AUTO_EGG then useEggs() task.wait(1800) else task.wait(1) end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if AUTO_SHAKE then useShakes() task.wait(450) else task.wait(1) end
+    end
+end)
+
+-- Auto Spin Wheel
+if AUTO_SPIN_WHEEL then
+    task.spawn(function()
+        while AUTO_SPIN_WHEEL do
+            replicatedStorage.rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", replicatedStorage.fortuneWheelChances["Fortune Wheel"])
+            task.wait(1)
+        end
+    end)
+end
+
+-- Position Lock
+if LOCK_POSITION then
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if root then lockedPosition = root.Position end
+    task.spawn(function()
+        while LOCK_POSITION do
+            lockPosition()
+            task.wait(0.1)
+        end
+    end)
+end
+
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if LOCK_POSITION then
+        local root = player.Character:WaitForChild("HumanoidRootPart")
+        lockedPosition = root.Position
+    end
+end)
+
+print("✅ Invincible Private Script Loaded (No UI)")
