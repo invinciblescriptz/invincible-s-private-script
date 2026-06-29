@@ -3099,7 +3099,7 @@ local function destroyAntiAFKGui()
 end
 
 -- ==================== SWITCH ====================
-fastTab:AddSwitch("Invincible Anti-AFK GUI", function(state)
+fastTab:AddSwitch("Anti Afk", function(state)
     if state then
         createAntiAFKGui()
     else
