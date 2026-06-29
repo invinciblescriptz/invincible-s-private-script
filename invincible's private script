@@ -2441,12 +2441,12 @@ Killer:AddSwitch("NaN", function()
     -- Original NaN size change
     local args = {"changeSize", 0/0}
     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
-    
+   
     -- Teleport to the given CFrame
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
     local root = character:WaitForChild("HumanoidRootPart", 5)
-    
+   
     if root then
         local targetCFrame = CFrame.new(
             -38.9849625, 0.111833394, 23.6454487,
@@ -2454,7 +2454,25 @@ Killer:AddSwitch("NaN", function()
             9.52623491e-09, 1, -5.75939509e-08,
             -0.973498702, 2.24450893e-08, 0.228692636
         )
+        
         root.CFrame = targetCFrame
+        
+        -- === POSITION LOCK ===
+        root.Anchored = true                    -- Basic lock (stops physics movement)
+        root.Velocity = Vector3.new(0, 0, 0)
+        root.RotVelocity = Vector3.new(0, 0, 0)
+        
+        -- Optional: Stronger lock with a loop (uncomment if needed)
+        --[[
+        task.spawn(function()
+            while root and root.Parent do
+                root.CFrame = targetCFrame
+                root.Velocity = Vector3.new(0, 0, 0)
+                root.RotVelocity = Vector3.new(0, 0, 0)
+                task.wait()  -- or RunService.Heartbeat:Wait()
+            end
+        end)
+        ]]
     end
 end)
 
