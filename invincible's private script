@@ -2498,6 +2498,7 @@ local titleLabel = Killer:AddLabel("AUTO KILL")
 titleLabel.TextSize = 18
 titleLabel.Font = Enum.Font.Bangers        
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+
 -- God Mode (join brawl)
 local godModeToggle = false
 Killer:AddSwitch("God mode (for pussies)", function(State)
