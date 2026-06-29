@@ -2041,8 +2041,9 @@ function library:AddWindow(title, options)
 	return window_data, Window
 end
 
---script begin 
-local window = library:AddWindow("invincible priv", {
+local player = game.Players.LocalPlayer
+
+local window = library:AddWindow("invincible private, " .. player.Name, {
 	main_color = Color3.fromRGB(0, 0, 0),
 	min_size = Vector2.new(660, 870),
 	can_resize = false,
