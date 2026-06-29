@@ -3316,3 +3316,417 @@ autoEquipToolsFolder:AddSwitch("Auto Punch", function(Value)
         end
     end
 end)
+
+-- Fixed & Optimized Script (All features preserved + bug fixes)
+local player = game:GetService("Players").LocalPlayer
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local VirtualUser = game:GetService("VirtualUser")
+
+-- Anti-AFK
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+-- Services & Remotes
+local muscleEvent = replicatedStorage.rEvents.muscleEvent
+local rebirthsStat = player.leaderstats:WaitForChild("Rebirths")
+local PlayerData = player:WaitForChild("PlayerData")
+
+-- Delete Ads
+local function deleteAds()
+    for _, portal in pairs(game:GetDescendants()) do
+        if portal.Name == "RobloxForwardPortals" then
+            portal:Destroy()
+        end
+    end
+    if _G.ads then _G.ads:Disconnect() end
+    _G.ads = game.DescendantAdded:Connect(function(descendant)
+        if descendant.Name == "RobloxForwardPortals" then
+            descendant:Destroy()
+        end
+    end)
+end
+deleteAds()
+
+-- Assuming you have a UI library (Kavo, Flux, etc.) already loaded as 'window'
+-- If not, you need to load your UI library before this script
+
+local fastTab = window:AddTab("Fast Farming")
+
+-- Fast Rebirth
+local isRunning = false
+
+local function managePets(petName)
+    -- Unequip all
+    for _, folder in pairs(player.petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                replicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+            end
+        end
+    end
+    task.wait(0.1)
+    
+    -- Equip desired pet(s)
+    for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
+        if pet.Name == petName then
+            replicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+        end
+    end
+end
+
+local function doRebirth()
+    local rebirths = rebirthsStat.Value
+    local strengthTarget = 5000 + (rebirths * 2550)
+    
+    while isRunning and player.leaderstats.Strength.Value < strengthTarget do
+        local reps = player.MembershipType == Enum.MembershipType.Premium and 12 or 20
+        for _ = 1, reps do
+            muscleEvent:FireServer("rep")
+        end
+        task.wait(0.02)
+    end
+    
+    if isRunning and player.leaderstats.Strength.Value >= strengthTarget then
+        managePets("Tribal Overlord")
+        task.wait(0.25)
+        local before = rebirthsStat.Value
+        repeat
+            replicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            task.wait(0.05)
+        until rebirthsStat.Value > before or not isRunning
+    end
+end
+
+local function fastRebirthLoop()
+    while isRunning do
+        managePets("Swift Samurai")
+        doRebirth()
+        task.wait(0.5)
+    end
+end
+
+fastTab:AddSwitch("Fast Rebirth", function(state)
+    isRunning = state
+    if isRunning then
+        task.spawn(fastRebirthLoop)
+    end
+end)
+
+-- Size Changer
+local sizeRunning = false
+local sizeThread = nil
+
+local sizeSwitch = fastTab:AddSwitch("Set Size 1", function(bool)
+    sizeRunning = bool
+    if bool then
+        if sizeThread then coroutine.close(sizeThread) end
+        sizeThread = coroutine.create(function()
+            while sizeRunning do
+                replicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
+                task.wait(0.01)
+            end
+        end)
+        coroutine.resume(sizeThread)
+    else
+        if sizeThread then
+            coroutine.close(sizeThread)
+            sizeThread = nil
+        end
+    end
+end)
+
+-- Position Lock
+local posLocked = false
+local lockedPosition = nil
+local positionConnection = nil
+
+local function lockPosition()
+    if not posLocked or not lockedPosition then return end
+    local character = player.Character
+    if not character then return end
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    local existing = rootPart:FindFirstChild("PositionLocker")
+    if existing then
+        existing.Position = lockedPosition
+    else
+        local bodyPosition = Instance.new("BodyPosition")
+        bodyPosition.Name = "PositionLocker"
+        bodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyPosition.Position = lockedPosition
+        bodyPosition.P = 100000
+        bodyPosition.Parent = rootPart
+    end
+end
+
+local function unlockPosition()
+    local character = player.Character
+    if character then
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            local existing = rootPart:FindFirstChild("PositionLocker")
+            if existing then existing:Destroy() end
+        end
+    end
+    lockedPosition = nil
+end
+
+local lockPositionSwitch = fastTab:AddSwitch("Lock Position", function(bool)
+    posLocked = bool
+    if bool then
+        local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            lockedPosition = rootPart.Position
+        end
+        lockPosition()
+    else
+        unlockPosition()
+    end
+end)
+
+player.CharacterAdded:Connect(function(newCharacter)
+    task.wait(0.5)
+    local rootPart = newCharacter:WaitForChild("HumanoidRootPart", 5)
+    if posLocked and rootPart then
+        lockedPosition = rootPart.Position
+        lockPosition()
+    end
+end)
+
+-- Position lock loop
+task.spawn(function()
+    while true do
+        if posLocked then
+            lockPosition()
+        end
+        task.wait(0.1)
+    end
+end)
+
+fastTab:AddLabel("====================").TextSize = 17
+
+-- Fast Rep
+local farmRunning = false
+local repSpeed = 350
+local pingControl = true
+local networkStats = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]
+
+local function getCurrentPing()
+    return networkStats:GetValue()
+end
+
+local function getAdaptiveSpeed(ping)
+    if ping < 80 then return 500
+    elseif ping < 150 then return 300
+    elseif ping < 250 then return 100
+    else return 50 end
+end
+
+local function startAutoRep()
+    local lastPingUpdate = tick()
+    local currentPing = getCurrentPing()
+    
+    while farmRunning do
+        if tick() - lastPingUpdate > 0.5 then
+            currentPing = getCurrentPing()
+            lastPingUpdate = tick()
+        end
+        
+        local repsToFire = pingControl and getAdaptiveSpeed(currentPing) or repSpeed
+        local delayBetweenBatches = math.clamp(currentPing / 2500, 0.001, 0.1)
+        
+        for repCount = 1, math.min(repsToFire, repSpeed) do
+            muscleEvent:FireServer("rep")
+            if repCount % 500 == 0 then
+                task.wait(0)
+            end
+        end
+        task.wait(delayBetweenBatches)
+    end
+end
+
+fastTab:AddTextBox("Rep Speed:", function(inputText)
+    local speedValue = tonumber(inputText)
+    if speedValue then
+        repSpeed = math.clamp(math.floor(speedValue), 1, 1000)
+    end
+end)
+
+fastTab:AddSwitch("Controlled Speed", function(isEnabled)
+    pingControl = isEnabled
+end):Set(true)
+
+fastTab:AddSwitch("Fast Rep", function(isEnabled)
+    farmRunning = isEnabled
+    if farmRunning then
+        task.spawn(startAutoRep)
+    end
+end)
+
+fastTab:AddLabel("====================").TextSize = 17
+
+-- Protein Eggs & Shakes
+local ProteinEggLabel = fastTab:AddLabel("Protein Eggs Owned: 0")
+ProteinEggLabel.TextSize = 14
+
+task.spawn(function()
+    while true do
+        local proteinEggCount = 0
+        if PlayerData:FindFirstChild("Backpack") then
+            for _, item in ipairs(PlayerData.Backpack:GetChildren()) do
+                if item.Name == "Protein Egg" then
+                    proteinEggCount += 1
+                end
+            end
+        end
+        ProteinEggLabel.Text = "Protein Eggs: " .. proteinEggCount
+        task.wait(7.5)
+    end
+end)
+
+local ProteinEggBoostLabel = fastTab:AddLabel("Protein Egg Boost: 00:00")
+ProteinEggBoostLabel.TextSize = 14
+
+local function formatTime(seconds)
+    local m = math.floor(seconds / 60)
+    local s = seconds % 60
+    return string.format("%02d:%02d", m, s)
+end
+
+task.spawn(function()
+    while true do
+        local boostTimersFolder = player:FindFirstChild("boostTimersFolder")
+        if boostTimersFolder then
+            local boost = boostTimersFolder:FindFirstChild("Protein Egg")
+            if boost and boost:IsA("IntValue") then
+                ProteinEggBoostLabel.Text = "Protein Egg Timer: " .. formatTime(boost.Value)
+            else
+                ProteinEggBoostLabel.Text = "Protein Egg Timer: 00:00"
+            end
+        else
+            ProteinEggBoostLabel.Text = "Protein Egg Timer: 00:00"
+        end
+        task.wait(0.5)
+    end
+end)
+
+local function useEggs()
+    local boost = player.boostTimersFolder:FindFirstChild("Protein Egg")
+    if boost and boost:IsA("IntValue") and boost.Value >= 5 then
+        return
+    end
+    local tool = player.Character:FindFirstChild("Protein Egg") or player.Backpack:FindFirstChild("Protein Egg")
+    if tool then
+        muscleEvent:FireServer("proteinEgg", tool)
+    end
+end
+
+local running1 = false
+task.spawn(function()
+    while true do
+        if running1 then
+            useEggs()
+            task.wait(1800)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+fastTab:AddSwitch("Auto Egg", function(state)
+    running1 = state
+    if state then useEggs() end
+end)
+
+local function useShakes()
+    local tool = player.Character:FindFirstChild("Tropical Shake") or player.Backpack:FindFirstChild("Tropical Shake")
+    if tool then
+        muscleEvent:FireServer("tropicalShake", tool)
+    end
+end
+
+local running2 = false
+task.spawn(function()
+    while true do
+        if running2 then
+            useShakes()
+            task.wait(450)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+fastTab:AddSwitch("Auto Shake", function(state)
+    running2 = state
+    if state then useShakes() end
+end)
+
+-- Fortune Wheel
+fastTab:AddSwitch("Spin Fortune Wheel", function(bool)
+    _G.AutoSpinWheel = bool
+    if bool then
+        task.spawn(function()
+            while _G.AutoSpinWheel do
+                replicatedStorage.rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", replicatedStorage.fortuneWheelChances["Fortune Wheel"])
+                task.wait(1)
+            end
+        end)
+    end
+end)
+
+-- Perk Pet Equip
+local statPetDropdown = fastTab:AddDropdown("Perk Pet Equip", function(text)
+    -- Unequip all
+    for _, folder in pairs(player.petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                replicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+            end
+        end
+    end
+    task.wait(0.2)
+    
+    local petsToEquip = {}
+    for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
+        if pet.Name == text then
+            table.insert(petsToEquip, pet)
+        end
+    end
+    
+    for i = 1, math.min(8, #petsToEquip) do
+        replicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", petsToEquip[i])
+        task.wait(0.1)
+    end
+end)
+
+statPetDropdown:Add("Swift Samurai")
+statPetDropdown:Add("Tribal Overlord")
+
+-- Jungle Buttons
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+fastTab:AddButton("Jungle Lift", function()
+    if hrp then
+        hrp.CFrame = CFrame.new(-8642.396484375, 6.7980651855, 2086.1030273)
+        task.wait(0.2)
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(0.05)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    end
+end)
+
+fastTab:AddButton("Jungle Squat", function()
+    if hrp then
+        hrp.CFrame = CFrame.new(-8371.43359375, 6.79806327, 2858.88525390)
+        task.wait(0.2)
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(0.05)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    end
+end)
