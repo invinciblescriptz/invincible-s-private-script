@@ -2471,29 +2471,6 @@ Killer:AddSwitch("NaN, function()
     end)
 end)
 
-Killer:AddSwitch("Lock Pos", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local root = character:WaitForChild("HumanoidRootPart", 5)
-    
-    if not root then return end
-    
-    -- Capture current position & rotation
-    local targetCFrame = root.CFrame
-    
-    -- Strong position lock
-    task.spawn(function()
-        while task.wait(0.03) do
-            if not (root and root.Parent) then break end
-            
-            root.CFrame = targetCFrame
-            root.Velocity = Vector3.new(0, 0, 0)
-            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-        end
-    end)
-end)
-
 local titleLabel = Killer:AddLabel("AUTO KILL")
 titleLabel.TextSize = 18
 titleLabel.Font = Enum.Font.Bangers        
