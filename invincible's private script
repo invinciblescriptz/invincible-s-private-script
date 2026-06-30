@@ -2045,18 +2045,11 @@ local player = game.Players.LocalPlayer
 
 local player = game.Players.LocalPlayer
 
-local player = game.Players.LocalPlayer
-
-local player = game.Players.LocalPlayer
-
-local player = game.Players.LocalPlayer
-local window = library:AddWindow("invincible | private | welcome, " .. player.DisplayName, {
+local window = library:AddWindow("𝗶𝗻𝘃𝗶𝗻𝗰𝗶𝗯𝗹𝗲 | 𝗽𝗿𝗶𝘃𝗮𝘁𝗲 | 𝘄𝗲𝗹𝗰𝗼𝗺𝗲,  " .. player.DisplayName, {
     main_color = Color3.fromRGB(0, 0, 0),
     min_size = Vector2.new(660, 870),
     can_resize = false,
 })
-
-window.titleLabel.Font = Enum.Font.Bangers
 
 local Killer = window:AddTab("Killer")
 local Players = game:GetService("Players")
@@ -3123,7 +3116,6 @@ fastTab:AddSwitch("Anti Afk", function(state)
         destroyAntiAFKGui()
     end
 end)
-
 
 local titleLabel = fastTab:AddLabel("Other")
 titleLabel.TextSize = 18
