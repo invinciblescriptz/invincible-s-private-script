@@ -2534,36 +2534,30 @@ Killer:AddSwitch("NaN", function(state)
     end
 end)
 
--- Anti Knockback Switch
 local AntiKnockbackToggle = Killer:AddSwitch("Anti Knockback", function(state)
     getgenv().AntiKnockback = state
     
     if state then
         print("✅ Anti Knockback ENABLED")
         
-        -- Main loop
         spawn(function()
             while getgenv().AntiKnockback do
                 pcall(function()
-                    local player = game.Players.LocalPlayer
-                    local character = player.Character or player.CharacterAdded:Wait()
-                    local root = character:FindFirstChild("HumanoidRootPart")
+                    local character = game.Players.LocalPlayer.Character
+                    if not character then return end
                     
+                    local root = character:FindFirstChild("HumanoidRootPart")
                     if root then
-                        -- Clear any knockback forces
+                        -- Only remove knockback forces, don't touch normal movement
                         for _, v in pairs(root:GetChildren()) do
                             if v:IsA("BodyVelocity") or v:IsA("BodyThrust") or v:IsA("BodyForce") or 
                                v:IsA("LinearVelocity") or v:IsA("VectorForce") then
                                 v:Destroy()
                             end
                         end
-                        
-                        -- Zero out velocity
-                        root.Velocity = Vector3.new(0, root.Velocity.Y, 0)
-                        root.AssemblyLinearVelocity = Vector3.new(0, root.AssemblyLinearVelocity.Y, 0)
                     end
                 end)
-                wait(0.05) -- Fast enough to counter knockback without too much lag
+                wait(0.03)  -- Slightly faster detection
             end
         end)
     else
