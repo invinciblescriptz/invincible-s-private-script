@@ -2534,6 +2534,43 @@ Killer:AddSwitch("NaN", function(state)
     end
 end)
 
+-- Anti Knockback Switch
+local AntiKnockbackToggle = Killer:AddSwitch("Anti Knockback", function(state)
+    getgenv().AntiKnockback = state
+    
+    if state then
+        print("✅ Anti Knockback ENABLED")
+        
+        -- Main loop
+        spawn(function()
+            while getgenv().AntiKnockback do
+                pcall(function()
+                    local player = game.Players.LocalPlayer
+                    local character = player.Character or player.CharacterAdded:Wait()
+                    local root = character:FindFirstChild("HumanoidRootPart")
+                    
+                    if root then
+                        -- Clear any knockback forces
+                        for _, v in pairs(root:GetChildren()) do
+                            if v:IsA("BodyVelocity") or v:IsA("BodyThrust") or v:IsA("BodyForce") or 
+                               v:IsA("LinearVelocity") or v:IsA("VectorForce") then
+                                v:Destroy()
+                            end
+                        end
+                        
+                        -- Zero out velocity
+                        root.Velocity = Vector3.new(0, root.Velocity.Y, 0)
+                        root.AssemblyLinearVelocity = Vector3.new(0, root.AssemblyLinearVelocity.Y, 0)
+                    end
+                end)
+                wait(0.05) -- Fast enough to counter knockback without too much lag
+            end
+        end)
+    else
+        print("❌ Anti Knockback DISABLED")
+    end
+end)
+
 local titleLabel = Killer:AddLabel("AUTO KILL")
 titleLabel.TextSize = 18
 titleLabel.Font = Enum.Font.Bangers        
