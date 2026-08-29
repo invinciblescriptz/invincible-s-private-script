@@ -1283,7 +1283,7 @@ local function formatNumber(num)
     local absNum = math.abs(num)
 
     if absNum >= 1e15 then
-        return string.format("%.2f QA", num / 1e15)
+        return string.format("%.2f Qa", num / 1e15)
     elseif absNum >= 1e12 then
         return string.format("%.2f T", num / 1e12)
     elseif absNum >= 1e9 then
@@ -1339,22 +1339,22 @@ strengthValue:GetPropertyChangedSignal("Value"):Connect(updateDamageLabels)
 
 
 
-
-
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
 local healthFolder = calcTab:AddFolder("Health Calc")
 
 local function formatNumber(n)
-    if n >= 1e12 then
-        return string.format("%.1ft", n / 1e12)
+    if n >= 1e15 then
+        return string.format("%.1fQa", n / 1e15)
+    elseif n >= 1e12 then
+        return string.format("%.1fT", n / 1e12)
     elseif n >= 1e9 then
-        return string.format("%.1fb", n / 1e9)
+        return string.format("%.1fB", n / 1e9)
     elseif n >= 1e6 then
-        return string.format("%.1fm", n / 1e6)
+        return string.format("%.1fM", n / 1e6)
     elseif n >= 1e3 then
-        return string.format("%.1fk", n / 1e3)
+        return string.format("%.1fK", n / 1e3)
     else
         return string.format("%.1f", n)
     end
@@ -1400,3 +1400,4 @@ if baseDurability then
 else
     healthFolder:AddLabel("Durability not found")
 end
+
