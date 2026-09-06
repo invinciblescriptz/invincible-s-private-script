@@ -1372,3 +1372,149 @@ bossTab:AddSwitch("Kill Boss", function(state)
         end
     end)
 end)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+_G.fastHitActive = false
+
+local bossSwitch = bossTab:AddSwitch("Auto Boss", function(bool)
+    _G.fastHitActive = bool
+    
+    if bool then
+        
+        task.spawn(function()
+            while _G.fastHitActive do
+                local player = game.Players.LocalPlayer
+                local character = player.Character
+                
+                if character and character:FindFirstChild("HumanoidRootPart") then
+                    local lockedRoot = nil
+                    
+                    for i = 1, 6 do
+                        local boss = workspace:FindFirstChild("Boss" .. i, true)
+                        if boss then
+                            local humanoid = boss:FindFirstChildOfClass("Humanoid")
+                            local root = boss:FindFirstChild("HumanoidRootPart") or boss.PrimaryPart
+                            
+                            if root and (not humanoid or humanoid.Health > 0) then
+                                lockedRoot = root
+                                break
+                            end
+                        end
+                    end
+                    
+                    if lockedRoot then
+                        character:PivotTo(lockedRoot.CFrame * CFrame.new(0, 45, 0))
+                    end
+                end
+                
+                task.wait() 
+            end
+        end)
+
+        task.spawn(function()
+            while _G.fastHitActive do
+                local player = game.Players.LocalPlayer
+                local punch = player.Backpack:FindFirstChild("Punch")
+                
+                if punch then
+                    punch.Parent = player.Character
+                    if punch:FindFirstChild("attackTime") then
+                        punch.attackTime.Value = 0
+                    end
+                end
+                
+                task.wait(2)
+            end
+        end)
+        
+        task.spawn(function()
+            while _G.fastHitActive do
+                local player = game.Players.LocalPlayer
+                local punch = player.Character and player.Character:FindFirstChild("Punch")
+                
+                if punch then
+                    punch:Activate()
+                end
+                
+                task.wait(0.1)
+            end
+        end)
+        
+    else
+        print("Boss Lock + Punch: DISABLED")
+    end
+end)
+
+bossSwitch:Set(false)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bossTab:AddSwitch("Auto Loot", function(enabled)
+    getgenv().AutoLoot = enabled
+    if enabled then
+        task.spawn(function()
+            game:GetService("VirtualInputManager"):SendKeyEvent(true, "E", false, game)
+            task.wait(0.1)
+            game:GetService("VirtualInputManager"):SendKeyEvent(false, "E", false, game)
+            while getgenv().AutoLoot do
+                task.wait(120)
+
+                if getgenv().AutoLoot then
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true, "E", false, game)
+                    task.wait(0.1)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false, "E", false, game)
+                end
+            end
+        end)
+    end
+end)
