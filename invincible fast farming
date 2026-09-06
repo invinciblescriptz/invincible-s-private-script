@@ -1267,136 +1267,108 @@ end)
 
 
 
-local calcTab = window:AddTab("PvP Calc")
 
 
 
 
 
 
-local damageFolder = calcTab:AddFolder("Damage Calc")
 
-local player = game.Players.LocalPlayer
-local strengthValue = player:WaitForChild("leaderstats"):WaitForChild("Strength")
 
-local function formatNumber(num)
-    local absNum = math.abs(num)
 
-    if absNum >= 1e15 then
-        return string.format("%.2f Qa", num / 1e15)
-    elseif absNum >= 1e12 then
-        return string.format("%.2f T", num / 1e12)
-    elseif absNum >= 1e9 then
-        return string.format("%.2f B", num / 1e9)
-    elseif absNum >= 1e6 then
-        return string.format("%.2f M", num / 1e6)
-    elseif absNum >= 1e3 then
-        return string.format("%.2f K", num / 1e3)
-    else
-        return tostring(num)
+
+
+
+local bossTab = window:AddTab("Boss Farming")
+
+local selectedBoss = "Boss1"
+local lockConnection = nil
+
+
+local bossDropdown =
+    bossTab:AddDropdown(
+    "Select Boss",
+    function(Value)
+        selectedBoss = Value
+        print("Selected boss:", Value)
     end
-end
+)
+bossDropdown:Add("Boss1")
+bossDropdown:Add("Boss2")
+bossDropdown:Add("Boss3")
+bossDropdown:Add("Boss4")
+bossDropdown:Add("Boss5")
+bossDropdown:Add("Boss6")
+bossTab:AddSwitch("Kill Boss", function(state)
 
-local damageLabels = {}
-
-for i = 1, 9 do
-    damageLabels[i] = damageFolder:AddLabel(i .. " Damage Pack(s): 0")
-end
-
-local function updateDamageLabels()
-    local strength = strengthValue.Value
-    local packPercent = 1.84 / 13.8
-
-    for i = 1, 9 do
-        local value = strength * packPercent * i
-        damageLabels[i].Text = i .. " Damage Pack(s): " .. formatNumber(value)
-    end
-end
-
-
-updateDamageLabels()
-
-strengthValue:GetPropertyChangedSignal("Value"):Connect(updateDamageLabels)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
-local healthFolder = calcTab:AddFolder("Health Calc")
-
-local function formatNumber(n)
-    if n >= 1e15 then
-        return string.format("%.1fQa", n / 1e15)
-    elseif n >= 1e12 then
-        return string.format("%.1fT", n / 1e12)
-    elseif n >= 1e9 then
-        return string.format("%.1fB", n / 1e9)
-    elseif n >= 1e6 then
-        return string.format("%.1fM", n / 1e6)
-    elseif n >= 1e3 then
-        return string.format("%.1fK", n / 1e3)
-    else
-        return string.format("%.1f", n)
-    end
-end
-
-local function getDurability()
-    local durability = player:GetAttribute("Durability")
-
-    if typeof(durability) == "number" then
-        return durability
+    if lockConnection then
+        lockConnection:Disconnect()
+        lockConnection = nil
     end
 
-    local locations = {
-        player,
-        player.Character
-    }
+    _G.fastHitActive = state
 
-    for _, location in ipairs(locations) do
-        if location then
-            local value = location:FindFirstChild("Durability", true)
+    if not state then
+        local punch = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Punch")
+        if punch then
+            punch.Parent = game.Players.LocalPlayer.Backpack
+        end
+        return
+    end
 
-            if value and (value:IsA("NumberValue") or value:IsA("IntValue")) then
-                return value.Value
+    local LocalPlayer = game.Players.LocalPlayer
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+
+    
+    task.spawn(function()
+        while _G.fastHitActive do
+            local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+            if punch then
+                punch.Parent = LocalPlayer.Character
+                if punch:FindFirstChild("attackTime") then
+                    punch.attackTime.Value = 0
+                end
+            end
+            task.wait(2)
+        end
+    end)
+
+    task.spawn(function()
+        while _G.fastHitActive do
+            local punch = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
+            if punch then
+                punch:Activate()
+            end
+            task.wait(0.1)
+        end
+    end)
+
+    lockConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        if not character or not character.Parent or not hrp or not hrp.Parent then
+            character = LocalPlayer.Character
+            if not character then return end
+            hrp = character:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+        end
+
+        local boss = nil
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj.Name == selectedBoss and (obj:IsA("Model") or obj:IsA("Folder") or obj:IsA("BasePart")) then
+                boss = obj
+                break
             end
         end
-    end
 
-    return nil
-end
+        if not boss then return end
 
-local baseDurability = getDurability()
+        local targetPart = boss:FindFirstChild("HumanoidRootPart")
+            or (boss:FindFirstChild("Humanoid") and boss.Humanoid.RootPart)
+            or boss:FindFirstChildWhichIsA("BasePart")
+            or (boss:IsA("BasePart") and boss)
 
-if baseDurability then
-    local packPercent = 0.5
-
-    for i = 1, 9 do
-        local total = baseDurability * (1 + (packPercent * i))
-
-        healthFolder:AddLabel(
-            string.format("%d Health Pack(s): %s", i, formatNumber(total))
-        )
-    end
-else
-    healthFolder:AddLabel("Durability not found")
-end
+        if targetPart then
+            hrp.CFrame = targetPart.CFrame + Vector3.new(0, 45, 0)
+        end
+    end)
+end)
