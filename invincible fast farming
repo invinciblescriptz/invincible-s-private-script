@@ -1507,7 +1507,7 @@ bossTab:AddSwitch("Auto Loot", function(enabled)
             task.wait(0.1)
             game:GetService("VirtualInputManager"):SendKeyEvent(false, "E", false, game)
             while getgenv().AutoLoot do
-                task.wait(2)
+                task.wait(1)
 
                 if getgenv().AutoLoot then
                     game:GetService("VirtualInputManager"):SendKeyEvent(true, "E", false, game)
