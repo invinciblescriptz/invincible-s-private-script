@@ -1161,7 +1161,7 @@ packs:AddButton("Fast Farm Combo", function()
     local unique = player.petsFolder:FindFirstChild("Unique")
     if unique then
         for _, pet in pairs(unique:GetChildren()) do
-            if pet.Name == "Omega Overlord" and equippedOmega < 4 then
+            if pet.Name == "Omega Overlord" and equippedOmega < 7 then
                 equipEvent:FireServer("equipPet", pet)
                 equippedOmega += 1
                 task.wait(0.05)
@@ -1181,87 +1181,7 @@ end)
 
 
 
-packs:AddButton("Fast Farm Combo V2", function()
-    local player = game:GetService("Players").LocalPlayer
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
 
-    if player:FindFirstChild("petsFolder") then
-        for _, folder in pairs(player.petsFolder:GetChildren()) do
-            if folder:IsA("Folder") then
-                for _, pet in pairs(folder:GetChildren()) do
-                    equipEvent:FireServer("unequipPet", pet)
-                end
-            end
-        end
-    end
-
-    task.wait(0.15)
-
-    local equippedOmega = 0
-    local equippedHound = 0
-
-    local unique = player.petsFolder:FindFirstChild("Unique")
-    if unique then
-        for _, pet in pairs(unique:GetChildren()) do
-            if pet.Name == "Omega Overlord" and equippedOmega < 5 then
-                equipEvent:FireServer("equipPet", pet)
-                equippedOmega += 1
-                task.wait(0.05)
-
-            elseif pet.Name == "Powercore Hound" and equippedHound < 4 then
-                equipEvent:FireServer("equipPet", pet)
-                equippedHound += 1
-                task.wait(0.05)
-            end
-
-            if equippedOmega >= 5 and equippedHound >= 4 then
-                break
-            end
-        end
-    end
-end)
-
-packs:AddButton("Fast Farm Combo V3", function()
-    local player = game:GetService("Players").LocalPlayer
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
-    if player:FindFirstChild("petsFolder") then
-        for _, folder in pairs(player.petsFolder:GetChildren()) do
-            if folder:IsA("Folder") then
-                for _, pet in pairs(folder:GetChildren()) do
-                    equipEvent:FireServer("unequipPet", pet)
-                end
-            end
-        end
-    end
-
-    task.wait(0.15)
-
-    local equippedOmega = 0
-    local equippedHound = 0
-
-    local unique = player.petsFolder:FindFirstChild("Unique")
-    if unique then
-        for _, pet in pairs(unique:GetChildren()) do
-            if pet.Name == "Omega Overlord" and equippedOmega < 5 then
-                equipEvent:FireServer("equipPet", pet)
-                equippedOmega += 1
-                task.wait(0.05)
-
-            elseif pet.Name == "Powercore Hound" and equippedHound < 4 then
-                equipEvent:FireServer("equipPet", pet)
-                equippedHound += 1
-                task.wait(0.05)
-            end
-
-            if equippedOmega >= 5 and equippedHound >= 4 then
-                break
-            end
-        end
-    end
-end)
 
 
 
