@@ -1161,18 +1161,18 @@ packs:AddButton("Fast Farm Combo", function()
     local unique = player.petsFolder:FindFirstChild("Unique")
     if unique then
         for _, pet in pairs(unique:GetChildren()) do
-            if pet.Name == "Omega Overlord" and equippedOmega < 7 then
+            if pet.Name == "Omega Overlord" and equippedOmega < 5 then
                 equipEvent:FireServer("equipPet", pet)
                 equippedOmega += 1
                 task.wait(0.05)
 
-            elseif pet.Name == "Powercore Hound" and equippedHound < 2 then
+            elseif pet.Name == "Powercore Hound" and equippedHound < 7 then
                 equipEvent:FireServer("equipPet", pet)
                 equippedHound += 1
                 task.wait(0.05)
             end
 
-            if equippedOmega >= 4 and equippedHound >= 5 then
+            if equippedOmega >= 5 and equippedHound >= 7 then
                 break
             end
         end
