@@ -885,10 +885,13 @@ settingsTab:AddButton("Industrial Squat",function()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
 
-
-
-
-
+settingsTab:AddButton("King Squat",function()
+    hrp.CFrame = CFrame.new(-8758.44238, 19.0472374, -6043.06934, -1, 0, 0, 0, 1, 0, 0, 0, -1)
+    task.wait(0.2)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end)
 
 
 
@@ -1184,21 +1187,6 @@ end)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 local bossTab = window:AddTab("Boss Farming")
 
 local selectedBoss = "Boss1"
@@ -1293,30 +1281,6 @@ bossTab:AddSwitch("Kill Boss", function(state)
     end)
 end)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 _G.fastHitActive = false
 
 local bossSwitch = bossTab:AddSwitch("Auto Boss", function(bool)
@@ -1389,35 +1353,6 @@ local bossSwitch = bossTab:AddSwitch("Auto Boss", function(bool)
 end)
 
 bossSwitch:Set(false)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 bossTab:AddSwitch("Auto Loot", function(enabled)
     getgenv().AutoLoot = enabled
