@@ -894,7 +894,25 @@ settingsTab:AddButton("King Squat",function()
 end)
 
 
+local kingTimeLabel = settingsTab:AddLabel("King Time: 0")
 
+task.spawn(function()
+    while true do
+        local timeValue = 0
+        local player = game.Players.LocalPlayer
+
+        if player:FindFirstChild("muscleKingTime") then
+            timeValue = player.muscleKingTime.Value
+        elseif player:FindFirstChild("MuscleKingTime") then
+            timeValue = player.MuscleKingTime.Value
+        elseif player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("muscleKingTime") then
+            timeValue = player.leaderstats.muscleKingTime.Value
+        end
+        kingTimeLabel.Text = "King Time: " .. math.floor(timeValue) .. ""
+
+        task.wait(0.5)
+    end
+end)
 
 
 
@@ -1373,3 +1391,6 @@ bossTab:AddSwitch("Auto Loot", function(enabled)
         end)
     end
 end)
+
+
+
