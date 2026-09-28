@@ -1,16 +1,16 @@
---open src
-
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local Lighting = game:GetService("Lighting")
+local Stats = game:GetService("Stats")
 
 local player = Players.LocalPlayer
 local muscleEvent = player:WaitForChild("muscleEvent")
 local leaderstats = player:WaitForChild("leaderstats")
 local rebirthsStat = leaderstats:WaitForChild("Rebirths")
 local strengthStat = leaderstats:WaitForChild("Strength")
+local durabilityStat = player:WaitForChild("Durability")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/invinciblescriptz/UI-librarys-/refs/heads/main/Invincible%20Elerium", true))()
 local window = library:AddWindow("Invincible Fast Farm", {
@@ -51,8 +51,6 @@ end
 
 deleteAds()
 
-local rebirthTab = window:AddTab("Rebirth")
-
 local function formatNumber(num)
     num = tonumber(num) or 0
 
@@ -71,10 +69,11 @@ local function formatNumber(num)
     return string.format("%.0f", num)
 end
 
+local rebirthTab = window:AddTab("Rebirth")
+
 local activeMode = nil
 local startTime = 0
 local totalElapsed = 0
-
 local initialRebirths = rebirthsStat.Value
 
 local rebirthCount = 0
@@ -84,7 +83,6 @@ local lastRebirthValue = rebirthsStat.Value
 local savedPaceHour = 0
 local savedPaceDay = 0
 local savedPaceWeek = 0
-
 local savedAvgHour = 0
 local savedAvgDay = 0
 local savedAvgWeek = 0
@@ -92,7 +90,6 @@ local savedAvgWeek = 0
 local paceHistoryHour = {}
 local paceHistoryDay = {}
 local paceHistoryWeek = {}
-
 local MAX_HISTORY = 20
 
 local serverLabel = rebirthTab:AddLabel("Calc:")
@@ -102,14 +99,10 @@ local timeLabel = rebirthTab:AddLabel("0d 0h 0m 0s - Fast Reb Inactive")
 timeLabel.TextSize = 15
 timeLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
 
-local paceLabel = rebirthTab:AddLabel(
-    "Pace: / Hour | / Day | / Week"
-)
+local paceLabel = rebirthTab:AddLabel("Pace: / Hour | / Day | / Week")
 paceLabel.TextSize = 15
 
-local averagePaceLabel = rebirthTab:AddLabel(
-    "Average Pace: / Hour | / Day | / Week"
-)
+local averagePaceLabel = rebirthTab:AddLabel("Average Pace: / Hour | / Day | / Week")
 averagePaceLabel.TextSize = 15
 
 local rebirthsStatsLabel = rebirthTab:AddLabel(
@@ -118,22 +111,16 @@ local rebirthsStatsLabel = rebirthTab:AddLabel(
 rebirthsStatsLabel.TextSize = 15
 
 local function average(tbl)
-    if #tbl == 0 then
-        return 0
-    end
-
+    if #tbl == 0 then return 0 end
     local sum = 0
-
     for _, value in ipairs(tbl) do
         sum += value
     end
-
     return sum / #tbl
 end
 
 local function updateRebirthsLabel()
     local gained = rebirthsStat.Value - initialRebirths
-
     rebirthsStatsLabel.Text = string.format(
         "Rebirths: %s | Gained: %s",
         formatNumber(rebirthsStat.Value),
@@ -150,7 +137,6 @@ local function updatePaceLabels()
             formatNumber(savedPaceWeek)
         )
     end
-
     if savedAvgHour > 0 then
         averagePaceLabel.Text = string.format(
             "Average Pace: %s / Hour | %s / Day | %s / Week",
@@ -163,7 +149,6 @@ end
 
 local function updateUI()
     local elapsed = totalElapsed
-
     if activeMode then
         elapsed += tick() - startTime
     end
@@ -174,25 +159,19 @@ local function updateUI()
     local seconds = math.floor(elapsed % 60)
 
     local status
-
     if activeMode == "normal" then
         status = "Fast Rebirthing"
     elseif activeMode == "new" then
         status = "Fast Rebirthing [New]"
+    elseif activeMode == "nopacks" then
+        status = "Fast Rebirthing [No Packs]"
     elseif elapsed > 0 then
         status = "Rebirthing Paused"
     else
         status = "Fast Reb Inactive"
     end
 
-    timeLabel.Text = string.format(
-        "%dd %dh %dm %ds - %s",
-        days,
-        hours,
-        minutes,
-        seconds,
-        status
-    )
+    timeLabel.Text = string.format("%dd %dh %dm %ds - %s", days, hours, minutes, seconds, status)
 
     if activeMode then
         timeLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
@@ -205,13 +184,11 @@ end
 
 local function calculatePace()
     rebirthCount += 1
-
     if rebirthCount < 2 then
         lastRebirthTime = tick()
         lastRebirthValue = rebirthsStat.Value
         return
     end
-
     if not activeMode then
         lastRebirthTime = tick()
         lastRebirthValue = rebirthsStat.Value
@@ -222,12 +199,9 @@ local function calculatePace()
     local gained = rebirthsStat.Value - lastRebirthValue
     local elapsed = now - lastRebirthTime
 
-    if gained <= 0 or elapsed <= 0 then
-        return
-    end
+    if gained <= 0 or elapsed <= 0 then return end
 
     local avgTimePerRebirth = elapsed / gained
-
     local paceHour = 3600 / avgTimePerRebirth
     local paceDay = 86400 / avgTimePerRebirth
     local paceWeek = 604800 / avgTimePerRebirth
@@ -265,22 +239,13 @@ local MAX_PETS = 12
 
 local function managePets(petName)
     local petsFolder = player:FindFirstChild("petsFolder")
-
-    if not petsFolder then
-        return false
-    end
+    if not petsFolder then return false end
 
     local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-
-    if not rEvents then
-        return false
-    end
+    if not rEvents then return false end
 
     local equipEvent = rEvents:FindFirstChild("equipPetEvent")
-
-    if not equipEvent then
-        return false
-    end
+    if not equipEvent then return false end
 
     for _, folder in ipairs(petsFolder:GetChildren()) do
         if folder:IsA("Folder") then
@@ -295,24 +260,16 @@ local function managePets(petName)
     task.wait(0.15)
 
     local unique = petsFolder:FindFirstChild("Unique")
-
-    if not unique then
-        return false
-    end
+    if not unique then return false end
 
     local equipped = 0
-
     for _, pet in ipairs(unique:GetChildren()) do
         if pet.Name == petName then
             pcall(function()
                 equipEvent:FireServer("equipPet", pet)
             end)
-
             equipped += 1
-
-            if equipped >= MAX_PETS then
-                break
-            end
+            if equipped >= MAX_PETS then break end
         end
     end
 
@@ -321,70 +278,42 @@ end
 
 local function getRebirthRemote()
     local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
-
-    if not rEvents then
-        return nil
-    end
-
+    if not rEvents then return nil end
     return rEvents:FindFirstChild("rebirthRemote")
 end
 
 local function doRebirth(petName)
-    if not activeMode then
-        return false
-    end
+    if not activeMode then return false end
 
     local rebirthRemote = getRebirthRemote()
-
-    if not rebirthRemote then
-        return false
-    end
+    if not rebirthRemote then return false end
 
     local currentRebirths = rebirthsStat.Value
     local strengthTarget = 5000 + (currentRebirths * 2550)
 
-  
     while activeMode and strengthStat.Value < strengthTarget do
-        local reps
-
-        if player.MembershipType == Enum.MembershipType.Premium then
-            reps = 12
-        else
-            reps = 20
-        end
+        local reps = (player.MembershipType == Enum.MembershipType.Premium) and 12 or 20
 
         for _ = 1, reps do
-            if not activeMode then
-                return false
-            end
-
+            if not activeMode then return false end
             pcall(function()
                 muscleEvent:FireServer("rep")
             end)
         end
-
         task.wait(0.02)
     end
 
-    if not activeMode then
-        return false
-    end
+    if not activeMode then return false end
 
     managePets(petName)
-
     task.wait(0.25)
 
     local before = rebirthsStat.Value
-
     repeat
-        if not activeMode then
-            return false
-        end
-
+        if not activeMode then return false end
         pcall(function()
             rebirthRemote:InvokeServer("rebirthRequest")
         end)
-
         task.wait(0.05)
     until rebirthsStat.Value > before or not activeMode
 
@@ -396,7 +325,6 @@ local MODES = {
         petBefore = "Swift Samurai",
         petRebirth = "Tribal Overlord"
     },
-
     new = {
         petBefore = "Omega Overlord",
         petRebirth = "Powercore Hound"
@@ -405,24 +333,13 @@ local MODES = {
 
 local function fastRebirthLoop(modeName)
     local config = MODES[modeName]
-
-    if not config then
-        return
-    end
+    if not config then return end
 
     while activeMode == modeName do
         managePets(config.petBefore)
-
-        if activeMode ~= modeName then
-            break
-        end
-
+        if activeMode ~= modeName then break end
         doRebirth(config.petRebirth)
-
-        if activeMode ~= modeName then
-            break
-        end
-
+        if activeMode ~= modeName then break end
         task.wait(0.5)
     end
 end
@@ -431,10 +348,8 @@ local function startMode(modeName)
     if activeMode then
         totalElapsed += tick() - startTime
     end
-
     activeMode = modeName
     startTime = tick()
-
     updatePaceLabels()
 
     task.spawn(function()
@@ -446,7 +361,6 @@ local function stopMode()
     if activeMode then
         totalElapsed += tick() - startTime
     end
-
     activeMode = nil
     updateUI()
 end
@@ -454,49 +368,32 @@ end
 rebirthTab:AddLabel("")
 rebirthTab:AddLabel("Rebirth:").TextSize = 17
 
-local normalSwitch = rebirthTab:AddSwitch(
-    "Fast Rebirth",
-    function(state)
-        if state then
-            startMode("normal")
-        elseif activeMode == "normal" then
-            stopMode()
-        end
-    end
-)
-
-local newSwitch = rebirthTab:AddSwitch(
-    "Fast Rebirth [ New ]",
-    function(state)
-        if state then
-            startMode("new")
-        elseif activeMode == "new" then
-            stopMode()
-        end
-    end
-)
-
-task.spawn(function()
-    while true do
-        updateUI()
-        task.wait(0.1)
+local normalSwitch = rebirthTab:AddSwitch("Fast Rebirth", function(state)
+    if state then
+        startMode("normal")
+    elseif activeMode == "normal" then
+        stopMode()
     end
 end)
 
-updateRebirthsLabel()
-updateUI()
-
-
-
-
+local newSwitch = rebirthTab:AddSwitch("Fast Rebirth [ New ]", function(state)
+    if state then
+        startMode("new")
+    elseif activeMode == "new" then
+        stopMode()
+    end
+end)
 
 rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
     if state then
-        local player = game.Players.LocalPlayer
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        if activeMode then
+            totalElapsed += tick() - startTime
+        end
+        activeMode = "nopacks"
+        startTime = tick()
+
         local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
         local rebirthRemote = ReplicatedStorage.rEvents.rebirthRemote
-        local muscleEvent = player:WaitForChild("muscleEvent")
 
         local preferredPets = {
             "Mythic Boss Pet",
@@ -508,11 +405,12 @@ rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
         }
 
         local function equipBestPets()
-
             for _, folder in pairs(player.petsFolder:GetChildren()) do
                 if folder:IsA("Folder") then
                     for _, pet in pairs(folder:GetChildren()) do
-                        equipEvent:FireServer("unequipPet", pet)
+                        pcall(function()
+                            equipEvent:FireServer("unequipPet", pet)
+                        end)
                     end
                 end
             end
@@ -536,7 +434,9 @@ rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
                 if petsOfThisType then
                     for _, pet in ipairs(petsOfThisType) do
                         if equipped >= maxSlots then break end
-                        equipEvent:FireServer("equipPet", pet)
+                        pcall(function()
+                            equipEvent:FireServer("equipPet", pet)
+                        end)
                         equipped += 1
                         task.wait(0.03)
                     end
@@ -545,46 +445,50 @@ rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
         end
 
         equipBestPets()
-        activeMode = "normal"
-        startTime = tick()
 
         task.spawn(function()
-            while activeMode == "normal" do
-                local strengthStat = player.leaderstats:FindFirstChild("Strength")
-                local rebirthsStat = player.leaderstats:FindFirstChild("Rebirths")
+            while activeMode == "nopacks" do
+                local currentRebirths = rebirthsStat.Value
+                local target = 10000 + (currentRebirths * 5000)
 
-                if strengthStat and rebirthsStat then
-                    local currentRebirths = rebirthsStat.Value
-                    local target = 10000 + (currentRebirths * 5000)
-
-                    if strengthStat.Value >= target then
-                        local before = rebirthsStat.Value
+                if strengthStat.Value >= target then
+                    local before = rebirthsStat.Value
+                    pcall(function()
                         rebirthRemote:InvokeServer("rebirthRequest")
-                        task.wait(0.15)  server to process
+                    end)
+                    task.wait(0.15)
 
-                        if rebirthsStat.Value > before then
-                            equipBestPets() 
-                        end
-                    else
-                        muscleEvent:FireServer("rep")
+                    if rebirthsStat.Value > before then
+                        equipBestPets()
                     end
+                else
+                    pcall(function()
+                        muscleEvent:FireServer("rep")
+                    end)
                 end
 
-                task.wait() 
+                task.wait()
             end
         end)
     else
-        if activeMode == "normal" then
-            totalElapsed = totalElapsed + (tick() - startTime)
+        if activeMode == "nopacks" then
+            totalElapsed += tick() - startTime
             activeMode = nil
         end
     end
 end)
 
-local farmTab = window:AddTab("Farm")
+task.spawn(function()
+    while true do
+        updateUI()
+        task.wait(0.1)
+    end
+end)
 
-local strengthStat = leaderstats:WaitForChild("Strength")
-local durabilityStat = player:WaitForChild("Durability")
+updateRebirthsLabel()
+updateUI()
+
+local farmTab = window:AddTab("Farm")
 
 farmTab:AddLabel("Calc:").TextSize = 17
 local stopwatchLabel = farmTab:AddLabel("0d 0h 0m 0s - Fast Rep Inactive")
@@ -607,12 +511,13 @@ strengthLabel.TextSize = 15
 local durabilityLabel = farmTab:AddLabel("Durability: " .. formatNumber(durabilityStat.Value) .. " | Gained: 0")
 durabilityLabel.TextSize = 15
 
-local startTime = 0
+local farmStartTime = 0
 local pausedElapsedTime = 0
-local lastPauseTime = 0
-
 local runFastRep = false
 local trackingStarted = false
+local farmRunning = false
+local pingControl = false
+local autoRepThread = nil
 
 local strengthHistory = {}
 local durabilityHistory = {}
@@ -652,10 +557,10 @@ task.spawn(function()
         if runFastRep then
             if not trackingStarted then
                 trackingStarted = true
-                startTime = currentTime
+                farmStartTime = currentTime
                 strengthHistory = {}
                 durabilityHistory = {}
-                
+
                 if savedStrengthPerHour > 0 then
                     projectedStrengthLabel.Text = "Strength: " .. formatNumber(savedStrengthPerHour) .. "/Hour | " .. formatNumber(savedStrengthPerDay) .. "/Day | " .. formatNumber(savedStrengthPerWeek) .. "/Week | " .. formatNumber(savedStrengthPerMonth) .. "/Month"
                     projectedDurabilityLabel.Text = "Dura: " .. formatNumber(savedDurabilityPerHour) .. "/Hour | " .. formatNumber(savedDurabilityPerDay) .. "/Day | " .. formatNumber(savedDurabilityPerWeek) .. "/Week | " .. formatNumber(savedDurabilityPerMonth) .. "/Month"
@@ -663,8 +568,8 @@ task.spawn(function()
                     averageDurabilityLabel.Text = "Average: " .. formatNumber(savedAvgDurabilityPerHour) .. "/Hour | " .. formatNumber(savedAvgDurabilityPerDay) .. "/Day | " .. formatNumber(savedAvgDurabilityPerWeek) .. "/Week | " .. formatNumber(savedAvgDurabilityPerMonth) .. "/Month"
                 end
             end
-            
-            local elapsedTime = pausedElapsedTime + (currentTime - startTime)
+
+            local elapsedTime = pausedElapsedTime + (currentTime - farmStartTime)
             local days = math.floor(elapsedTime / (24 * 3600))
             local hours = math.floor((elapsedTime % (24 * 3600)) / 3600)
             local minutes = math.floor((elapsedTime % 3600) / 60)
@@ -691,7 +596,7 @@ task.spawn(function()
                     savedStrengthPerHour = strengthPerSecond * 3600
                     savedStrengthPerDay = strengthPerSecond * 86400
                     savedStrengthPerWeek = strengthPerSecond * 604800
-                    savedStrengthPerMonth = strengthPerSecond * 2592000 -- 30 days
+                    savedStrengthPerMonth = strengthPerSecond * 2592000
                     projectedStrengthLabel.Text = "Strength: " .. formatNumber(savedStrengthPerHour) .. "/Hour | " .. formatNumber(savedStrengthPerDay) .. "/Day | " .. formatNumber(savedStrengthPerWeek) .. "/Week | " .. formatNumber(savedStrengthPerMonth) .. "/Month"
                 end
 
@@ -701,36 +606,36 @@ task.spawn(function()
                     savedDurabilityPerHour = durabilityPerSecond * 3600
                     savedDurabilityPerDay = durabilityPerSecond * 86400
                     savedDurabilityPerWeek = durabilityPerSecond * 604800
-                    savedDurabilityPerMonth = durabilityPerSecond * 2592000 -- 30 days
+                    savedDurabilityPerMonth = durabilityPerSecond * 2592000
                     projectedDurabilityLabel.Text = "Dura: " .. formatNumber(savedDurabilityPerHour) .. "/Hour | " .. formatNumber(savedDurabilityPerDay) .. "/Day | " .. formatNumber(savedDurabilityPerWeek) .. "/Week | " .. formatNumber(savedDurabilityPerMonth) .. "/Month"
                 end
 
-                local totalElapsed = pausedElapsedTime + (currentTime - startTime)
-                if totalElapsed > 0 then
-                    local avgStrengthPerSecond = (currentStrength - initialStrength) / totalElapsed
+                local totalElapsedFarm = pausedElapsedTime + (currentTime - farmStartTime)
+                if totalElapsedFarm > 0 then
+                    local avgStrengthPerSecond = (currentStrength - initialStrength) / totalElapsedFarm
                     savedAvgStrengthPerHour = avgStrengthPerSecond * 3600
                     savedAvgStrengthPerDay = avgStrengthPerSecond * 86400
                     savedAvgStrengthPerWeek = avgStrengthPerSecond * 604800
-                    savedAvgStrengthPerMonth = avgStrengthPerSecond * 2592000 -- 30 days
+                    savedAvgStrengthPerMonth = avgStrengthPerSecond * 2592000
                     averageStrengthLabel.Text = "Average: " .. formatNumber(savedAvgStrengthPerHour) .. "/Hour | " .. formatNumber(savedAvgStrengthPerDay) .. "/Day | " .. formatNumber(savedAvgStrengthPerWeek) .. "/Week | " .. formatNumber(savedAvgStrengthPerMonth) .. "/Month"
 
-                    local avgDurabilityPerSecond = (currentDurability - initialDurability) / totalElapsed
+                    local avgDurabilityPerSecond = (currentDurability - initialDurability) / totalElapsedFarm
                     savedAvgDurabilityPerHour = avgDurabilityPerSecond * 3600
                     savedAvgDurabilityPerDay = avgDurabilityPerSecond * 86400
                     savedAvgDurabilityPerWeek = avgDurabilityPerSecond * 604800
-                    savedAvgDurabilityPerMonth = avgDurabilityPerSecond * 2592000 -- 30 days
+                    savedAvgDurabilityPerMonth = avgDurabilityPerSecond * 2592000
                     averageDurabilityLabel.Text = "Average: " .. formatNumber(savedAvgDurabilityPerHour) .. "/Hour | " .. formatNumber(savedAvgDurabilityPerDay) .. "/Day | " .. formatNumber(savedAvgDurabilityPerWeek) .. "/Week | " .. formatNumber(savedAvgDurabilityPerMonth) .. "/Month"
                 end
             end
         else
             if trackingStarted then
                 trackingStarted = false
-                pausedElapsedTime = pausedElapsedTime + (currentTime - startTime)
+                pausedElapsedTime = pausedElapsedTime + (currentTime - farmStartTime)
                 local days = math.floor(pausedElapsedTime / (24 * 3600))
                 local hours = math.floor((pausedElapsedTime % (24 * 3600)) / 3600)
                 local minutes = math.floor((pausedElapsedTime % 3600) / 60)
                 local seconds = math.floor(pausedElapsedTime % 60)
-                
+
                 if pausedElapsedTime > 0 then
                     stopwatchLabel.Text = string.format("%dd %dh %dm %ds - Farming Paused", days, hours, minutes, seconds)
                     stopwatchLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
@@ -751,42 +656,25 @@ end)
 farmTab:AddLabel("")
 farmTab:AddLabel("Farming:").TextSize = 17
 
-local networkStats = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]
+local networkStats = Stats.Network.ServerStatsItem["Data Ping"]
 
 local function getCurrentPing()
     return networkStats:GetValue()
 end
 
-local function getAdaptiveSpeed(ping)
-    if ping < 80 then
-        return 500
-    elseif ping < 150 then
-        return 300
-    elseif ping < 250 then
-        return 100
-    else
-        return 50
-    end
-end
-
-farmTab.AddSwitch(farmTab, "Max Tick Speed [ Dont Turn on ]", function(isEnabled)
+farmTab:AddSwitch("Max Tick Speed [ Dont Turn on ]", function(isEnabled)
     pingControl = isEnabled
-end):Set(Fals)
+end)
 
 local function startAutoRep()
-    local lastPingUpdate = time()
-    local currentPing = getCurrentPing()
     while farmRunning do
-        if time() - lastPingUpdate > 0.5 then
-            currentPing = getCurrentPing()
-            lastPingUpdate = time()
-        end
-
         local repsToFire = pingControl and 1000 or 1000
         local delayBetweenBatches = 0.001
 
         for repCount = 1, repsToFire do
-            muscleEvent:FireServer("rep")
+            pcall(function()
+                muscleEvent:FireServer("rep")
+            end)
             if repCount % 500 == 0 then
                 task.wait(0)
             end
@@ -795,31 +683,23 @@ local function startAutoRep()
     end
 end
 
-farmTab.AddSwitch(farmTab, "Fast Rep", function(isEnabled)
+farmTab:AddSwitch("Fast Rep", function(isEnabled)
     farmRunning = isEnabled
     if farmRunning then
         runFastRep = true
-        task.spawn(startAutoRep)
-    else 
+        autoRepThread = task.spawn(startAutoRep)
+    else
         runFastRep = false
-        task.cancel(startAutoRep)
+        farmRunning = false
     end
 end)
-
-
-
-
-
 
 local settingsTab = window:AddTab("Misc")
 
 settingsTab:AddLabel("Misc").TextSize = 17
 
-
 settingsTab:AddButton("Anti Lag", function()
-    local player = game.Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
-    local lighting = game:GetService("Lighting")
 
     for _, gui in pairs(playerGui:GetChildren()) do
         if gui:IsA("ScreenGui") then
@@ -828,7 +708,7 @@ settingsTab:AddButton("Anti Lag", function()
     end
 
     local function darkenSky()
-        for _, v in pairs(lighting:GetChildren()) do
+        for _, v in pairs(Lighting:GetChildren()) do
             if v:IsA("Sky") then
                 v:Destroy()
             end
@@ -842,28 +722,28 @@ settingsTab:AddButton("Anti Lag", function()
         darkSky.SkyboxLf = "rbxassetid://0"
         darkSky.SkyboxRt = "rbxassetid://0"
         darkSky.SkyboxUp = "rbxassetid://0"
-        darkSky.Parent = lighting
+        darkSky.Parent = Lighting
 
-        lighting.Brightness = 0
-        lighting.ClockTime = 0
-        lighting.TimeOfDay = "00:00:00"
-        lighting.OutdoorAmbient = Color3.new(0, 0, 0)
-        lighting.Ambient = Color3.new(0, 0, 0)
-        lighting.FogColor = Color3.new(0, 0, 0)
-        lighting.FogEnd = 100
+        Lighting.Brightness = 0
+        Lighting.ClockTime = 0
+        Lighting.TimeOfDay = "00:00:00"
+        Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+        Lighting.Ambient = Color3.new(0, 0, 0)
+        Lighting.FogColor = Color3.new(0, 0, 0)
+        Lighting.FogEnd = 100
 
         task.spawn(function()
             while true do
-                wait(5)
-                if not lighting:FindFirstChild("DarkSky") then
-                    darkSky:Clone().Parent = lighting
+                task.wait(5)
+                if not Lighting:FindFirstChild("DarkSky") then
+                    darkSky:Clone().Parent = Lighting
                 end
-                lighting.Brightness = 0
-                lighting.ClockTime = 0
-                lighting.OutdoorAmbient = Color3.new(0, 0, 0)
-                lighting.Ambient = Color3.new(0, 0, 0)
-                lighting.FogColor = Color3.new(0, 0, 0)
-                lighting.FogEnd = 100
+                Lighting.Brightness = 0
+                Lighting.ClockTime = 0
+                Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+                Lighting.Ambient = Color3.new(0, 0, 0)
+                Lighting.FogColor = Color3.new(0, 0, 0)
+                Lighting.FogEnd = 100
             end
         end)
     end
@@ -888,20 +768,13 @@ settingsTab:AddButton("Anti Lag", function()
     removeLightSources()
     darkenSky()
 end)
-    
-
-
-
-
 
 settingsTab:AddButton("Set Time Night", function()
-game.Lighting.ClockTime = 0
+    Lighting.ClockTime = 0
 end)
 
 settingsTab:AddButton("Safe Spot", function()
-    local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
-
     character:PivotTo(CFrame.new(
         -20520.832, 79022.7891, 128446.789,
         -0.0871579424, -0.114932016, -0.989542365,
@@ -909,10 +782,6 @@ settingsTab:AddButton("Safe Spot", function()
         0.996194482, -0.0100554936, -0.0865759403
     ))
 end)
-
-
-
-
 
 local snackList = {
     ["Protein Egg"] = "proteinEgg",
@@ -934,24 +803,21 @@ settingsTab:AddSwitch("Snack Destroyer", function(state)
     if state then
         task.spawn(function()
             while snackDestroyerEnabled do
-                local player = game.Players.LocalPlayer
-                local muscleEvent = player:FindFirstChild("muscleEvent")
-                
-                if muscleEvent then
-                    local sources = {player.Character, player:FindFirstChild("Backpack")}
-                    
-                    for _, source in pairs(sources) do
-                        if source then
-                            for _, tool in pairs(source:GetChildren()) do
-                                if tool:IsA("Tool") and snackList[tool.Name] then
+                local sources = {player.Character, player:FindFirstChild("Backpack")}
+
+                for _, source in pairs(sources) do
+                    if source then
+                        for _, tool in pairs(source:GetChildren()) do
+                            if tool:IsA("Tool") and snackList[tool.Name] then
+                                pcall(function()
                                     muscleEvent:FireServer(snackList[tool.Name], tool)
-                                    task.wait(0.15)
-                                end
+                                end)
+                                task.wait(0.15)
                             end
                         end
                     end
                 end
-                
+
                 task.wait(0.4)
             end
         end)
@@ -962,10 +828,10 @@ settingsTab:AddLabel("").TextSize = 17
 settingsTab:AddLabel("=======================").TextSize = 17
 settingsTab:AddLabel("").TextSize = 17
 
-local char = player.Character or player.CharacterAdded:wait()
+local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
-settingsTab:AddButton("Industrial Lift",function()
+settingsTab:AddButton("Industrial Lift", function()
     hrp.CFrame = CFrame.new(-5492.73877, 76.5083466, 4643.60107, -0.061767891, -1.58912012e-08, 0.998090565, 2.83243362e-09, 1, 1.60968909e-08, -0.998090565, 3.82129617e-09, -0.061767891)
     task.wait(0.2)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
@@ -973,7 +839,7 @@ settingsTab:AddButton("Industrial Lift",function()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
 
-settingsTab:AddButton("Industrial Squat",function()
+settingsTab:AddButton("Industrial Squat", function()
     hrp.CFrame = CFrame.new(-5216.61523, 79.1034012, 5420.27783, 0.999408305, -2.82105628e-09, -0.0343945809, 4.72853223e-09, 1, 5.53772708e-08, 0.0343945809, -5.55071438e-08, 0.999408305)
     task.wait(0.2)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
@@ -981,23 +847,18 @@ settingsTab:AddButton("Industrial Squat",function()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
 
-
-
-
 local packs = window:AddTab("Packs")
 
-
 packs:AddButton("Swift Samurai", function()
-    local player = game:GetService("Players").LocalPlayer
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
 
     if player:FindFirstChild("petsFolder") then
         for _, folder in pairs(player.petsFolder:GetChildren()) do
             if folder:IsA("Folder") then
                 for _, pet in pairs(folder:GetChildren()) do
-                    equipEvent:FireServer("unequipPet", pet)
+                    pcall(function()
+                        equipEvent:FireServer("unequipPet", pet)
+                    end)
                 end
             end
         end
@@ -1005,33 +866,28 @@ packs:AddButton("Swift Samurai", function()
 
     task.wait(0.15)
 
-
-    local equipped = 0
     if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
         for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
             if pet.Name == "Swift Samurai" then
-                equipEvent:FireServer("equipPet", pet)
-                equipped = equipped + 1
+                pcall(function()
+                    equipEvent:FireServer("equipPet", pet)
+                end)
                 task.wait(0.05)
             end
         end
     end
 end)
 
-
-
-
 packs:AddButton("Tribal Overlord", function()
-    local player = game:GetService("Players").LocalPlayer
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
 
     if player:FindFirstChild("petsFolder") then
         for _, folder in pairs(player.petsFolder:GetChildren()) do
             if folder:IsA("Folder") then
                 for _, pet in pairs(folder:GetChildren()) do
-                    equipEvent:FireServer("unequipPet", pet)
+                    pcall(function()
+                        equipEvent:FireServer("unequipPet", pet)
+                    end)
                 end
             end
         end
@@ -1039,13 +895,12 @@ packs:AddButton("Tribal Overlord", function()
 
     task.wait(0.15)
 
-
-    local equipped = 0
     if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
         for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
             if pet.Name == "Tribal Overlord" then
-                equipEvent:FireServer("equipPet", pet)
-                equipped = equipped + 1
+                pcall(function()
+                    equipEvent:FireServer("equipPet", pet)
+                end)
                 task.wait(0.05)
             end
         end
@@ -1053,16 +908,15 @@ packs:AddButton("Tribal Overlord", function()
 end)
 
 packs:AddButton("Omega Overlord", function()
-    local player = game:GetService("Players").LocalPlayer
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
 
     if player:FindFirstChild("petsFolder") then
         for _, folder in pairs(player.petsFolder:GetChildren()) do
             if folder:IsA("Folder") then
                 for _, pet in pairs(folder:GetChildren()) do
-                    equipEvent:FireServer("unequipPet", pet)
+                    pcall(function()
+                        equipEvent:FireServer("unequipPet", pet)
+                    end)
                 end
             end
         end
@@ -1070,13 +924,12 @@ packs:AddButton("Omega Overlord", function()
 
     task.wait(0.15)
 
-
-    local equipped = 0
     if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
         for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
             if pet.Name == "Omega Overlord" then
-                equipEvent:FireServer("equipPet", pet)
-                equipped = equipped + 1
+                pcall(function()
+                    equipEvent:FireServer("equipPet", pet)
+                end)
                 task.wait(0.05)
             end
         end
@@ -1084,16 +937,15 @@ packs:AddButton("Omega Overlord", function()
 end)
 
 packs:AddButton("Powercore Hound", function()
-    local player = game:GetService("Players").LocalPlayer
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
 
     if player:FindFirstChild("petsFolder") then
         for _, folder in pairs(player.petsFolder:GetChildren()) do
             if folder:IsA("Folder") then
                 for _, pet in pairs(folder:GetChildren()) do
-                    equipEvent:FireServer("unequipPet", pet)
+                    pcall(function()
+                        equipEvent:FireServer("unequipPet", pet)
+                    end)
                 end
             end
         end
@@ -1101,13 +953,12 @@ packs:AddButton("Powercore Hound", function()
 
     task.wait(0.15)
 
-
-    local equipped = 0
     if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
         for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
             if pet.Name == "Powercore Hound" then
-                equipEvent:FireServer("equipPet", pet)
-                equipped = equipped + 1
+                pcall(function()
+                    equipEvent:FireServer("equipPet", pet)
+                end)
                 task.wait(0.05)
             end
         end
@@ -1115,16 +966,15 @@ packs:AddButton("Powercore Hound", function()
 end)
 
 packs:AddButton("Titanium Hydra", function()
-    local player = game:GetService("Players").LocalPlayer
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
 
     if player:FindFirstChild("petsFolder") then
         for _, folder in pairs(player.petsFolder:GetChildren()) do
             if folder:IsA("Folder") then
                 for _, pet in pairs(folder:GetChildren()) do
-                    equipEvent:FireServer("unequipPet", pet)
+                    pcall(function()
+                        equipEvent:FireServer("unequipPet", pet)
+                    end)
                 end
             end
         end
@@ -1132,13 +982,12 @@ packs:AddButton("Titanium Hydra", function()
 
     task.wait(0.15)
 
-
-    local equipped = 0
     if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
         for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
             if pet.Name == "Titanium Hydra" then
-                equipEvent:FireServer("equipPet", pet)
-                equipped = equipped + 1
+                pcall(function()
+                    equipEvent:FireServer("equipPet", pet)
+                end)
                 task.wait(0.05)
             end
         end
@@ -1150,15 +999,15 @@ packs:AddLabel("=======================").TextSize = 17
 packs:AddLabel("").TextSize = 17
 
 packs:AddButton("Fast Farm Combo", function()
-    local player = game:GetService("Players").LocalPlayer
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
 
     if player:FindFirstChild("petsFolder") then
         for _, folder in pairs(player.petsFolder:GetChildren()) do
             if folder:IsA("Folder") then
                 for _, pet in pairs(folder:GetChildren()) do
-                    equipEvent:FireServer("unequipPet", pet)
+                    pcall(function()
+                        equipEvent:FireServer("unequipPet", pet)
+                    end)
                 end
             end
         end
@@ -1173,12 +1022,15 @@ packs:AddButton("Fast Farm Combo", function()
     if unique then
         for _, pet in pairs(unique:GetChildren()) do
             if pet.Name == "Omega Overlord" and equippedOmega < 5 then
-                equipEvent:FireServer("equipPet", pet)
+                pcall(function()
+                    equipEvent:FireServer("equipPet", pet)
+                end)
                 equippedOmega += 1
                 task.wait(0.05)
-
             elseif pet.Name == "Powercore Hound" and equippedHound < 7 then
-                equipEvent:FireServer("equipPet", pet)
+                pcall(function()
+                    equipEvent:FireServer("equipPet", pet)
+                end)
                 equippedHound += 1
                 task.wait(0.05)
             end
