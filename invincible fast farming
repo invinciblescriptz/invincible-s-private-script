@@ -957,7 +957,28 @@ settingsTab:AddSwitch("Snack Destroyer", function(state)
     end
 end)
 
+settingsTab:AddLabel("").TextSize = 17
+settingsTab:AddLabel("=======================").TextSize = 17
+settingsTab:AddLabel("").TextSize = 17
 
+local char = player.Character or player.CharacterAdded:wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+settingsTab:AddButton("Industrial Lift",function()
+    hrp.CFrame = CFrame.new(-5492.73877, 76.5083466, 4643.60107, -0.061767891, -1.58912012e-08, 0.998090565, 2.83243362e-09, 1, 1.60968909e-08, -0.998090565, 3.82129617e-09, -0.061767891)
+    task.wait(0.2)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end)
+
+settingsTab:AddButton("Industrial Squat",function()
+    hrp.CFrame = CFrame.new(-5216.61523, 79.1034012, 5420.27783, 0.999408305, -2.82105628e-09, -0.0343945809, 4.72853223e-09, 1, 5.53772708e-08, 0.0343945809, -5.55071438e-08, 0.999408305)
+    task.wait(0.2)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end)
 
 
 
@@ -1123,9 +1144,9 @@ packs:AddButton("Titanium Hydra", function()
     end
 end)
 
-packs:AddLabel("").TextSize = 1
-packs:AddLabel("Pet Combos").TextSize = 18
-packs:AddLabel("").TextSize = 1
+packs:AddLabel("").TextSize = 17
+pack:AddLabel("=======================").TextSize = 17
+packs:AddLabel("").TextSize = 17
 
 packs:AddButton("Fast Farm Combo", function()
     local player = game:GetService("Players").LocalPlayer
