@@ -1145,7 +1145,7 @@ packs:AddButton("Titanium Hydra", function()
 end)
 
 packs:AddLabel("").TextSize = 17
-pack:AddLabel("=======================").TextSize = 17
+packs:AddLabel("=======================").TextSize = 17
 packs:AddLabel("").TextSize = 17
 
 packs:AddButton("Fast Farm Combo", function()
@@ -1188,6 +1188,3 @@ packs:AddButton("Fast Farm Combo", function()
         end
     end
 end)
-
-
-
