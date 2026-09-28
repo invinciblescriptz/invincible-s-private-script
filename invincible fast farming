@@ -489,7 +489,6 @@ updateUI()
 
 
 
-
 rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
     if state then
         local player = game.Players.LocalPlayer
@@ -497,6 +496,7 @@ rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
         local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
         local rebirthRemote = ReplicatedStorage.rEvents.rebirthRemote
         local muscleEvent = player:WaitForChild("muscleEvent")
+
         local preferredPets = {
             "Mythic Boss Pet",
             "Legendary Boss Pet",
@@ -505,7 +505,9 @@ rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
             "Rare Boss Pet",
             "Common Boss Pet",
         }
+
         local function equipBestPets()
+
             for _, folder in pairs(player.petsFolder:GetChildren()) do
                 if folder:IsA("Folder") then
                     for _, pet in pairs(folder:GetChildren()) do
@@ -513,18 +515,18 @@ rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
                     end
                 end
             end
-            task.wait(0.15)
+            task.wait(0.1)
+
             local ownedPets = {}
             for _, folder in pairs(player.petsFolder:GetChildren()) do
                 if folder:IsA("Folder") then
                     for _, pet in pairs(folder:GetChildren()) do
-                        if not ownedPets[pet.Name] then
-                            ownedPets[pet.Name] = {}
-                        end
+                        ownedPets[pet.Name] = ownedPets[pet.Name] or {}
                         table.insert(ownedPets[pet.Name], pet)
                     end
                 end
             end
+
             local equipped = 0
             local maxSlots = 12
             for _, petName in ipairs(preferredPets) do
@@ -534,36 +536,40 @@ rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
                     for _, pet in ipairs(petsOfThisType) do
                         if equipped >= maxSlots then break end
                         equipEvent:FireServer("equipPet", pet)
-                        equipped = equipped + 1
-                        task.wait(0.05)
+                        equipped += 1
+                        task.wait(0.03)
                     end
                 end
             end
         end
+
         equipBestPets()
         activeMode = "normal"
         startTime = tick()
-        lastRebirthTime = tick()
-        lastRebirthValue = player.leaderstats.Rebirths.Value
+
         task.spawn(function()
             while activeMode == "normal" do
                 local strengthStat = player.leaderstats:FindFirstChild("Strength")
                 local rebirthsStat = player.leaderstats:FindFirstChild("Rebirths")
+
                 if strengthStat and rebirthsStat then
                     local currentRebirths = rebirthsStat.Value
                     local target = 10000 + (currentRebirths * 5000)
-                    if strengthStat.Value < target then
-                        muscleEvent:FireServer("rep")
-                    else
+
+                    if strengthStat.Value >= target then
                         local before = rebirthsStat.Value
                         rebirthRemote:InvokeServer("rebirthRequest")
-                        task.wait(0.2)
+                        task.wait(0.15)  server to process
+
                         if rebirthsStat.Value > before then
-                            equipBestPets()
+                            equipBestPets() 
                         end
+                    else
+                        muscleEvent:FireServer("rep")
                     end
                 end
-                task.wait()
+
+                task.wait() 
             end
         end)
     else
@@ -573,12 +579,6 @@ rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
         end
     end
 end)
-
-
-
-
-
-
 
 local farmTab = window:AddTab("Farm")
 
