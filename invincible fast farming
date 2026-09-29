@@ -398,7 +398,7 @@ rebirthTab:AddSwitch("Fast Rebirth [ No Packs ]", function(state)
         local preferredPets = {
             "Mythic Boss Pet",
             "Legendary Boss Pet",
-            "Rainbow Golem",
+            "Rainbow Boss Pet",
             "Epic Boss Pet",
             "Rare Boss Pet",
             "Common Boss Pet",
