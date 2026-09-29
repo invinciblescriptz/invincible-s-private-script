@@ -707,9 +707,8 @@ farmTab.AddSwitch(farmTab, "Fast Rep [ Normal Device ]", function(isEnabled)
     end
 end)
 
+
 local lowEndFarmRunning = false
-local autoRepThread = nil
-local pingControl = true
 local networkStats = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]
 
 local function getCurrentPing()
@@ -748,8 +747,9 @@ local function startAutoRepLowEnd()
 	end
 end
 
-farmTab.AddSwitch(farmTab, "Fast Rep [ Bad Device ]", function(isEnabled)
+farmTab.AddSwitch(farmTab, "Fast Rep (Low-End)", function(isEnabled)
 	lowEndFarmRunning = isEnabled
+	runFastRep = isEnabled
 	if autoRepThread then
 		task.cancel(autoRepThread)
 		autoRepThread = nil
