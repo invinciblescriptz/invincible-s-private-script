@@ -747,7 +747,7 @@ local function startAutoRepLowEnd()
 	end
 end
 
-farmTab.AddSwitch(farmTab, "Fast Rep (Low-End)", function(isEnabled)
+farmTab.AddSwitch(farmTab, "Fast Rep [ Shit Device ]", function(isEnabled)
 	lowEndFarmRunning = isEnabled
 	runFastRep = isEnabled
 	if autoRepThread then
