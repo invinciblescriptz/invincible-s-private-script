@@ -657,13 +657,11 @@ farmTab:AddLabel("")
 farmTab:AddLabel("Farming:").TextSize = 17
 local networkStats = Stats.Network.ServerStatsItem["Data Ping"]
 
+local networkStats = Stats.Network.ServerStatsItem["Data Ping"]
+
 local function getCurrentPing()
     return networkStats:GetValue()
 end
-
-local REPS_PER_BATCH = 8
-local DELAY_BETWEEN_BATCHES = 0.03
-local YIELD_EVERY = 4
 
 farmTab:AddSwitch("Max Tick Speed [Dont Turn on]", function(isEnabled)
     pingControl = isEnabled
@@ -671,19 +669,20 @@ end)
 
 local function startAutoRep()
     while farmRunning do
-        local repsToFire = pingControl and 12 or REPS_PER_BATCH
-        local delay = pingControl and 0.02 or DELAY_BETWEEN_BATCHES
+        local repsToFire = pingControl and 35 or 25
+        local delayBetweenBatches = pingControl and 0.008 or 0.012
 
         for i = 1, repsToFire do
             pcall(function()
                 muscleEvent:FireServer("rep")
             end)
-            if i % YIELD_EVERY == 0 then
+
+            if i % 8 == 0 then
                 task.wait()
             end
         end
 
-        task.wait(delay)
+        task.wait(delayBetweenBatches)
     end
 end
 
@@ -693,7 +692,6 @@ farmTab:AddSwitch("Fast Rep", function(isEnabled)
     if farmRunning then
         autoRepThread = task.spawn(startAutoRep)
     else
-        -- Make sure the loop actually stops
         farmRunning = false
     end
 end)
