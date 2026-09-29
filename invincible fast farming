@@ -696,7 +696,7 @@ local function startAutoRep()
         task.wait(delayBetweenBatches)
     end
 end
-farmTab.AddSwitch(farmTab, "Fast Rep", function(isEnabled)
+farmTab.AddSwitch(farmTab, "Fast Rep [ Normal Device ]", function(isEnabled)
     farmRunning = isEnabled
     if farmRunning then
         runFastRep = true
@@ -707,35 +707,58 @@ farmTab.AddSwitch(farmTab, "Fast Rep", function(isEnabled)
     end
 end)
 
-local function startAutoRepLowEnd()
-    local lastPingUpdate = time()
-    local currentPing = getCurrentPing()
-    while lowEndFarmRunning do
-        if time() - lastPingUpdate > 1 then 
-            currentPing = getCurrentPing()
-            lastPingUpdate = time()
-        end
+local lowEndFarmRunning = false
+local autoRepThread = nil
+local pingControl = true
+local networkStats = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]
 
-        local repsToFire = pingControl and getLowEndSpeed(currentPing) or 12
-        local delayBetweenBatches = math.clamp(currentPing / 1200, 0.04, 0.18)
-        for repCount = 1, repsToFire do
-            muscleEvent:FireServer("rep")
-            if repCount % 5 == 0 then
-                task.wait()
-            end
-        end
-
-        task.wait(delayBetweenBatches)
-    end
+local function getCurrentPing()
+	return networkStats:GetValue()
 end
 
-farmTab.AddSwitch(farmTab, "Fast Rep [ Bum Ass Device ]", function(isEnabled)
-    lowEndFarmRunning = isEnabled
-    if lowEndFarmRunning then
-        farmRunning = false
-        task.spawn(startAutoRepLowEnd)
-    end
+local function getLowEndSpeed(ping)
+	if ping < 100 then
+		return 25
+	elseif ping < 180 then
+		return 15
+	elseif ping < 280 then
+		return 8
+	else
+		return 4
+	end
+end
+
+local function startAutoRepLowEnd()
+	local lastPingUpdate = time()
+	local currentPing = getCurrentPing()
+	while lowEndFarmRunning do
+		if time() - lastPingUpdate > 1 then
+			currentPing = getCurrentPing()
+			lastPingUpdate = time()
+		end
+		local repsToFire = pingControl and getLowEndSpeed(currentPing) or 12
+		local delayBetweenBatches = math.clamp(currentPing / 1200, 0.04, 0.18)
+		for repCount = 1, repsToFire do
+			muscleEvent:FireServer("rep")
+			if repCount % 5 == 0 then
+				task.wait()
+			end
+		end
+		task.wait(delayBetweenBatches)
+	end
+end
+
+farmTab.AddSwitch(farmTab, "Fast Rep [ Bad Device ]", function(isEnabled)
+	lowEndFarmRunning = isEnabled
+	if autoRepThread then
+		task.cancel(autoRepThread)
+		autoRepThread = nil
+	end
+	if isEnabled then
+		autoRepThread = task.spawn(startAutoRepLowEnd)
+	end
 end)
+
 
 local settingsTab = window:AddTab("Misc")
 
