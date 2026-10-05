@@ -24,7 +24,7 @@ local durabilityStat = player:WaitForChild("Durability")
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/invinciblescriptz/UI-librarys-/refs/heads/main/Modern%20Elerium", true))()
 local window = library:AddWindow("Invincible Fast Farm", {
     main_color = Color3.fromRGB(0, 0, 0),
-    min_size = Vector2.new(300, 300),
+    min_size = Vector2.new(400, 660),
     can_resize = false
 })
 
