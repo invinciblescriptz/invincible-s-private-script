@@ -917,10 +917,6 @@ settingsTab:AddSwitch("Snack Destroyer", function(state)
     end
 end)
 
-settingsTab:AddLabel("").TextSize = 17
-settingsTab:AddLabel("=======================").TextSize = 17
-settingsTab:AddLabel("").TextSize = 17
-
 local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
