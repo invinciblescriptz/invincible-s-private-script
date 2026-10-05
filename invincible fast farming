@@ -21,12 +21,29 @@ local rebirthsStat = leaderstats:WaitForChild("Rebirths")
 local strengthStat = leaderstats:WaitForChild("Strength")
 local durabilityStat = player:WaitForChild("Durability")
 
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/invinciblescriptz/UI-librarys-/refs/heads/main/Modern%20Elerium", true))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/invinciblescriptz/UI-librarys-/refs/heads/main/Viltrum"))()
+
 local window = library:AddWindow("Invincible Fast Farm", {
-    main_color = Color3.fromRGB(0, 0, 0),
-    min_size = Vector2.new(400, 660),
-    can_resize = false
+	title_bar = {
+		Color3.fromRGB(0, 0, 0),
+		Color3.fromRGB(0, 0, 0),
+		Color3.fromRGB(250, 240, 250),
+	},
+	title_bar_transparency = 0.2,
+
+	background = {
+		Color3.fromRGB(0, 0, 0),
+		Color3.fromRGB(255, 255, 250),
+		Color3.fromRGB(255, 255, 255),
+	},
+	background_transparency = 0.1,
+
+	main_color = Color3.fromRGB(255, 255, 0),
+	min_size = Vector2.new(660, 350),
+	can_resize = true,
+	tween_time = 0.1,
 })
+
 
 player.Idled:Connect(function()
     VirtualUser:CaptureController()
