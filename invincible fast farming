@@ -1,10 +1,19 @@
+local success, result = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/wrrwrwrwrwrwe/bleh/refs/heads/main/exhale.luau"))()
+end)
+
+if success then
+    print("Exhale remover loaded successfully")
+else
+    warn("Failed to load: " .. tostring(result))
+end
+
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local Lighting = game:GetService("Lighting")
 local Stats = game:GetService("Stats")
-
 local player = Players.LocalPlayer
 local muscleEvent = player:WaitForChild("muscleEvent")
 local leaderstats = player:WaitForChild("leaderstats")
