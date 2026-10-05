@@ -922,156 +922,7 @@ settingsTab:AddButton("Industrial Squat", function()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
 
-local packs = window:AddTab("Packs")
-
-packs:AddButton("Swift Samurai", function()
-    local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
-    if player:FindFirstChild("petsFolder") then
-        for _, folder in pairs(player.petsFolder:GetChildren()) do
-            if folder:IsA("Folder") then
-                for _, pet in pairs(folder:GetChildren()) do
-                    pcall(function()
-                        equipEvent:FireServer("unequipPet", pet)
-                    end)
-                end
-            end
-        end
-    end
-
-    task.wait(0.15)
-
-    if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
-        for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
-            if pet.Name == "Swift Samurai" then
-                pcall(function()
-                    equipEvent:FireServer("equipPet", pet)
-                end)
-                task.wait(0.05)
-            end
-        end
-    end
-end)
-
-packs:AddButton("Tribal Overlord", function()
-    local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
-    if player:FindFirstChild("petsFolder") then
-        for _, folder in pairs(player.petsFolder:GetChildren()) do
-            if folder:IsA("Folder") then
-                for _, pet in pairs(folder:GetChildren()) do
-                    pcall(function()
-                        equipEvent:FireServer("unequipPet", pet)
-                    end)
-                end
-            end
-        end
-    end
-
-    task.wait(0.15)
-
-    if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
-        for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
-            if pet.Name == "Tribal Overlord" then
-                pcall(function()
-                    equipEvent:FireServer("equipPet", pet)
-                end)
-                task.wait(0.05)
-            end
-        end
-    end
-end)
-
-packs:AddButton("Omega Overlord", function()
-    local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
-    if player:FindFirstChild("petsFolder") then
-        for _, folder in pairs(player.petsFolder:GetChildren()) do
-            if folder:IsA("Folder") then
-                for _, pet in pairs(folder:GetChildren()) do
-                    pcall(function()
-                        equipEvent:FireServer("unequipPet", pet)
-                    end)
-                end
-            end
-        end
-    end
-
-    task.wait(0.15)
-
-    if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
-        for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
-            if pet.Name == "Omega Overlord" then
-                pcall(function()
-                    equipEvent:FireServer("equipPet", pet)
-                end)
-                task.wait(0.05)
-            end
-        end
-    end
-end)
-
-packs:AddButton("Powercore Hound", function()
-    local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
-    if player:FindFirstChild("petsFolder") then
-        for _, folder in pairs(player.petsFolder:GetChildren()) do
-            if folder:IsA("Folder") then
-                for _, pet in pairs(folder:GetChildren()) do
-                    pcall(function()
-                        equipEvent:FireServer("unequipPet", pet)
-                    end)
-                end
-            end
-        end
-    end
-
-    task.wait(0.15)
-
-    if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
-        for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
-            if pet.Name == "Powercore Hound" then
-                pcall(function()
-                    equipEvent:FireServer("equipPet", pet)
-                end)
-                task.wait(0.05)
-            end
-        end
-    end
-end)
-
-packs:AddButton("Titanium Hydra", function()
-    local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
-
-    if player:FindFirstChild("petsFolder") then
-        for _, folder in pairs(player.petsFolder:GetChildren()) do
-            if folder:IsA("Folder") then
-                for _, pet in pairs(folder:GetChildren()) do
-                    pcall(function()
-                        equipEvent:FireServer("unequipPet", pet)
-                    end)
-                end
-            end
-        end
-    end
-
-    task.wait(0.15)
-
-    if player:FindFirstChild("petsFolder") and player.petsFolder:FindFirstChild("Unique") then
-        for _, pet in pairs(player.petsFolder.Unique:GetChildren()) do
-            if pet.Name == "Titanium Hydra" then
-                pcall(function()
-                    equipEvent:FireServer("equipPet", pet)
-                end)
-                task.wait(0.05)
-            end
-        end
-    end
-end)
-
-packs:AddLabel("").TextSize = 17
-packs:AddLabel("=======================").TextSize = 17
-packs:AddLabel("").TextSize = 17
+local packs = window:AddTab(" Packs ")
 
 packs:AddButton("Fast Farm Combo", function()
     local equipEvent = ReplicatedStorage.rEvents.equipPetEvent
@@ -1115,4 +966,70 @@ packs:AddButton("Fast Farm Combo", function()
             end
         end
     end
+end)
+
+
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local lp = Players.LocalPlayer
+
+local PetPriority = {
+    "Omega Overlord",
+    "Swift Samurai",
+    "Mythic Boss Pet",
+    "Legendary Boss Pet",
+    "Rainbow Boss Pet",
+    "Epic Boss Pet",
+    "Rare Boss Pet",
+    "Common Boss Pet"
+}
+
+local MaxPets = 12
+
+local function unequipAllPets()
+    local petsFolder = lp:FindFirstChild("petsFolder")
+    if not petsFolder then return end
+    for _, folder in pairs(petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                pcall(function()
+                    ReplicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+                end)
+            end
+        end
+    end
+    task.wait(0.15)
+end
+
+local function equipPetsByName(petName, amount)
+    local petsFolder = lp:FindFirstChild("petsFolder")
+    if not petsFolder then return 0 end
+    local unique = petsFolder:FindFirstChild("Unique")
+    if not unique then return 0 end
+    local equipped = 0
+    for _, pet in pairs(unique:GetChildren()) do
+        if pet.Name == petName and equipped < amount then
+            pcall(function()
+                ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+            end)
+            equipped = equipped + 1
+            task.wait(0.05)
+        end
+    end
+    return equipped
+end
+
+local function BestRepPets()
+    unequipAllPets()
+    local remaining = MaxPets
+    for _, petName in ipairs(PetPriority) do
+        if remaining <= 0 then break end
+        local equipped = equipPetsByName(petName, remaining)
+        remaining = remaining - equipped
+    end
+end
+
+packs:AddButton("Best Rep Speed Pets", function()
+    BestRepPets()
 end)
