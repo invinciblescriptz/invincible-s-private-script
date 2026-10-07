@@ -682,14 +682,15 @@ end)
 
 farmTab:AddLabel("")
 farmTab:AddLabel("Farming:").TextSize = 17
-
 local farmRunning = false
 local repSpeed = 350
 local pingControl = true
 local networkStats = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]
+
 local function getCurrentPing()
     return networkStats:GetValue()
 end
+
 local function getAdaptiveSpeed(ping)
     if ping < 80 then
         return 500
@@ -701,9 +702,11 @@ local function getAdaptiveSpeed(ping)
         return 50
     end
 end
+
 farmTab.AddSwitch(farmTab, "Max Tick Speed [ Dont Turn Off ]", function(isEnabled)
     pingControl = isEnabled
 end):Set(true)
+
 local function startAutoRep()
     local lastPingUpdate = time()
     local currentPing = getCurrentPing()
@@ -723,16 +726,32 @@ local function startAutoRep()
         task.wait(delayBetweenBatches)
     end
 end
-farmTab.AddSwitch(farmTab, "Fast Rep [ Normal Device ]", function(isEnabled)
+
+local fastRepSaved = false
+pcall(function()
+    if isfile("FastRepSave.txt") then
+        fastRepSaved = readfile("FastRepSave.txt") == "true"
+    end
+end)
+
+local FastRepSwitch = farmTab.AddSwitch(farmTab, "Fast Rep [ Normal Device ]", function(isEnabled)
+    pcall(function()
+        writefile("FastRepSave.txt", tostring(isEnabled))
+    end)
+
     farmRunning = isEnabled
     if farmRunning then
         runFastRep = true
         task.spawn(startAutoRep)
     else 
         runFastRep = false
-        task.cancel(startAutoRep)
     end
 end)
+
+if fastRepSaved then
+    task.wait(0.3)
+    FastRepSwitch:Set(true)
+end
 
 
 local lowEndFarmRunning = false
