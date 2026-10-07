@@ -936,6 +936,77 @@ settingsTab:AddButton("Industrial Squat", function()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end)
 
+local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer = Players.LocalPlayer
+
+local firstCFrame = CFrame.new(
+    -2663.29468, 167.325623, 5471.97656,
+    -0.968901336, -5.29532116e-08, -0.247447386,
+    -4.30470593e-08, 1, -4.54434357e-08,
+    0.247447386, -3.33783241e-08, -0.968901336
+)
+
+local secondCFrame = CFrame.new(
+    -2801.76611, 167.325623, 5463.24121,
+    -0.997538626, -5.04895645e-08, 0.0701189861,
+    -5.71784788e-08, 1, -9.33866389e-08,
+    -0.0701189861, -9.71660796e-08, -0.997538626
+)
+
+local saved = false
+pcall(function()
+    if isfile("AutoMachineSave.txt") then
+        saved = readfile("AutoMachineSave.txt") == "true"
+    end
+end)
+
+local function doTeleport()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local someoneNear = false
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local otherHRP = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+            if otherHRP and (otherHRP.Position - firstCFrame.Position).Magnitude <= 20 then
+                someoneNear = true
+                break
+            end
+        end
+    end
+
+    if someoneNear then
+        hrp.CFrame = secondCFrame
+    else
+        hrp.CFrame = firstCFrame
+    end
+
+    hrp.Velocity = Vector3.zero
+    task.wait(0.2)
+
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
+local AutoMachineSwitch = settingsTab:AddSwitch("Auto Machine", function(state)
+    pcall(function()
+        writefile("AutoMachineSave.txt", tostring(state))
+    end)
+
+    if state then
+        doTeleport()
+    end
+end)
+
+if saved then
+    task.wait(0.5)
+    AutoMachineSwitch:Set(true)
+end
+
+
 local packs = window:AddTab("   Packs   ")
 
 packs:AddButton("Fast Farm Combo", function()
