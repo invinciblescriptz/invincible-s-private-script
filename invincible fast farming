@@ -1163,7 +1163,7 @@ settingsTab:AddSwitch("Platform", function(state)
             _G.PlatformLockConnection = game:GetService("RunService").Heartbeat:Connect(function()
                 local character = player and player.Character
                 if character and character:FindFirstChild("HumanoidRootPart") and _G.Platform then
-                    character.HumanoidRootPart.CFrame = _G.Platform.CFrame * CFrame.new(0, 6, 0)
+                    character.HumanoidRootPart.CFrame = _G.Platform.CFrame * CFrame.new(0, 11, 0)
                     character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
                     character.HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
                 end
