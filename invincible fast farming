@@ -1025,6 +1025,157 @@ if saved then
     AutoMachineSwitch:Set(true)
 end
 
+settingsTab:AddSwitch("Platform", function(state)
+    local function setTransparency(obj)
+        if obj:IsA("BasePart") then
+            obj.LocalTransparencyModifier = 1
+        end
+    end
+
+    local function shouldHide(name)
+        name = name:lower()
+        return name:find("weight") or name:find("barbell") or name:find("dumbbell") or name:find("bar")
+    end
+
+    local function process(container)
+        for _, v in ipairs(container:GetDescendants()) do
+            if shouldHide(v.Name) then
+                if v:IsA("Model") or v:IsA("Tool") then
+                    for _, part in ipairs(v:GetDescendants()) do
+                        setTransparency(part)
+                    end
+                else
+                    setTransparency(v)
+                end
+            end
+        end
+    end
+
+    process(workspace)
+
+    local player = game.Players.LocalPlayer
+    if player then
+        process(player.Backpack)
+        if player.Character then
+            process(player.Character)
+        end
+    end
+
+    if not _G.HideWeightsConnection then
+        _G.HideWeightsConnection = workspace.DescendantAdded:Connect(function(obj)
+            if shouldHide(obj.Name) then
+                task.defer(function()
+                    process(obj)
+                end)
+            end
+        end)
+    end
+
+    if not _G.AlwaysHideLoop then
+        _G.AlwaysHideLoop = game:GetService("RunService").Heartbeat:Connect(function()
+            process(workspace)
+            if player then
+                process(player.Backpack)
+                if player.Character then
+                    process(player.Character)
+                end
+            end
+        end)
+    end
+
+    local char = player and player.Character
+    if char then
+        local animate = char:FindFirstChild("Animate")
+        if animate and animate:FindFirstChild("idle") then
+            local idle = animate.idle
+            if state then
+                if not _G.OriginalIdle1 then
+                    _G.OriginalIdle1 = idle:FindFirstChild("Animation1") and idle.Animation1.AnimationId
+                    _G.OriginalIdle2 = idle:FindFirstChild("Animation2") and idle.Animation2.AnimationId
+                end
+                if idle:FindFirstChild("Animation1") then
+                    idle.Animation1.AnimationId = "rbxassetid://782841498"
+                end
+                if idle:FindFirstChild("Animation2") then
+                    idle.Animation2.AnimationId = "rbxassetid://782845736"
+                end
+            else
+                if _G.OriginalIdle1 and idle:FindFirstChild("Animation1") then
+                    idle.Animation1.AnimationId = _G.OriginalIdle1
+                end
+                if _G.OriginalIdle2 and idle:FindFirstChild("Animation2") then
+                    idle.Animation2.AnimationId = _G.OriginalIdle2
+                end
+            end
+        end
+    end
+
+    if state then
+        if not _G.NoMachineAnimConnection then
+            _G.NoMachineAnimConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                local character = player and player.Character
+                if not character then return end
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if not humanoid then return end
+                local animator = humanoid:FindFirstChildOfClass("Animator")
+                if not animator then return end
+
+                for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+                    track:Stop(0)
+                end
+
+                local anim = Instance.new("Animation")
+                anim.AnimationId = "rbxassetid://782841498"
+                local track = animator:LoadAnimation(anim)
+                track.Priority = Enum.AnimationPriority.Action4
+                track.Looped = true
+                track:Play(0)
+            end)
+        end
+    else
+        if _G.NoMachineAnimConnection then
+            _G.NoMachineAnimConnection:Disconnect()
+            _G.NoMachineAnimConnection = nil
+        end
+    end
+
+    if state then
+        if not _G.Platform or not _G.Platform.Parent then
+            local platform = Instance.new("Part")
+            platform.Name = "Platform"
+            platform.Size = Vector3.new(40, 3, 40)
+            platform.Anchored = true
+            platform.CanCollide = true
+            platform.Material = Enum.Material.SmoothPlastic
+            platform.Color = Color3.fromRGB(0, 0, 0)
+            platform.CFrame = CFrame.new(549.368774, 260.511536, 753.804382)
+            platform.Parent = workspace
+            _G.Platform = platform
+
+            local decal = Instance.new("Decal")
+            decal.Name = "TopImage"
+            decal.Face = Enum.NormalId.Top
+            decal.Texture = "rbxassetid://134901309817937"
+            decal.Parent = platform
+        end
+
+        if not _G.PlatformLockConnection then
+            _G.PlatformLockConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                local character = player and player.Character
+                if character and character:FindFirstChild("HumanoidRootPart") and _G.Platform then
+                    character.HumanoidRootPart.CFrame = _G.Platform.CFrame * CFrame.new(0, 6, 0)
+                    character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+                    character.HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
+                end
+            end)
+        end
+    else
+        if _G.PlatformLockConnection then
+            _G.PlatformLockConnection:Disconnect()
+            _G.PlatformLockConnection = nil
+        end
+    end
+end):Set(false)
 
 local packs = window:AddTab("   Packs   ")
 
